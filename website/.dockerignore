@@ -1,3 +1,5 @@
 .git
 **/.DS_Store
 **/*.md
+# Written at container start from the repo .env. Never bake a local copy.
+public/checkout/config.js

@@ -114,10 +114,11 @@ months). `app.js` and `paid_plans.js` are copies of `checkout/`.
 `python3 scripts/validate_phase7_2_paid_plans.py` fails if they drift.
 
 The container writes `config.js` on startup from `SUPABASE_URL` and
-`SUPABASE_ANON_KEY` in the `.env` next to the compose file you run. Those
-are the same public values as the Flutter app. Do not put
-`RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, or
-`SUPABASE_SERVICE_ROLE_KEY` here.
+`SUPABASE_ANON_KEY` in the **repo-root** `.env` (the same public values as
+the Flutter app). That file is used whether you run Compose from the repo
+root or from `website/`. Do not put `RAZORPAY_KEY_SECRET`,
+`RAZORPAY_WEBHOOK_SECRET`, or `SUPABASE_SERVICE_ROLE_KEY` in the image;
+Compose blanks those on the site container even though they live in `.env`.
 
 ```bash
 docker compose up --build -d

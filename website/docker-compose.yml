@@ -10,11 +10,22 @@ services:
     image: medico-site:local
     container_name: medico-site
     restart: unless-stopped
-    # Public keys only — same values as the Flutter app. Razorpay secrets
-    # stay on the Supabase Edge Functions, not in this container.
+    # Public keys only — same values as the Flutter app. Read them from the
+    # repo-root .env (this file lives in website/, so the path is ../.env).
+    # ${SUPABASE_URL} interpolation is empty when you run Compose from
+    # website/, because that directory has no .env; env_file still works.
+    # Do not copy payment or admin secrets into this container. Listing
+    # them here overrides anything env_file would have imported.
+    env_file:
+      - path: ../.env
+        required: false
     environment:
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      DATABASE_URL: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      RAZORPAY_KEY_ID: ""
+      RAZORPAY_KEY_SECRET: ""
+      RAZORPAY_WEBHOOK_SECRET: ""
+      CLOUDFLARE_TUNNEL_TOKEN: ""
     ports:
       - "127.0.0.1:${MEDICO_SITE_PORT:-8080}:80"
     healthcheck:
