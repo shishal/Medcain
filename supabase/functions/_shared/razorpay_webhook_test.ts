@@ -72,6 +72,31 @@ Deno.test('parses payment.captured when amount matches the catalog', () => {
   if (parsed.payment.plan !== 'pro' || parsed.payment.amountPaise !== 149900) {
     throw new Error('pro catalog fields did not match');
   }
+  if (parsed.payment.discountCode !== null) {
+    throw new Error('list-price payment must not carry a discount code');
+  }
+});
+
+Deno.test('rejects a discounted amount when no code is attached', () => {
+  const body = JSON.parse(capturedBody);
+  body.payload.payment.entity.amount = 119920;
+  const parsed = parseWebhookEvent(body);
+  if (parsed.kind !== 'invalid') {
+    throw new Error('discounted amount without a code must be invalid');
+  }
+});
+
+Deno.test('accepts a discounted amount when notes include a code', () => {
+  const body = JSON.parse(capturedBody);
+  body.payload.payment.entity.amount = 119920;
+  body.payload.payment.entity.notes.discount_code = 'campus-20';
+  const parsed = parseWebhookEvent(body);
+  if (parsed.kind !== 'captured') {
+    throw new Error(`expected captured, got ${JSON.stringify(parsed)}`);
+  }
+  if (parsed.payment.discountCode !== 'CAMPUS20' || parsed.payment.amountPaise !== 119920) {
+    throw new Error('normalized code or amount did not match');
+  }
 });
 
 Deno.test('ignores order.paid so the same payment is not applied twice', () => {

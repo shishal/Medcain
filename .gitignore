@@ -54,6 +54,7 @@ app.*.map.json
 
 # Checkout page config (anon key is public, but keep local copies out of git)
 checkout/config.js
+website/public/checkout/config.js
 
 # Script tooling (local venvs for one-off DB validators)
 scripts/.venv/

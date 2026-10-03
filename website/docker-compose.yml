@@ -10,6 +10,11 @@ services:
     image: medico-site:local
     container_name: medico-site
     restart: unless-stopped
+    # Public keys only — same values as the Flutter app. Razorpay secrets
+    # stay on the Supabase Edge Functions, not in this container.
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
     ports:
       - "127.0.0.1:${MEDICO_SITE_PORT:-8080}:80"
     healthcheck:

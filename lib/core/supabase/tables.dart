@@ -33,6 +33,7 @@ abstract final class Tables {
   static const studyEvents = 'study_events';
   static const announcements = 'announcements';
   static const announcementReads = 'announcement_reads';
+  static const discountCodes = 'discount_codes';
 }
 
 abstract final class ProfileColumns {
@@ -215,6 +216,13 @@ abstract final class AttemptAnswerColumns {
 }
 
 /// Postgres RPC function names (see `docs/02_DATABASE_SCHEMA.md`).
+abstract final class DiscountCodeColumns {
+  static const code = 'code';
+  static const percentOff = 'percent_off';
+  static const ownerUserId = 'owner_user_id';
+  static const active = 'active';
+}
+
 abstract final class RpcFunctions {
   static const currentPlan = 'current_plan';
   static const claimActiveDevice = 'claim_active_device';

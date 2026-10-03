@@ -6,7 +6,7 @@
     <title>Checkout — MEDCAIN</title>
     <meta
       name="description"
-      content="MEDCAIN plan checkout. Payments will be completed here in the browser — not inside the Android app."
+      content="Sign in with your MEDCAIN email and pay for Pro or Elite. The Android app never takes a card."
     />
     <link rel="canonical" href="https://medico.shishal.com/checkout/" />
     <meta name="theme-color" content="#008FD6" />
@@ -18,6 +18,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/css/site.css?v=medcain" />
+    <link rel="stylesheet" href="/checkout/checkout.css?v=checkout1" />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -43,33 +44,17 @@
       </div>
     </header>
 
-    <main id="main" class="wrap prose">
-      <p class="badge">Not live yet</p>
+    <main id="main" class="wrap prose checkout">
       <h1>Checkout</h1>
-      <p>
-        Plan upgrades will be paid on this page with the same email you use in
-        the MEDCAIN app. The app never takes a card. That is the Play Store /
-        App Store boundary we keep.
+      <p class="lede">
+        Sign in with the same email you use in the app, pick a plan, and pay
+        here. The app never takes a card.
       </p>
-      <p>When this page is switched on you will:</p>
-      <ol>
-        <li>Sign in with your MEDCAIN email.</li>
-        <li>Choose Pro (₹1,499 / 6 months) or Elite (₹2,999 / 12 months).</li>
-        <li>Pay through Razorpay (UPI or card).</li>
-        <li>Return to the app → Profile → refresh to see the new plan.</li>
-      </ol>
-      <p>
-        Until then, nothing on this site can charge you. New accounts still get
-        a <strong>4-day Pro trial</strong> inside the app. Compare plans on the
-        <a href="/#plans">home page</a>. If you already paid in error, use
-        <a href="/account/">refunds &amp; cancel</a>.
+      <div id="panel">Loading…</div>
+      <p class="meta">
+        Prepaid windows do not auto-renew. Refunds and cancellation:
+        <a href="/account/">Account</a>.
       </p>
-      <div class="btn-row">
-        <a class="btn btn-primary" href="/#plans">View plans</a>
-        <a class="btn btn-ghost" href="mailto:support@medico.shishal.com"
-          >Email support</a
-        >
-      </div>
     </main>
 
     <footer class="footer">
@@ -84,5 +69,10 @@
       </div>
     </footer>
     <script src="/js/site.js?v=medcain"></script>
+    <script src="/checkout/config.js"></script>
+    <script src="/checkout/paid_plans.js?v=checkout1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="/checkout/app.js?v=checkout2"></script>
   </body>
 </html>

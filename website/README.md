@@ -7,9 +7,9 @@ Positioning: **MBBS university-exam companion** (generic — no named
 university on the public site), not NEET-PG mocks. Theme follows the Flutter
 chrome (coral `#F25C2D`, charcoal, indigo accent).
 
-Nothing in this folder talks to Supabase or Razorpay yet. Checkout is a
-placeholder at `/checkout/` so you can drop the existing `checkout/` app
-there later without changing the hostname.
+Checkout at `/checkout/` signs the student in with Supabase (public URL and
+anon key only) and opens Razorpay Checkout. Card data stays with Razorpay.
+Secret keys stay on the Supabase Edge Functions, not in this image.
 
 ## Pages (paste these into Play Console)
 
@@ -107,11 +107,25 @@ and point that tunnel at `http://127.0.0.1:8080`.
 - https://medico.shishal.com/privacy/ loads without a login
 - View source is HTML files, not a Flutter web build
 
-## Payments later
+## Payments
 
-Keep this hostname. Replace `public/checkout/` with the files from repo
-`checkout/` (except `serve.py` and `config.example.js`), add a host-only
-`config.js` as in `docs/06_PAYMENTS_PRODUCTION.md`, and expand the CSP in
-`nginx.conf` so Razorpay + Supabase scripts can load.
+`/checkout/` is the live pay page (Pro ₹1,499 / 6 months, Elite ₹2,999 / 12
+months). `app.js` and `paid_plans.js` are copies of `checkout/`.
+`python3 scripts/validate_phase7_2_paid_plans.py` fails if they drift.
 
-Then set Flutter `CHECKOUT_URL=https://medico.shishal.com/checkout`.
+The container writes `config.js` on startup from `SUPABASE_URL` and
+`SUPABASE_ANON_KEY` in the `.env` next to the compose file you run. Those
+are the same public values as the Flutter app. Do not put
+`RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, or
+`SUPABASE_SERVICE_ROLE_KEY` here.
+
+```bash
+docker compose up --build -d
+```
+
+Then open https://medico.shishal.com/checkout — you should see a sign-in
+form. Razorpay API keys and the webhook are a separate step:
+[`docs/06_PAYMENTS_PRODUCTION.md`](../docs/06_PAYMENTS_PRODUCTION.md).
+
+Flutter store builds should set
+`CHECKOUT_URL=https://medico.shishal.com/checkout`.

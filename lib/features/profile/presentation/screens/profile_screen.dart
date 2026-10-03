@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -19,6 +20,7 @@ import '../../../catalog/presentation/providers/catalog_providers.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../auth/domain/device_session.dart';
 import '../providers/current_plan_provider.dart';
+import '../providers/referral_code_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../widgets/academic_editor.dart';
 
@@ -64,7 +66,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         actions: [
           IconButton(
             tooltip: 'Refresh plan',
-            onPressed: () => ref.read(userProfileProvider.notifier).refresh(),
+            onPressed: () {
+              ref.invalidate(ownReferralCodeProvider);
+              ref.read(userProfileProvider.notifier).refresh();
+            },
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -180,6 +185,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               error: (_, _) => const SizedBox.shrink(),
             ),
             const SizedBox(height: Spacing.lg),
+            const _ReferralCodeCard(),
             ComicCard(
               color: Color.alphaBlend(
                 StickerFills.mint.withValues(alpha: 0.4),
@@ -241,6 +247,67 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text('Sign out'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown only after a code is issued in Postgres. Copy puts it on the
+/// pasteboard so the student can send it to a classmate.
+class _ReferralCodeCard extends ConsumerWidget {
+  const _ReferralCodeCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final codeAsync = ref.watch(ownReferralCodeProvider);
+    final code = codeAsync.value;
+    if (code == null) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.lg),
+      child: ComicCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Your referral code', style: theme.textTheme.titleMedium),
+            const SizedBox(height: Spacing.xs),
+            Text(
+              'Classmates get ${code.percentOff}% off at checkout. '
+              'It does not discount your own payment.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: Spacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    code.code,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Copy code',
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: code.code));
+                    // The await can finish after the student has left Profile.
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Code copied')),
+                    );
+                  },
+                  icon: const Icon(Icons.copy),
+                ),
+              ],
             ),
           ],
         ),

@@ -6,6 +6,7 @@ import '../../../core/supabase/tables.dart';
 import '../../../core/utils/result.dart';
 import '../../../core/utils/user_facing_error.dart';
 import '../domain/plan_tier.dart';
+import '../domain/referral_code.dart';
 import '../domain/user_profile.dart';
 
 part 'profile_repository.g.dart';
@@ -107,6 +108,47 @@ class ProfileRepository {
         UserFacingError.from(
           e,
           fallback: 'Could not save your profile. Please try again.',
+        ),
+      );
+    }
+  }
+
+  /// The signed-in student's own shareable code, if one has been issued.
+  ///
+  /// RLS only returns rows whose `owner_user_id` is this user. A missing row
+  /// means they have nothing to share yet — that is not an error.
+  Future<Result<ReferralCode?>> fetchOwnReferralCode() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      return const Failure('Not signed in.');
+    }
+
+    try {
+      final row = await _client
+          .from(Tables.discountCodes)
+          .select(
+            '${DiscountCodeColumns.code}, ${DiscountCodeColumns.percentOff}',
+          )
+          .eq(DiscountCodeColumns.ownerUserId, userId)
+          .eq(DiscountCodeColumns.active, true)
+          .maybeSingle();
+
+      if (row == null) return const Success(null);
+
+      final code = row[DiscountCodeColumns.code];
+      final percent = row[DiscountCodeColumns.percentOff];
+      if (code is! String || percent is! num) {
+        return const Failure('Could not load your referral code.');
+      }
+
+      return Success(
+        ReferralCode(code: code, percentOff: percent.toInt()),
+      );
+    } catch (e) {
+      return Failure(
+        UserFacingError.from(
+          e,
+          fallback: 'Could not load your referral code. Please try again.',
         ),
       );
     }

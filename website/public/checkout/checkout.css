@@ -1,0 +1,99 @@
+/* Checkout form. Scoped so it does not restyle the marketing pages. */
+
+.checkout .lede {
+  color: var(--muted);
+}
+
+.checkout .card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.checkout .card.selected {
+  outline: 2px solid var(--coral);
+}
+
+.checkout .row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-md);
+  align-items: baseline;
+}
+
+.checkout .price {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.checkout label {
+  display: block;
+  font-weight: 650;
+  margin-bottom: var(--space-xs);
+}
+
+.checkout input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: var(--space-md);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.checkout .primary,
+.checkout .ghost {
+  width: 100%;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 13px 22px;
+}
+
+.checkout .primary {
+  background: var(--coral);
+  color: #fff;
+  border: 0;
+}
+
+.checkout .primary:hover {
+  background: var(--coral-deep);
+}
+
+.checkout .primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.checkout .ghost {
+  margin-top: var(--space-sm);
+  background: transparent;
+  color: var(--coral);
+  border: 1px solid color-mix(in srgb, var(--coral) 35%, transparent);
+}
+
+.checkout .error {
+  color: #b3261e;
+  margin: 0 0 var(--space-md);
+}
+
+.checkout .success {
+  color: var(--coral-deep);
+  font-weight: 700;
+}
+
+.checkout button.plan-pick {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}

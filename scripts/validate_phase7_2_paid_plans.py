@@ -10,6 +10,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TS = ROOT / "supabase" / "functions" / "_shared" / "paid_plans.ts"
 JS = ROOT / "checkout" / "paid_plans.js"
+# Public site serves copies. Prices and checkout behavior must stay identical.
+SITE_COPIES = (
+    (
+        ROOT / "checkout" / "paid_plans.js",
+        ROOT / "website" / "public" / "checkout" / "paid_plans.js",
+    ),
+    (
+        ROOT / "checkout" / "app.js",
+        ROOT / "website" / "public" / "checkout" / "app.js",
+    ),
+)
 FIELDS = ("amountPaise", "durationDays", "periodLabel")
 
 
@@ -40,6 +51,10 @@ def main() -> int:
         if left != right:
             sys.exit(f"{plan} mismatch:\n  function {left}\n  page     {right}")
         print(f"ok {plan} amountPaise={left['amountPaise']} {left['periodLabel']}")
+    for source, copy in SITE_COPIES:
+        if source.read_text() != copy.read_text():
+            sys.exit(f"{copy.relative_to(ROOT)} drifted from {source.relative_to(ROOT)}")
+        print(f"ok copy {copy.relative_to(ROOT)}")
     return 0
 
 

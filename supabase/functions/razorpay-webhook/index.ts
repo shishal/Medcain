@@ -68,6 +68,7 @@ Deno.serve(async (req) => {
     p_plan: pay.plan,
     p_amount_paise: pay.amountPaise,
     p_currency: pay.currency,
+    p_discount_code: pay.discountCode,
   });
 
   if (error) {

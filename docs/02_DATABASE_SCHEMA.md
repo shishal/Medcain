@@ -576,7 +576,7 @@ $$;
 
 Razorpay's webhook hits a Supabase Edge Function (`razorpay-webhook`). That function's only job is to verify `X-Razorpay-Signature` (HMAC-SHA256 of the **raw** body with `RAZORPAY_WEBHOOK_SECRET`). After a valid `payment.captured` event, it calls `apply_razorpay_payment()` — it does **not** write `profiles.plan` itself.
 
-Amount and duration live in the SQL catalog (must match `supabase/functions/_shared/paid_plans.ts`). A signed webhook that claims Elite but paid the Pro amount is rejected.
+Amount and duration live in `paid_plan_terms()` (must match `supabase/functions/_shared/paid_plans.ts`). A signed webhook that claims Elite but paid the Pro amount is rejected. A `discount_code` on the order is priced from `discount_codes.percent_off` inside `apply_razorpay_payment` — the client never sends an amount. Issue codes with `issue_discount_code()` (service role / SQL editor only). The code's owner can `SELECT` their own row; they cannot redeem it.
 
 ```sql
 create table payments (

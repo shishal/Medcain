@@ -86,44 +86,28 @@ where pronamespace = 'public'::regnamespace
 
 Keep the Test keys. You will still use Test Mode for development.
 
-### 3. Host the checkout page on HTTPS
+### 3. Serve checkout on the public site
 
 Razorpay **Live** Checkout expects the page to be served over **https://**.
 `python3 checkout/serve.py` is local-only.
 
-The page is static. Upload everything in `checkout/` except `serve.py` and
-`config.example.js`. You **must** add a `config.js` on the host (it is
-gitignored):
-
-```js
-window.CHECKOUT_CONFIG = {
-  supabaseUrl: 'https://YOUR_PROJECT_REF.supabase.co',
-  supabaseAnonKey: 'your_anon_key',  // same public key as the Flutter app
-};
-```
-
-Never put `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, or
-`SUPABASE_SERVICE_ROLE_KEY` in this folder. The page only needs the public
-Supabase URL + anon key. The Razorpay **public** key is returned at runtime
-by `create-razorpay-order`.
-
-**Simple host options** (any of these is fine):
-
-- Cloudflare Pages / Netlify / GitHub Pages — not needed; this project serves
-  the same hostname from Docker (`website/`)
-- Path on the existing domain: `https://medico.shishal.com/checkout`
-
-If the host can run a build command, generate `config.js` from env vars
-instead of uploading it by hand:
+The public site already serves checkout at
+`https://medico.shishal.com/checkout` (`website/public/checkout/`). From the
+repo root, rebuild so nginx and the page are current:
 
 ```bash
-printf "window.CHECKOUT_CONFIG = { supabaseUrl: '%s', supabaseAnonKey: '%s' };\n" \
-  "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > config.js
+docker compose up --build -d
 ```
 
-The public site is `https://medico.shishal.com`. Checkout should live at
-`https://medico.shishal.com/checkout` (placeholder is already there). You
-will paste that URL into Flutter, Razorpay, and Supabase Auth.
+On startup the container writes `checkout/config.js` from `SUPABASE_URL` and
+`SUPABASE_ANON_KEY` in the repo `.env` (the same public values as the Flutter
+app). Never put `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, or
+`SUPABASE_SERVICE_ROLE_KEY` in that container. The Razorpay **public** key is
+returned at runtime by `create-razorpay-order`.
+
+Open `https://medico.shishal.com/checkout`. You should see the sign-in form.
+Paste that URL into Flutter `CHECKOUT_URL`, Razorpay website details, and
+Supabase Auth redirect URLs.
 
 ### 4. Allow the checkout origin in Supabase Auth
 
@@ -266,13 +250,45 @@ Phase 9 still applies. For payments specifically:
 
 ---
 
+## Discount and referral codes
+
+The checkout page has a code field. Postgres computes the percent off. The
+browser cannot choose the amount.
+
+Issue a code in the Supabase SQL editor:
+
+```sql
+select public.issue_discount_code(
+  p_percent_off => 20,
+  p_owner_user_id => '00000000-0000-0000-0000-000000000000', -- profile id
+  p_code => 'CAMPUS20'  -- omit this argument to generate a code
+);
+```
+
+`p_owner_user_id` set: that student sees the code on **Profile** and can share
+it. It discounts other students' payments. It does not discount the owner's
+own payment. Issuing another code to the same student turns the previous one
+off.
+
+`p_owner_user_id` null: a promo anyone signed in can enter.
+
+Optional: `p_max_redemptions => 50`, `p_expires_at => timestamptz '2026-12-31'`.
+Percent is 1–99. Each student can use a given code once. To stop a code
+without breaking a payment already in progress:
+
+```sql
+update public.discount_codes set active = false where code = 'CAMPUS20';
+```
+
+Leave `percent_off` as it was issued. The webhook checks that stored percent.
+
 ## Changing prices later
 
 Three places must stay identical (the validator checks this):
 
 1. `supabase/functions/_shared/paid_plans.ts` (Edge Function)
-2. `checkout/paid_plans.js` (display only)
-3. Catalog inside `apply_razorpay_payment()` (Postgres migration)
+2. `checkout/paid_plans.js` (display only — keep `website/public/checkout/paid_plans.js` identical)
+3. `paid_plan_terms()` in `supabase/migrations/20260930210000_discount_codes.sql`
 
 Then: `python3 scripts/validate_phase7_3_webhook.py`, `npx supabase db push`,
 redeploy `create-razorpay-order`, redeploy the hosted `paid_plans.js`.
@@ -285,11 +301,12 @@ redeploy `create-razorpay-order`, redeploy the hosted `paid_plans.js`.
 |---|---|
 | Student paid, plan still Free | Razorpay webhook log: non-200? Redeploy function / check Live secret. Profile → refresh. |
 | Webhook 400 Invalid signature | Live secret in Razorpay ≠ `RAZORPAY_WEBHOOK_SECRET` on Supabase. |
-| Checkout says “not configured” | Hosted `config.js` still has placeholders, or `create-razorpay-order` missing Live keys. |
+| Checkout says “not available” | Container started without `SUPABASE_URL` / `SUPABASE_ANON_KEY`. Rebuild after they are in `.env`. |
+| Pay button says “not configured yet” | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` are missing on the Edge Functions. |
 | Pay button fails, Test keys in Live | `RAZORPAY_KEY_ID` still `rzp_test_`. |
 | You refund in Razorpay | Manually set `profiles.plan = 'free'` (or wait until `plan_expires_at`). |
 | Rotate keys | New Live API keys + new webhook secret → `secrets set` → redeploy both functions. Update Razorpay webhook secret to match. |
-| Student buys again before expiry | Same payment id is ignored. A **new** payment starts a **new** window from `now()` (does not stack leftover days). |
+| Student buys again before expiry | Same payment id is ignored. A new payment adds a full window onto any time still left. |
 
 ---
 

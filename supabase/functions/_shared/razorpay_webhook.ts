@@ -15,6 +15,8 @@ export type CapturedPayment = {
   plan: PaidPlanId;
   amountPaise: number;
   currency: string;
+  /** Null when the student paid the list price. */
+  discountCode: string | null;
 };
 
 export type ParseResult =
@@ -136,11 +138,25 @@ export function parseWebhookEvent(body: unknown): ParseResult {
   if (amountPaise == null || currency == null) {
     return { kind: 'invalid', reason: 'missing amount or currency' };
   }
+  if (currency !== catalog.currency) {
+    return { kind: 'invalid', reason: 'amount does not match catalog' };
+  }
 
-  if (
-    amountPaise !== catalog.amountPaise ||
-    currency !== catalog.currency
-  ) {
+  // The exact discounted paise is checked in apply_razorpay_payment(), which
+  // reads percent_off from discount_codes. This layer only rejects a code
+  // that could not have come from our order notes, and a list-price payment
+  // whose amount was changed.
+  const rawCode = asString(notes.discount_code);
+  let discountCode: string | null = null;
+  if (rawCode != null) {
+    discountCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!/^[A-Z0-9]{4,16}$/.test(discountCode)) {
+      return { kind: 'invalid', reason: 'notes.discount_code is not a code' };
+    }
+    if (amountPaise >= catalog.amountPaise) {
+      return { kind: 'invalid', reason: 'amount does not match catalog' };
+    }
+  } else if (amountPaise !== catalog.amountPaise) {
     return { kind: 'invalid', reason: 'amount does not match catalog' };
   }
 
@@ -153,6 +169,7 @@ export function parseWebhookEvent(body: unknown): ParseResult {
       plan: planName as PaidPlanId,
       amountPaise,
       currency,
+      discountCode,
     },
   };
 }

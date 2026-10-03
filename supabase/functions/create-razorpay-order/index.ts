@@ -40,9 +40,13 @@ Deno.serve(async (req) => {
   }
 
   let planName = '';
+  let requestedCode: string | null = null;
   try {
     const body = await req.json();
     planName = typeof body?.plan === 'string' ? body.plan.trim().toLowerCase() : '';
+    if (typeof body?.code === 'string' && body.code.trim().length > 0) {
+      requestedCode = body.code.trim();
+    }
   } catch {
     return jsonResponse({ error: 'Send JSON with a plan field.' }, 400);
   }
@@ -51,6 +55,48 @@ Deno.serve(async (req) => {
   if (plan == null) {
     return jsonResponse({ error: 'Choose Pro or Elite.' }, 400);
   }
+
+  // Amount comes from checkout_quote(), never from this request.
+  const { data: quote, error: quoteError } = await supabase.rpc(
+    'checkout_quote',
+    { p_plan: planName, p_code: requestedCode },
+  );
+
+  if (quoteError) {
+    const known = [
+      'That code is not valid.',
+      'That code has expired.',
+      'That code has been used up.',
+      'Referral codes cannot be used on your own payment.',
+      'You already used this code.',
+      'That discount is too large for this plan.',
+      'Choose Pro or Elite.',
+      'Sign in to continue.',
+    ];
+    const message = known.find((item) => quoteError.message.includes(item));
+    return jsonResponse(
+      { error: message ?? 'Could not start checkout. Please try again.' },
+      message ? 400 : 500,
+    );
+  }
+
+  const amountPaise = quote?.amount_paise;
+  const listAmountPaise = quote?.list_amount_paise;
+  if (
+    typeof amountPaise !== 'number' ||
+    typeof listAmountPaise !== 'number' ||
+    quote?.currency !== 'INR'
+  ) {
+    return jsonResponse(
+      { error: 'Could not start checkout. Please try again.' },
+      500,
+    );
+  }
+
+  const discountCode = typeof quote.code === 'string' ? quote.code : null;
+  const percentOff = typeof quote.percent_off === 'number'
+    ? quote.percent_off
+    : null;
 
   const keyId = Deno.env.get('RAZORPAY_KEY_ID');
   const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
@@ -64,6 +110,13 @@ Deno.serve(async (req) => {
   // receipt max 40 chars. Date.now() in base36 stays well under that.
   const receipt = `m_${planName}_${Date.now().toString(36)}`;
 
+  const notes: Record<string, string> = {
+    user_id: user.id,
+    plan: planName,
+    email: user.email,
+  };
+  if (discountCode) notes.discount_code = discountCode;
+
   const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
     method: 'POST',
     headers: {
@@ -71,14 +124,10 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      amount: plan.amountPaise,
-      currency: plan.currency,
+      amount: amountPaise,
+      currency: 'INR',
       receipt,
-      notes: {
-        user_id: user.id,
-        plan: planName,
-        email: user.email,
-      },
+      notes,
     }),
   });
 
@@ -94,11 +143,16 @@ Deno.serve(async (req) => {
   return jsonResponse({
     keyId,
     orderId: razorpayBody.id,
-    amount: plan.amountPaise,
-    currency: plan.currency,
+    amount: amountPaise,
+    listAmount: listAmountPaise,
+    percentOff,
+    code: discountCode,
+    currency: 'INR',
     plan: planName,
     label: plan.label,
-    description: plan.description,
+    description: percentOff
+      ? `${plan.description} · ${percentOff}% off`
+      : plan.description,
     name: 'Medico',
     prefillEmail: user.email,
   });

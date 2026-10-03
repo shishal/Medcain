@@ -45,7 +45,7 @@ SQL = (
     ROOT
     / "supabase"
     / "migrations"
-    / "20260829220000_phase7_3_apply_razorpay_payment.sql"
+    / "20260930210000_discount_codes.sql"
 )
 FIELDS = ("amountPaise", "durationDays")
 
