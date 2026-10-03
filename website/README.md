@@ -40,8 +40,8 @@ Or from this directory:
 docker compose up --build -d
 ```
 
-Either way the site is at http://127.0.0.1:8080 (`medico-site` container).
-Change the host port with `MEDICO_SITE_PORT=8081` if 8080 is taken.
+Either way the site is at http://127.0.0.1:8083 (`medico-site` container).
+Change the host port with `MEDICO_SITE_PORT` in the repo-root `.env` if 8083 is taken.
 
 Without Docker:
 
@@ -72,7 +72,7 @@ Copy this repo onto the machine. From the **repo root**:
 docker compose up --build -d
 ```
 
-The container listens on **127.0.0.1:8080** only. Do not publish `8080` to
+The container listens on **127.0.0.1:8083** only. Do not publish `8083` to
 `0.0.0.0` unless you intend the origin to be reachable without Cloudflare.
 
 ### 3. Cloudflare Tunnel (recommended)
@@ -80,7 +80,7 @@ The container listens on **127.0.0.1:8080** only. Do not publish `8080` to
 Zero open inbound ports.
 
 1. Cloudflare Zero Trust → Networks → Tunnels → Create.
-2. Public hostname: `medico.shishal.com` → service `http://127.0.0.1:8080`
+2. Public hostname: `medico.shishal.com` → service `http://127.0.0.1:8083`
    (or `http://site:80` if cloudflared is on the same Compose network).
 3. Put the tunnel token in `.env` at the **repo root** (gitignored):
 
@@ -99,7 +99,7 @@ Zero open inbound ports.
    (not `127.0.0.1`) when cloudflared is on this Compose network.
 
 If you already run `cloudflared` as a host service, skip the Compose profile
-and point that tunnel at `http://127.0.0.1:8080`.
+and point that tunnel at `http://127.0.0.1:8083`.
 
 ### 4. Check
 
