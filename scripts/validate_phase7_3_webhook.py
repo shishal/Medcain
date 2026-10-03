@@ -3,8 +3,9 @@
 Phase 7.3 — Razorpay webhook → plan update.
 
 Checks:
-  1. Price/duration catalog matches across paid_plans.ts, paid_plans.js, and
-     apply_razorpay_payment() SQL (never trust a client-sent amount).
+  1. Seed price/duration matches across paid_plans.ts, paid_plans.js, and the
+     paid_plan_catalog INSERT. Live charges read the table, which may differ
+     after an UPDATE.
   2. The RPC grants a plan, is idempotent, and rejects a wrong amount.
   3. authenticated cannot UPDATE profiles.plan or EXECUTE the RPC.
   4. POST without X-Razorpay-Signature is rejected (400).
@@ -45,7 +46,7 @@ SQL = (
     ROOT
     / "supabase"
     / "migrations"
-    / "20260930210000_discount_codes.sql"
+    / "20261003120000_paid_plan_catalog.sql"
 )
 FIELDS = ("amountPaise", "durationDays")
 
@@ -98,14 +99,12 @@ def ts_js_fields(text: str, plan: str) -> dict[str, str]:
 
 
 def sql_fields(sql: str, plan: str) -> dict[str, str]:
-    pattern = (
-        rf"if p_plan = '{plan}' then\s*"
-        rf"v_amount_paise := (\d+);\s*"
-        rf"v_duration_days := (\d+);"
-    )
+    pattern = rf"\('{plan}',\s*(\d+),\s*(\d+)\)"
     match = re.search(pattern, sql)
     if not match:
-        sys.exit(f"Could not find `{plan}` catalog in {SQL.name}")
+        sys.exit(f"Could not find `{plan}` seed in {SQL.name}")
+    if "paid_plan_catalog" not in sql:
+        sys.exit(f"{SQL.name} does not read paid_plan_catalog")
     return {"amountPaise": match.group(1), "durationDays": match.group(2)}
 
 
@@ -124,7 +123,7 @@ def check_catalog() -> dict[str, dict[str, str]]:
             )
         catalog[plan] = left
         print(
-            f"  catalog {plan}: amountPaise={left['amountPaise']} "
+            f"  seed {plan}: amountPaise={left['amountPaise']} "
             f"durationDays={left['durationDays']}"
         )
     return catalog
@@ -200,9 +199,9 @@ def main() -> int:
     load_env()
     print("Phase 7.3 — payment webhook → plan update")
 
-    print("1. Catalog (TS / checkout JS / SQL) must match")
+    print("1. Seed catalog (TS / checkout JS / migration INSERT) must match")
     catalog = check_catalog()
-    print("  catalog: OK")
+    print("  seed catalog: OK")
 
     database_url = os.environ.get("DATABASE_URL", "")
     supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
@@ -282,6 +281,82 @@ def main() -> int:
                 print(f"FAIL: authenticated can UPDATE profiles.{col}")
                 return 1
         print("  authenticated cannot UPDATE plan timestamps: OK")
+
+        terms = conn.execute(
+            """
+            select pg_get_functiondef(p.oid)
+            from pg_proc p
+            join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname = 'paid_plan_terms'
+            """
+        ).fetchone()
+        if terms is None or "paid_plan_catalog" not in terms[0] or "149900" in terms[0]:
+            print("FAIL: paid_plan_terms() does not read paid_plan_catalog — run npx supabase db push")
+            return 1
+
+        rls = conn.execute(
+            """
+            select c.relrowsecurity
+            from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'public' and c.relname = 'paid_plan_catalog'
+            """
+        ).fetchone()
+        if rls is None or rls[0] is not True:
+            print("FAIL: paid_plan_catalog is missing or RLS is off")
+            return 1
+
+        can_select = conn.execute(
+            """
+            select has_table_privilege(
+              'authenticated', 'public.paid_plan_catalog', 'select'
+            )
+            """
+        ).fetchone()[0]
+        if not can_select:
+            print("FAIL: authenticated cannot SELECT paid_plan_catalog")
+            return 1
+        for priv in ("insert", "update", "delete"):
+            allowed = conn.execute(
+                """
+                select has_table_privilege(
+                  'authenticated', 'public.paid_plan_catalog', %s
+                )
+                """,
+                (priv,),
+            ).fetchone()[0]
+            if allowed:
+                print(f"FAIL: authenticated can {priv} paid_plan_catalog")
+                return 1
+        print("  paid_plan_catalog: students can read, cannot write: OK")
+
+        rows = conn.execute(
+            """
+            select plan::text, amount_paise, duration_days
+            from public.paid_plan_catalog
+            """
+        ).fetchall()
+        live = {
+            plan: {"amountPaise": str(paise), "durationDays": str(days)}
+            for plan, paise, days in rows
+        }
+        for plan in ("pro", "elite"):
+            if plan not in live:
+                print(f"FAIL: paid_plan_catalog missing {plan}")
+                return 1
+            seed_row = catalog[plan]
+            if live[plan] != seed_row:
+                print(
+                    f"  live {plan}: amountPaise={live[plan]['amountPaise']} "
+                    f"durationDays={live[plan]['durationDays']} "
+                    f"(seed {seed_row['amountPaise']}/{seed_row['durationDays']})"
+                )
+            else:
+                print(
+                    f"  live {plan}: amountPaise={live[plan]['amountPaise']} "
+                    f"durationDays={live[plan]['durationDays']}"
+                )
+        catalog = live
 
         try:
             insert_auth_user(conn, user_id, email)

@@ -73,7 +73,14 @@ Deno.serve(async (req) => {
 
   if (error) {
     console.error('apply_razorpay_payment failed', error.message);
-    return json({ error: 'Could not apply payment' }, 500);
+    // A price or plan mismatch will not succeed on retry. 400 tells Razorpay
+    // to stop. A real outage (500) is still retried.
+    const permanent = [
+      'amount does not match catalog',
+      'currency does not match catalog',
+      'unsupported plan',
+    ].some((item) => (error.message ?? '').includes(item));
+    return json({ error: 'Could not apply payment' }, permanent ? 400 : 500);
   }
 
   console.log(

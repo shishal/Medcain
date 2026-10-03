@@ -1,10 +1,11 @@
-/// Server-side source of truth for what we charge.
+/// Labels, and the seed prices for a fresh database.
 ///
-/// The checkout page shows the same numbers for display only. The Edge
-/// Function never reads amount from the browser — only the plan name.
+/// The live rupee amount is `paid_plan_catalog.amount_paise`. Orders and the
+/// webhook do not charge from `amountPaise` here. Change a live price with
+/// UPDATE on that table (see docs/06_PAYMENTS_PRODUCTION.md).
 ///
-/// Must stay in sync with `checkout/paid_plans.js` (the validator script
-/// checks both files).
+/// `amountPaise` / `durationDays` must still match the seed INSERT and
+/// `checkout/paid_plans.js` so a new database starts at these prices.
 
 export type PaidPlanId = 'pro' | 'elite';
 

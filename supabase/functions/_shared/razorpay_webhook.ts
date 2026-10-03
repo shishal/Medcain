@@ -142,10 +142,10 @@ export function parseWebhookEvent(body: unknown): ParseResult {
     return { kind: 'invalid', reason: 'amount does not match catalog' };
   }
 
-  // The exact discounted paise is checked in apply_razorpay_payment(), which
-  // reads percent_off from discount_codes. This layer only rejects a code
-  // that could not have come from our order notes, and a list-price payment
-  // whose amount was changed.
+  // The exact paise (list price, or list price minus a code's percent) is
+  // checked in apply_razorpay_payment(), which reads paid_plan_catalog.
+  // This layer only rejects a code that could not have come from our notes.
+  // Comparing the amount here would ignore a price changed in the database.
   const rawCode = asString(notes.discount_code);
   let discountCode: string | null = null;
   if (rawCode != null) {
@@ -153,11 +153,6 @@ export function parseWebhookEvent(body: unknown): ParseResult {
     if (!/^[A-Z0-9]{4,16}$/.test(discountCode)) {
       return { kind: 'invalid', reason: 'notes.discount_code is not a code' };
     }
-    if (amountPaise >= catalog.amountPaise) {
-      return { kind: 'invalid', reason: 'amount does not match catalog' };
-    }
-  } else if (amountPaise !== catalog.amountPaise) {
-    return { kind: 'invalid', reason: 'amount does not match catalog' };
   }
 
   return {

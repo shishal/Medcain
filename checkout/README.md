@@ -131,10 +131,9 @@ npx deno test supabase/functions/_shared/razorpay_webhook_test.ts
 | Pro | ₹1,499 | 180 days |
 | Elite | ₹2,999 | 365 days |
 
-Change `checkout/paid_plans.js`, `supabase/functions/_shared/paid_plans.ts`,
-**and** `paid_plan_terms()` in
-`supabase/migrations/20260930210000_discount_codes.sql`, then run
-`python3 scripts/validate_phase7_3_webhook.py`.
+Those are the seed prices. A live price is `paid_plan_catalog.amount_paise`
+(rupees × 100). Change it in the SQL editor — see
+`docs/06_PAYMENTS_PRODUCTION.md`. The checkout page reads that row.
 
 A discount code does not change those list prices. Issue one with
 `issue_discount_code()` — see `docs/06_PAYMENTS_PRODUCTION.md`.

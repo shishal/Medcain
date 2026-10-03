@@ -284,14 +284,34 @@ Leave `percent_off` as it was issued. The webhook checks that stored percent.
 
 ## Changing prices later
 
-Three places must stay identical (the validator checks this):
+The live price is a row in `paid_plan_catalog`. Orders (`checkout_quote`) and
+the webhook (`apply_razorpay_payment` → `paid_plan_terms()`) both read it.
+The checkout page shows that same `amount_paise` after the student signs in.
+Students can read the table and cannot update it.
 
-1. `supabase/functions/_shared/paid_plans.ts` (Edge Function)
-2. `checkout/paid_plans.js` (display only — keep `website/public/checkout/paid_plans.js` identical)
-3. `paid_plan_terms()` in `supabase/migrations/20260930210000_discount_codes.sql`
+In the SQL editor (rupees × 100):
 
-Then: `python3 scripts/validate_phase7_3_webhook.py`, `npx supabase db push`,
-redeploy `create-razorpay-order`, redeploy the hosted `paid_plans.js`.
+```sql
+update public.paid_plan_catalog
+set amount_paise = 99900  -- ₹999
+where plan = 'pro';
+```
+
+Do this when nobody is mid-checkout. An order already created keeps the old
+paise, and the webhook rejects that payment if the row changed before capture.
+
+`duration_days` on the same row is how long the plan lasts. The "6 months" /
+"12 months" subtitle on the checkout page is still the copy in
+`checkout/paid_plans.js` (and the identical file under `website/public/checkout/`).
+Change those files only when that subtitle should change.
+
+The numbers in `paid_plans.ts` and `paid_plans.js` are the seed for a fresh
+database. They are not what a live student is charged.
+
+One-time, after this migration is in the repo: `npx supabase db push`,
+redeploy `razorpay-webhook`, and rebuild the hosted checkout page
+(`docker compose up --build -d`) so the page loads prices from the table.
+Later amount changes are the `UPDATE` only.
 
 ---
 

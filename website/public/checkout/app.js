@@ -28,12 +28,37 @@
   let selectedPlan =
     requestedPlan === 'elite' || requestedPlan === 'pro' ? requestedPlan : 'pro';
   let busy = false;
+  // List prices from paid_plan_catalog. Null until the first successful load.
+  let catalogByPlan = null;
   // The server prices the order. These only remember what the student typed
   // and the last quote checkout_quote() returned.
   let draftCode = '';
   let discountError = '';
   let appliedQuote = null;
   let quoteSeq = 0;
+
+  async function loadCatalog() {
+    const { data, error } = await supabase
+      .from('paid_plan_catalog')
+      .select('plan, amount_paise');
+    if (error || !Array.isArray(data)) return null;
+    const byPlan = {};
+    for (const row of data) {
+      const paise = row && row.amount_paise;
+      if (
+        row &&
+        (row.plan === 'pro' || row.plan === 'elite') &&
+        Number.isInteger(paise) &&
+        paise >= 100
+      ) {
+        byPlan[row.plan] = paise;
+      }
+    }
+    if (!Number.isInteger(byPlan.pro) || !Number.isInteger(byPlan.elite)) {
+      return null;
+    }
+    return byPlan;
+  }
 
   function formatInr(paise) {
     return new Intl.NumberFormat('en-IN', {
@@ -112,15 +137,22 @@
 
   function renderPlans(user) {
     const plans = window.PAID_PLANS;
+    if (!catalogByPlan) {
+      panel.innerHTML =
+        '<p class="error">Prices are unavailable right now. Reload the page and try again.</p>';
+      return;
+    }
     const cards = Object.entries(plans)
       .map(([id, plan]) => {
+        const paise = catalogByPlan[id];
+        if (!Number.isInteger(paise)) return '';
         const selected = id === selectedPlan ? ' selected' : '';
         return `
           <div class="card${selected}">
             <button class="plan-pick" type="button" data-plan="${id}">
               <div class="row">
                 <strong>${escapeHtml(plan.label)}</strong>
-                <span class="price">${formatInr(plan.amountPaise)}</span>
+                <span class="price">${formatInr(paise)}</span>
               </div>
               <p class="muted">${escapeHtml(plan.tagline)} · ${escapeHtml(plan.periodLabel)}</p>
             </button>
@@ -290,6 +322,7 @@
       renderLogin();
       return;
     }
+    catalogByPlan = await loadCatalog();
     renderPlans(user);
   }
 

@@ -1,6 +1,8 @@
-// Display-only copy of supabase/functions/_shared/paid_plans.ts.
-// The Pay button does not send these amounts — Razorpay charges whatever
-// the Edge Function put on the Order.
+// Labels, plus the seed prices for a fresh database.
+// The page shows the rupee amount from paid_plan_catalog (see app.js), not
+// from amountPaise here. amountPaise must match paid_plans.ts and the seed
+// INSERT so a new database starts at these prices. A live price change is
+// an UPDATE on paid_plan_catalog.
 window.PAID_PLANS = {
   pro: {
     amountPaise: 149900,

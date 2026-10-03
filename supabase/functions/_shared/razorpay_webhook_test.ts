@@ -64,25 +64,28 @@ Deno.test('rejects a signature for a different body', async () => {
   if (ok) throw new Error('tampered body must fail');
 });
 
-Deno.test('parses payment.captured when amount matches the catalog', () => {
+Deno.test('parses payment.captured and forwards the amount', () => {
   const parsed = parseWebhookEvent(JSON.parse(capturedBody));
   if (parsed.kind !== 'captured') {
     throw new Error(`expected captured, got ${JSON.stringify(parsed)}`);
   }
   if (parsed.payment.plan !== 'pro' || parsed.payment.amountPaise !== 149900) {
-    throw new Error('pro catalog fields did not match');
+    throw new Error('pro payment fields did not match');
   }
   if (parsed.payment.discountCode !== null) {
     throw new Error('list-price payment must not carry a discount code');
   }
 });
 
-Deno.test('rejects a discounted amount when no code is attached', () => {
+Deno.test('forwards an amount with no code for the database to check', () => {
   const body = JSON.parse(capturedBody);
   body.payload.payment.entity.amount = 119920;
   const parsed = parseWebhookEvent(body);
-  if (parsed.kind !== 'invalid') {
-    throw new Error('discounted amount without a code must be invalid');
+  if (parsed.kind !== 'captured' || parsed.payment.discountCode !== null) {
+    throw new Error('a missing code is forwarded; Postgres rejects a mismatched amount');
+  }
+  if (parsed.payment.amountPaise !== 119920) {
+    throw new Error('amount must be forwarded to apply_razorpay_payment');
   }
 });
 
@@ -106,12 +109,18 @@ Deno.test('ignores order.paid so the same payment is not applied twice', () => {
   }
 });
 
-Deno.test('rejects elite notes on a pro-priced payment', () => {
+Deno.test('forwards any positive amount for a known plan', () => {
+  // paid_plan_catalog is the price check. This parser must not reject a
+  // paise value just because it differs from the seed in paid_plans.ts.
   const body = JSON.parse(capturedBody);
   body.payload.payment.entity.notes.plan = 'elite';
+  body.payload.payment.entity.amount = 1;
   const parsed = parseWebhookEvent(body);
-  if (parsed.kind !== 'invalid') {
-    throw new Error('elite notes + pro amount must be invalid');
+  if (parsed.kind !== 'captured' || parsed.payment.plan !== 'elite') {
+    throw new Error(`expected captured elite, got ${JSON.stringify(parsed)}`);
+  }
+  if (parsed.payment.amountPaise !== 1) {
+    throw new Error('amount must be forwarded to apply_razorpay_payment');
   }
 });
 

@@ -1,5 +1,5 @@
 // Creates a Razorpay Order for the signed-in user.
-// Amount comes from paid_plans.ts — never from the request body.
+// Amount comes from checkout_quote() → paid_plan_catalog, never from the body.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 

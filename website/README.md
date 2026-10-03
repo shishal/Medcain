@@ -109,8 +109,9 @@ and point that tunnel at `http://127.0.0.1:8083`.
 
 ## Payments
 
-`/checkout/` is the live pay page (Pro ₹1,499 / 6 months, Elite ₹2,999 / 12
-months). `app.js` and `paid_plans.js` are copies of `checkout/`.
+`/checkout/` is the live pay page. The rupee amount is
+`paid_plan_catalog` in Postgres (seed: Pro ₹1,499 / 6 months, Elite ₹2,999 /
+12 months). `app.js` and `paid_plans.js` are copies of `checkout/`.
 `python3 scripts/validate_phase7_2_paid_plans.py` fails if they drift.
 
 The container writes `config.js` on startup from `SUPABASE_URL` and
