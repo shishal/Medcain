@@ -14,26 +14,25 @@ create table if not exists public.subject_phase_defaults (
 comment on table public.subject_phase_defaults is
   'Maps editor subject_name to MBBS year. CSV sync reads this; not a sheet column.';
 
+-- University-exam subjects only. Allied topics (Ortho, Dermatology,
+-- Psychiatry, Anesthesia, Radiology) stay inside Medicine/Surgery papers.
+-- Already-applied databases are corrected by
+-- 20261010130000_mbbs_subject_catalog.sql.
 insert into public.subject_phase_defaults (subject_name, phase_code, display_order) values
   ('Anatomy', 'year1', 1),
   ('Physiology', 'year1', 2),
   ('Biochemistry', 'year1', 3),
   ('Pathology', 'year2', 4),
-  ('Microbiology', 'year2', 5),
-  ('Pharmacology', 'year2', 6),
-  ('Forensic Medicine', 'year2', 7),
-  ('Community Medicine', 'year3', 8),
+  ('Pharmacology', 'year2', 5),
+  ('Microbiology', 'year2', 6),
+  ('FMT', 'year3', 7),
+  ('PSM', 'year3', 8),
   ('Ophthalmology', 'year3', 9),
   ('ENT', 'year3', 10),
   ('Medicine', 'year4', 11),
   ('Surgery', 'year4', 12),
-  ('Obstetrics & Gynaecology', 'year4', 13),
-  ('Pediatrics', 'year4', 14),
-  ('Orthopedics', 'year4', 15),
-  ('Dermatology', 'year4', 16),
-  ('Psychiatry', 'year4', 17),
-  ('Anesthesia', 'year4', 18),
-  ('Radiology', 'year4', 19)
+  ('OBGYN', 'year4', 13),
+  ('Pediatrics', 'year4', 14)
 on conflict (subject_name) do update
   set phase_code = excluded.phase_code,
       display_order = excluded.display_order;

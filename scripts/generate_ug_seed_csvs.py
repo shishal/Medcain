@@ -26,6 +26,8 @@ PHASES = [
     ("year4", "Final year", 4),
 ]
 
+# Historical generator list. The live catalog is subject_phase_defaults
+# (see supabase/migrations/20261010130000_mbbs_subject_catalog.sql).
 SUBJECTS = [
     ("Anatomy", 1, "year1"),
     ("Physiology", 2, "year1"),

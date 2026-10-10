@@ -52,8 +52,13 @@ The regulation names are phases:
 |---|---|---|
 | 1st | Phase I (~12 months) | Anatomy, Physiology, Biochemistry |
 | 2nd | Phase II (~12 months) | Pathology, Pharmacology, Microbiology |
-| 3rd | Phase III Part I (~12 months) | Forensic Medicine & Toxicology, Community Medicine, ENT, Ophthalmology |
-| Final | Phase III Part II (~18 months) | Medicine, Surgery, OBG, Paediatrics, plus allied (Ortho often inside Surgery papers) |
+| 3rd | Phase III Part I (~12 months) | FMT, PSM, Ophthalmology, ENT |
+| Final | Phase III Part II (~18 months) | Medicine, Surgery, OBGYN, Pediatrics |
+
+Those fourteen names are the app catalog (`subject_phase_defaults`).
+FMT is Forensic Medicine & Toxicology, PSM is Community Medicine, and
+OBGYN is Obstetrics & Gynaecology. Allied subjects are not separate rows;
+Orthopaedics, for example, is tagged inside a Surgery paper.
 
 Curriculum competencies are **national**. The **question paper** is
 **university-owned**. Same Anatomy chapter, different KUHS vs RGUHS stems.

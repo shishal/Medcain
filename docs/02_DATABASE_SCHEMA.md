@@ -729,7 +729,18 @@ textbook/page, and resource fields are optional. Paper linkage requires
 university code).
 
 **MBBS year is not a CSV column.** Table `subject_phase_defaults` maps
-subject names (Anatomy, Physiology, …) to `year1`–`year4`. Sync calls
+the university-exam subjects to `year1`–`year4`:
+
+| Year | Subjects |
+|---|---|
+| 1st | Anatomy, Physiology, Biochemistry |
+| 2nd | Pathology, Pharmacology, Microbiology |
+| 3rd | FMT, PSM, Ophthalmology, ENT |
+| 4th | Medicine, Surgery, OBGYN, Pediatrics |
+
+FMT is Forensic Medicine & Toxicology. PSM is Community Medicine
+(Preventive and Social Medicine). OBGYN is Obstetrics & Gynaecology.
+Allied subjects are not separate catalog rows. Sync calls
 `ensure_csv_subject()` so new subjects get `mbbs_phase_id` automatically.
 Unknown subjects fail validation.
 

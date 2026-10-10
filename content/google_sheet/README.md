@@ -21,7 +21,7 @@ Editor-facing order (first nine, then MCQ/optional extras):
 
 | Column | Required | Notes |
 |---|---|---|
-| `subject_name` | yes | Must exist in `subject_phase_defaults` (e.g. Anatomy → year1). |
+| `subject_name` | yes | Must match `subject_phase_defaults` exactly: Anatomy, Physiology, Biochemistry (1st); Pathology, Pharmacology, Microbiology (2nd); FMT, PSM, Ophthalmology, ENT (3rd); Medicine, Surgery, OBGYN, Pediatrics (4th). |
 | `question_text` | yes | Stem. |
 | `sample_answer_text` | no | DA (Pro-gated table). |
 | `explanation_text` | no | EX. |
@@ -77,5 +77,5 @@ python3 scripts/sync_content_csv.py --apply     # type APPLY to write
 ```
 
 Apply migrations through
-`supabase/migrations/20260915200000_content_admin_seed_and_cleanup.sql`
+`supabase/migrations/20261010130000_mbbs_subject_catalog.sql`
 before the first sync.
