@@ -46,10 +46,7 @@ def ensure_psycopg() -> None:
 
 
 def generated_id(row: dict[str, str]) -> str:
-    options = "".join(row.get(key, "").strip() for key in (
-        "option_a", "option_b", "option_c", "option_d", "correct_option"
-    ))
-    kind = row.get("kind", "").strip().lower() or ("mcq" if options else "pyq_theory")
+    kind = row.get("question_type", "").strip().lower()
     normalized = "|".join((
         " ".join(row["subject_name"].lower().split()),
         kind,
@@ -85,26 +82,19 @@ def check_sample_csv() -> tuple[list[dict[str, str]], list[str]]:
     errors: list[str] = []
     if not rows:
         errors.append("Questions.csv has no content rows")
-    mcq_fields = ("option_a", "option_b", "option_c", "option_d", "correct_option")
-    if not any(not any(row.get(field) for field in mcq_fields) for row in rows):
-        errors.append("Questions.csv needs a minimal theory example")
-    if not any(row.get("option_a") and row.get("correct_option") for row in rows):
+    if not any(row.get("question_type") == "pyq_theory" for row in rows):
+        errors.append("Questions.csv needs a theory example")
+    if not any(row.get("question_type") == "mcq" and row.get("correct_option") for row in rows):
         errors.append("Questions.csv needs an MCQ example")
     for index, row in enumerate(rows, start=2):
-        year = row.get("exam_year", "")
-        paper = row.get("paper_name", "")
-        uni = row.get("university_code", "")
-        filled = sum(1 for value in (year, paper, uni) if value)
-        if filled not in (0, 3):
+        missing = [
+            name for name in ("university_alias", "university_name", "exam_type", "year", "month", "subject_name", "question_type", "question_text")
+            if not row.get(name)
+        ]
+        if missing:
             errors.append(
-                f"Questions.csv row {index}: university_code, exam_year, and "
-                "paper_name must be filled together"
+                f"Questions.csv row {index}: missing {', '.join(missing)}"
             )
-    if not any(
-        row.get("university_code") and row.get("exam_year") and row.get("paper_name")
-        for row in rows
-    ):
-        errors.append("Questions.csv needs a paper-linked example with university_code")
     return rows, errors
 
 
@@ -131,35 +121,64 @@ def exercise_sync(conn) -> list[str]:
     """Exercise apply inside a transaction that is always rolled back."""
     errors: list[str] = []
     suffix = uuid.uuid4().hex[:8]
+    uni = conn.execute(
+        """
+        select code, name, state
+        from public.universities
+        where lower(code) = 'kuhs'
+        """
+    ).fetchone()
+    subjects = conn.execute(
+        """
+        select name from public.subjects
+        where lower(name) in ('anatomy', 'physiology')
+        order by lower(name)
+        """
+    ).fetchall()
+    if uni is None or len(subjects) < 2:
+        return ["exercise needs KUHS plus Anatomy and Physiology subjects"]
+    anatomy, physiology = subjects[0][0], subjects[1][0]
+    chapter = f"Shared topic {suffix}"
+
+    def sitting(subject: str, stem: str, **extra: str) -> dict[str, str]:
+        row = {
+            "state": uni[2],
+            "university_alias": uni[0],
+            "university_name": uni[1],
+            "exam_type": "PROF",
+            "year": "2021",
+            "month": "October",
+            "paper_number": "Paper I",
+            "subject_name": subject,
+            "question_type": "pyq_theory",
+            "question_text": stem,
+        }
+        row.update(extra)
+        return row
+
     valid = [
-        {"subject_name": f"CSV Test A {suffix}", "question_text": "Minimal theory"},
-        {
-            "subject_name": f"CSV Test A {suffix}",
-            "question_text": "Complete MCQ",
-            "option_a": "A", "option_b": "B", "option_c": "C", "option_d": "D",
-            "correct_option": "A",
-            "topic_name": "Shared topic",
-        },
-        {
-            "subject_name": f"CSV Test B {suffix}",
-            "question_text": "Same-named topic in another subject",
-            "topic_name": "Shared topic",
-        },
+        sitting(anatomy, f"Minimal theory {suffix}"),
+        sitting(
+            anatomy,
+            f"Complete MCQ {suffix}",
+            question_type="mcq",
+            option_a="A", option_b="B", option_c="C", option_d="D",
+            correct_option="A",
+            chapter_name=chapter,
+        ),
+        sitting(
+            physiology,
+            f"Same-named chapter in another subject {suffix}",
+            chapter_name=chapter,
+        ),
     ]
     invalid_cases = [
-        ([{"subject_name": "X", "question_text": "Partial MCQ", "option_a": "A"}], "option_b"),
-        ([{"subject_name": "X", "question_text": "Partial paper", "exam_year": "2024"}], "paper_name"),
-        (
-            [{
-                "subject_name": "X",
-                "question_text": "Paper without university",
-                "exam_year": "2024",
-                "paper_name": "Paper I",
-            }],
-            "university_code",
-        ),
-        ([{"subject_name": "X", "question_text": "Partial book", "textbook_title": "Book"}], "page"),
-        ([{"subject_name": "X", "question_text": "Lesson only", "lesson_name": "Lesson"}], "topic_name"),
+        ([sitting(anatomy, "Partial MCQ", question_type="mcq", option_a="A")], "option_b"),
+        ([sitting(anatomy, "No month", month="")], "month is required"),
+        ([sitting("Not A Real Subject", "Unknown subject")], "is not in subjects"),
+        ([sitting(anatomy, "Topic without chapter", topic_name="Lesson")], "chapter_name"),
+        ([sitting(anatomy, "Bad exam", exam_type="university")], "exam_type must be"),
+        ([sitting(anatomy, "Partial book", textbook_title="Book")], "page"),
     ]
 
     try:
@@ -195,9 +214,9 @@ def exercise_sync(conn) -> list[str]:
             """
             select s.name, t.name
             from public.topics t join public.subjects s on s.id = t.subject_id
-            where s.name in (%s, %s) and t.name = 'Shared topic'
+            where s.name in (%s, %s) and t.name = %s
             """,
-            (f"CSV Test A {suffix}", f"CSV Test B {suffix}"),
+            (anatomy, physiology, chapter),
         ).fetchall()
         if len(topics) != 2:
             errors.append("same topic name did not resolve independently per subject")

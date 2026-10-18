@@ -215,11 +215,14 @@ class PlayerSessionState {
     final isCorrect = selected == currentQuestion.correctOption;
     final showAnswer = explanationLevel != ExplanationLevel.none;
     final showText = explanationLevel == ExplanationLevel.full;
-    final raw = currentQuestion.explanationText?.trim();
+    final raw = PlayerQuestion.joinedExplanation(
+      currentQuestion.explanationText,
+      currentQuestion.explanationDeep,
+    );
     return FeedbackReveal(
       isCorrect: isCorrect,
       highlightCorrectOption: showAnswer,
-      explanationText: showText && raw != null && raw.isNotEmpty ? raw : null,
+      explanationText: showText ? raw : null,
     );
   }
 

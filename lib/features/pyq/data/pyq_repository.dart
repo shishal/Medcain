@@ -26,6 +26,7 @@ class PyqDetail {
     this.optionD,
     this.correctOption,
     this.explanationText,
+    this.explanationDeep,
   });
 
   final PyqTeaser teaser;
@@ -42,6 +43,7 @@ class PyqDetail {
   final String? optionD;
   final String? correctOption;
   final String? explanationText;
+  final String? explanationDeep;
 
   bool get isMcq => teaser.kind == 'mcq';
 }
@@ -290,6 +292,7 @@ class PyqRepository {
           '${AppearanceColumns.examPaperEmbed}:${Tables.examPapers}('
           '${ExamPaperColumns.universityId},'
           '${ExamPaperColumns.examYear},'
+          '${ExamPaperColumns.examMonth},'
           '${ExamPaperColumns.paperName})';
       const refSelect =
           '${TextbookRefColumns.questionId},${TextbookRefColumns.page},'
@@ -344,12 +347,19 @@ class PyqRepository {
               .putIfAbsent(uid, () => [])
               .add(year.toInt());
         }
-        final paperName = map[ExamPaperColumns.paperName] as String?;
-        if (uid != null && paperName != null && paperName.isNotEmpty) {
+        final rawPaper = map[ExamPaperColumns.paperName] as String?;
+        final hasPaper = rawPaper != null && rawPaper.isNotEmpty;
+        final hasMonth = examMonthName(map[ExamPaperColumns.examMonth]) != null;
+        if (uid != null && (hasPaper || hasMonth)) {
           papersByQuestionUni
               .putIfAbsent(qid, () => {})
               .putIfAbsent(uid, () => {})
-              .add(paperName);
+              .add(
+                paperSittingLabel(
+                  month: map[ExamPaperColumns.examMonth],
+                  paperName: rawPaper,
+                ),
+              );
         }
       }
 
@@ -433,7 +443,8 @@ class PyqRepository {
           .from(Tables.questionAppearances)
           .select(
             '${AppearanceColumns.examPaperEmbed}:${Tables.examPapers}('
-            '${ExamPaperColumns.examYear},${ExamPaperColumns.paperName})',
+            '${ExamPaperColumns.examYear},${ExamPaperColumns.examMonth},'
+            '${ExamPaperColumns.paperName})',
           )
           .eq(AppearanceColumns.questionId, questionId);
 
@@ -470,12 +481,14 @@ class PyqRepository {
       String? optionD;
       String? correctOption;
       String? explanationText;
+      String? explanationDeep;
       final qRows = await _client
           .from(Tables.questions)
           .select(
             '${QuestionColumns.optionA},${QuestionColumns.optionB},'
             '${QuestionColumns.optionC},${QuestionColumns.optionD},'
-            '${QuestionColumns.correctOption},${QuestionColumns.explanationText}',
+            '${QuestionColumns.correctOption},${QuestionColumns.explanationText},'
+            '${QuestionColumns.explanationDeep}',
           )
           .eq(QuestionColumns.id, questionId)
           .limit(1);
@@ -488,6 +501,7 @@ class PyqRepository {
         optionD = q[QuestionColumns.optionD] as String?;
         correctOption = q[QuestionColumns.correctOption] as String?;
         explanationText = q[QuestionColumns.explanationText] as String?;
+        explanationDeep = q[QuestionColumns.explanationDeep] as String?;
       }
 
       String? sample;
@@ -552,6 +566,7 @@ class PyqRepository {
           optionD: optionD,
           correctOption: correctOption,
           explanationText: explanationText,
+          explanationDeep: explanationDeep,
         ),
       );
     } catch (e) {

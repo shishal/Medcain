@@ -309,8 +309,10 @@ class _ExplanationPanel extends ConsumerWidget {
     };
     final links = [...detail.lessonResources, ...detail.questionResources];
     final explanation = detail.explanationText?.trim();
+    final deep = detail.explanationDeep?.trim();
     final hasExplanation = explanation != null && explanation.isNotEmpty;
-    if (!hasExplanation && citations.isEmpty && links.isEmpty) {
+    final hasDeep = deep != null && deep.isNotEmpty;
+    if (!hasExplanation && !hasDeep && citations.isEmpty && links.isEmpty) {
       return const Text('No explanation yet');
     }
 
@@ -319,6 +321,17 @@ class _ExplanationPanel extends ConsumerWidget {
       children: [
         if (hasExplanation)
           ComicCard(child: ZoomableMarkdownCopy(data: explanation)),
+        if (hasDeep) ...[
+          if (hasExplanation) ...[
+            const SizedBox(height: Spacing.md),
+            Text(
+              'Deeper explanation',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ],
+          const SizedBox(height: Spacing.sm),
+          ComicCard(child: ZoomableMarkdownCopy(data: deep!)),
+        ],
         if (citations.isNotEmpty) ...[
           const SizedBox(height: Spacing.lg),
           Text('Textbook pages', style: Theme.of(context).textTheme.titleSmall),

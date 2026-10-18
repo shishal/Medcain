@@ -215,6 +215,7 @@ class ResultsRepository {
       '${QuestionColumns.optionD},'
       '${QuestionColumns.correctOption},'
       '${QuestionColumns.explanationText},'
+      '${QuestionColumns.explanationDeep},'
       '${QuestionColumns.explanationVideoUrl},'
       '${QuestionColumns.imageUrl}';
 

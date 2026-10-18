@@ -14,6 +14,7 @@ class PlayerQuestion {
     required this.optionD,
     required this.correctOption,
     this.explanationText,
+    this.explanationDeep,
     this.explanationVideoUrl,
     this.imageUrl,
   });
@@ -28,6 +29,7 @@ class PlayerQuestion {
   final String optionD;
   final QuestionOption correctOption;
   final String? explanationText;
+  final String? explanationDeep;
   final String? explanationVideoUrl;
   final String? imageUrl;
 
@@ -59,6 +61,7 @@ class PlayerQuestion {
         question[QuestionColumns.correctOption] as String? ?? 'A',
       ),
       explanationText: question[QuestionColumns.explanationText] as String?,
+      explanationDeep: question[QuestionColumns.explanationDeep] as String?,
       explanationVideoUrl:
           question[QuestionColumns.explanationVideoUrl] as String?,
       imageUrl: question[QuestionColumns.imageUrl] as String?,
@@ -80,6 +83,7 @@ class PlayerQuestion {
         json[QuestionColumns.correctOption] as String? ?? 'A',
       ),
       explanationText: json[QuestionColumns.explanationText] as String?,
+      explanationDeep: json[QuestionColumns.explanationDeep] as String?,
       explanationVideoUrl: json[QuestionColumns.explanationVideoUrl] as String?,
       imageUrl: json[QuestionColumns.imageUrl] as String?,
     );
@@ -97,9 +101,20 @@ class PlayerQuestion {
       QuestionColumns.optionD: optionD,
       QuestionColumns.correctOption: correctOption.dbValue,
       QuestionColumns.explanationText: explanationText,
+      QuestionColumns.explanationDeep: explanationDeep,
       QuestionColumns.explanationVideoUrl: explanationVideoUrl,
       QuestionColumns.imageUrl: imageUrl,
     };
+  }
+
+  /// Sheet `exp_1` then `exp_2`, both markdown.
+  static String? joinedExplanation(String? shortText, String? deepText) {
+    final parts = <String>[
+      if (shortText != null && shortText.trim().isNotEmpty) shortText.trim(),
+      if (deepText != null && deepText.trim().isNotEmpty) deepText.trim(),
+    ];
+    if (parts.isEmpty) return null;
+    return parts.join('\n\n');
   }
 
   static int _asInt(Object? value) {

@@ -681,13 +681,17 @@ Tables: `universities`, `mbbs_phases`, `colleges`, `lessons` (sheet `external_id
 ### 9.2 Dual-kind questions
 
 `questions.kind` (`pyq_theory` | `mcq`), `topic_id`, `lesson_id`, `marks`.
-`topic_id` and `lesson_id` are optional syllabus tags — a PYQ can be uploaded
-before the chapter is known. MCQ options stay required only when
-`kind = 'mcq'` (nullable columns + a check constraint).
+`topic_id` (sheet `chapter_name`) and `lesson_id` (sheet `topic_name`) are
+optional free-text tags — sync creates the topic or lesson row when the name
+is new. A topic name requires a chapter. MCQ options and `correct_option`
+stay required only when `kind = 'mcq'`.
+
+`explanation_text` is the sheet's `exp_1`. `explanation_deep` is `exp_2`.
+Both sit on the question row, so they follow that row's plan gate.
 
 **Sample answers are not a column on `questions`** — a free SELECT on a free
-PYQ would leak the model answer. They live in `question_sample_answers` with
-RLS `plan_rank(current_plan()) >= plan_rank('pro')`.
+PYQ would leak the model answer. The sheet column `answers` is stored in
+`question_sample_answers` with RLS `plan_rank(current_plan()) >= plan_rank('pro')`.
 
 Also: `question_appearances` (frequency = count), `question_textbook_refs`
 (citation only — never PDF bytes).
@@ -723,14 +727,37 @@ campus short form (`MAMC`), unique per university, case-insensitive
 ### 9.2c One-file CSV sync
 
 Apply migrations through
-`supabase/migrations/20260915200000_content_admin_seed_and_cleanup.sql`.
+`supabase/migrations/20261018180000_question_sheet_columns.sql`.
 
-Routine content entry uses only `content/google_sheet/tabs/Questions.csv`.
-`subject_name` and `question_text` are unconditional; kind is inferred, and
-MCQ options/key are conditionally required. Topic, lesson, marks,
-textbook/page, and resource fields are optional. Paper linkage requires
-`university_code` + `exam_year` + `paper_name` together (no default
-university code).
+Routine content entry uses only `content/google_sheet/tabs/Questions.csv`
+(same columns as the Numbers question sheet; `course` is ignored).
+
+| Sheet column | Required | Stored as |
+|---|---|---|
+| `course` | no | Ignored. |
+| `state` | no | Checked against `universities.state` when filled. Not stored again. |
+| `university_alias` + `university_name` | yes | Must be the same existing `universities` row (`code` + `name`). |
+| `college_alias` + `college_name` | no | Both blank, or both matching one `colleges` row of that university (`short_form` + `name`). Blank is allowed for every exam type, including PRE PROF and INTERNAL. |
+| `exam_type` | yes | `prof`, `supply`, `pre_prof`, `internal`. Sheet values: PROF, SUPPLY, PRE PROF / Pre Proff, INTERNAL. |
+| `year` | yes | `exam_papers.exam_year`. |
+| `month` | yes | `exam_papers.exam_month` (1–12). Entry is a name such as May or June. |
+| `paper_number` | no | `exam_papers.paper_name` (Paper I, Paper II). |
+| `subject_name` | yes | Existing `subjects.name`. Sync does not create subjects. |
+| `chapter_name` | no | Free text → `topics` under that subject (created if new). |
+| `topic_name` | no | Free text → `lessons` under that chapter. Requires `chapter_name`. |
+| `question_type` | yes | `questions.kind`: `pyq_theory` or `mcq`. |
+| `marks` | no | `questions.marks`. |
+| `question_text` | yes | Stem. Markdown is stored as text. |
+| `option_a` … `option_d`, `correct_option` | mcq only | Blank on theory. `correct_option` is A–D. |
+| `answers` | no | `question_sample_answers.body` (Pro-gated). |
+| `exp_1` | no | `questions.explanation_text`. |
+| `exp_2` | no | `questions.explanation_deep`. |
+
+A sitting is one `exam_papers` row: university + college + subject + exam type
++ year + month + paper label. The same stem on another sitting is another
+appearance, not another question. Older rows with `exam_type = 'university'`
+are migrated to `prof`. `paper_name` may be null. `exam_month` may be null
+only on papers imported before this sheet.
 
 **MBBS year is not a CSV column.** Table `subject_phase_defaults` maps
 the university-exam subjects to `year1`–`year4`:
@@ -744,9 +771,9 @@ the university-exam subjects to `year1`–`year4`:
 
 FMT is Forensic Medicine & Toxicology. PSM is Community Medicine
 (Preventive and Social Medicine). OBGYN is Obstetrics & Gynaecology.
-Allied subjects are not separate catalog rows. Sync calls
-`ensure_csv_subject()` so new subjects get `mbbs_phase_id` automatically.
-Unknown subjects fail validation.
+Allied subjects are not separate catalog rows. The question sheet does not
+create subjects — `subject_name` must already be a `subjects` row. Unknown
+subjects fail validation.
 
 Admin seeds (universities, colleges) live under `content/admin/` and are
 loaded by `scripts/seed_universities_colleges.py` — not by the Questions sync.
@@ -766,10 +793,11 @@ identity; this destructive behavior is intentional for this pipeline.
 
 ### 9.2b Editor sheet vs database
 
-The Google Sheet is **denormalized** for a non-technical editor: a wide
-`Questions` tab (university, phase, subject, topic, lesson, stem, paper,
-textbook page, sample answer on one row). Sync upserts the normalized
-tables above. Editors do not invent UUIDs. See `content/google_sheet/README.md`.
+The Google Sheet is **denormalized** for a non-technical editor: one wide
+`Questions` row per stem (university, college, exam type, year, month, paper,
+subject, chapter, topic, stem, answer, explanations). Sync upserts the
+normalized tables above. Editors do not invent UUIDs. See
+`content/google_sheet/README.md`.
 
 ### 9.3 Profile academic fields + 4-day trial
 

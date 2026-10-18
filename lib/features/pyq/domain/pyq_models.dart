@@ -183,6 +183,38 @@ class TextbookCitation {
   }
 }
 
+const examMonthNames = <String>[
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+/// Sheet months are stored as 1–12. Null when the paper has no month yet.
+String? examMonthName(Object? value) {
+  final month = _asIntOrNull(value);
+  if (month == null || month < 1 || month > 12) return null;
+  return examMonthNames[month - 1];
+}
+
+/// "October · Paper I", or just the paper label when the month is unknown.
+String paperSittingLabel({Object? month, String? paperName}) {
+  final name = (paperName == null || paperName.trim().isEmpty)
+      ? 'Paper'
+      : paperName.trim();
+  final monthName = examMonthName(month);
+  if (monthName == null) return name;
+  return '$monthName · $name';
+}
+
 class ExamAppearance {
   const ExamAppearance({required this.year, required this.paperName});
 
@@ -194,13 +226,21 @@ class ExamAppearance {
     final map = paper is Map<String, dynamic> ? paper : <String, dynamic>{};
     return ExamAppearance(
       year: _asInt(map[ExamPaperColumns.examYear]),
-      paperName: map[ExamPaperColumns.paperName] as String? ?? 'Paper',
+      paperName: paperSittingLabel(
+        month: map[ExamPaperColumns.examMonth],
+        paperName: map[ExamPaperColumns.paperName] as String?,
+      ),
     );
   }
 }
 
 int _asInt(Object? value) {
+  return _asIntOrNull(value) ?? 0;
+}
+
+int? _asIntOrNull(Object? value) {
+  if (value == null) return null;
   if (value is int) return value;
   if (value is num) return value.toInt();
-  return int.tryParse(value.toString()) ?? 0;
+  return int.tryParse(value.toString());
 }

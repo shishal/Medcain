@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """LEGACY seed generator — do not use for the current CMS.
 
-The live content pipeline is one lean Questions.csv plus admin seeds under
-content/admin/ and supabase/migrations/20260915200000_*.sql. This script still
-emits multi-tab CSVs for historical reference only.
+Running this overwrites content/google_sheet/tabs/Questions.csv with the old
+column set. The live template is the question-sheet header in that file.
+This script still emits multi-tab CSVs for historical reference only.
 
 Usage (from repo root):
   python3 scripts/generate_ug_seed_csvs.py

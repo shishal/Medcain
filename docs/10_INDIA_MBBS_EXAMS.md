@@ -34,9 +34,10 @@ Two assessments, different shapes:
 | **College internals / IA** | The college | Often closer to the teaching timetable: one region or chapter at a time |
 | **University professional exam** | Affiliating university (KUHS, RGUHS, TNMGRMU, …) | Whole **subject**, usually **two theory papers**, mixed chapters in one sitting |
 
-MEDCAIN v1 is for the **university paper** (PYQs tagged to `exam_papers` with
-`exam_type = 'university'`). Internals can be stored the same way
-(`exam_type = 'internal'`) but are not the primary browse.
+MEDCAIN stores the sitting on `exam_papers.exam_type`: `prof` (university
+professional), `supply` (supplementary), `pre_prof`, or `internal`. A campus
+paper can also set `college_id`. Browse is still by subject and year; the
+month is kept on the paper and shown on the stem.
 
 Students still *revise* chapter-wise before internals. That is why
 chapters/lessons stay as tags even though the university paper is mixed.
@@ -174,8 +175,9 @@ by year / Paper I / Paper II.
 ### Already true in data (do not flatten the database)
 
 - Shared curriculum: year → subject → topic → lesson
-- University-owned PYQs: `exam_papers` (`university_id`, `subject_id`,
-  `exam_year`, `paper_name`, `exam_type`) → `question_appearances`
+- University-owned PYQs: `exam_papers` (`university_id`, optional
+  `college_id`, `subject_id`, `exam_year`, `exam_month`, `paper_name`,
+  `exam_type`) → `question_appearances`
 - One sheet row = one appearance (or extra textbook page). Repeat
   `external_id` for another paper. Topic/lesson names on that row **tag**
   the stem; they do not mean the paper is only that lesson.

@@ -82,9 +82,10 @@ class ReviewItem {
     if (isPlanLocked || explanationLevel != ExplanationLevel.full) {
       return null;
     }
-    final raw = question?.explanationText?.trim();
-    if (raw == null || raw.isEmpty) return null;
-    return raw;
+    return PlayerQuestion.joinedExplanation(
+      question?.explanationText,
+      question?.explanationDeep,
+    );
   }
 
   String? get visibleVideoUrl {

@@ -5,6 +5,16 @@ import 'package:medico/features/pyq/domain/pyq_models.dart';
 import 'package:medico/features/progress/domain/progress_models.dart';
 
 void main() {
+  test('paper label includes the sitting month', () {
+    expect(
+      paperSittingLabel(month: 10, paperName: 'Paper I'),
+      'October · Paper I',
+    );
+    expect(paperSittingLabel(paperName: 'Paper II'), 'Paper II');
+    expect(examMonthName(13), isNull);
+    expect(examMonthName(3), 'March');
+  });
+
   test('PyqTeaser parses appearance_count', () {
     final teaser = PyqTeaser.fromJson({
       PyqTeaserColumns.id: 'q1',

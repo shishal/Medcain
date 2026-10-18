@@ -101,6 +101,7 @@ abstract final class QuestionColumns {
   static const optionD = 'option_d';
   static const correctOption = 'correct_option';
   static const explanationText = 'explanation_text';
+  static const explanationDeep = 'explanation_deep';
   static const explanationVideoUrl = 'explanation_video_url';
   static const imageUrl = 'image_url';
   static const difficulty = 'difficulty';
@@ -394,8 +395,11 @@ abstract final class AppearanceColumns {
 abstract final class ExamPaperColumns {
   static const id = 'id';
   static const examYear = 'exam_year';
+  static const examMonth = 'exam_month';
   static const paperName = 'paper_name';
+  static const examType = 'exam_type';
   static const universityId = 'university_id';
+  static const collegeId = 'college_id';
   static const subjectId = 'subject_id';
 }
 

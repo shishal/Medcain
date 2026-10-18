@@ -20,8 +20,14 @@ function readQuestionsRows_() {
   if (!values.length) return [];
 
   var headers = values[0].map(headerKey_);
-  if (headers.indexOf('subject_name') < 0 || headers.indexOf('question_text') < 0) {
-    throw new Error('Questions must contain subject_name and question_text columns.');
+  var required = [
+    'university_alias', 'university_name', 'exam_type', 'year', 'month',
+    'subject_name', 'question_type', 'question_text'
+  ];
+  for (var i = 0; i < required.length; i++) {
+    if (headers.indexOf(required[i]) < 0) {
+      throw new Error('Questions is missing column ' + required[i] + '. Import tabs/Questions.csv.');
+    }
   }
 
   var rows = [];

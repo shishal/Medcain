@@ -137,6 +137,7 @@ class TestsRepository {
             '${QuestionColumns.optionD},'
             '${QuestionColumns.correctOption},'
             '${QuestionColumns.explanationText},'
+            '${QuestionColumns.explanationDeep},'
             '${QuestionColumns.explanationVideoUrl},'
             '${QuestionColumns.imageUrl}'
             ')',

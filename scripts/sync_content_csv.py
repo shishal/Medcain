@@ -17,20 +17,44 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CSV = ROOT / "content" / "google_sheet" / "tabs" / "Questions.csv"
 # Preferred editor column order for Questions.csv (extras may follow).
 LEAN_TEMPLATE_COLUMNS = (
+    "course",
+    "state",
+    "university_alias",
+    "university_name",
+    "college_alias",
+    "college_name",
+    "exam_type",
+    "year",
+    "month",
+    "paper_number",
     "subject_name",
-    "question_text",
-    "sample_answer_text",
-    "explanation_text",
-    "university_code",
-    "exam_year",
-    "paper_name",
+    "chapter_name",
     "topic_name",
-    "lesson_name",
+    "question_type",
+    "marks",
+    "question_text",
+    "option_a",
+    "option_b",
+    "option_c",
+    "option_d",
+    "correct_option",
+    "answers",
+    "exp_1",
+    "exp_2",
 )
+REQUIRED_HEADERS = {
+    "university_alias",
+    "university_name",
+    "exam_type",
+    "year",
+    "month",
+    "subject_name",
+    "question_type",
+    "question_text",
+}
 ALLOWED_COLUMNS = {
     *LEAN_TEMPLATE_COLUMNS,
-    "option_a", "option_b", "option_c", "option_d", "correct_option", "kind",
-    "marks", "exam_type", "textbook_title", "textbook_authors", "textbook_edition",
+    "textbook_title", "textbook_authors", "textbook_edition",
     "page", "section_heading", "difficulty", "required_plan", "is_active",
     "resource_title", "resource_url", "resource_source_label", "resource_is_free",
 }
@@ -57,7 +81,7 @@ def read_rows(path: Path) -> list[dict[str, str]]:
             header.strip().lower().replace(" ", "_").replace("-", "_")
             for header in reader.fieldnames
         }
-        missing = {"subject_name", "question_text"} - headers
+        missing = REQUIRED_HEADERS - headers
         if missing:
             raise ValueError(f"CSV is missing required column(s): {', '.join(sorted(missing))}")
         unsupported = headers - ALLOWED_COLUMNS
@@ -76,15 +100,6 @@ def read_rows(path: Path) -> list[dict[str, str]]:
                 if (value or "").strip()
             }
             if any(normalized.values()):
-                year = normalized.get("exam_year", "")
-                paper = normalized.get("paper_name", "")
-                uni = normalized.get("university_code", "")
-                filled = sum(1 for value in (year, paper, uni) if value)
-                if filled not in (0, 3):
-                    raise ValueError(
-                        f"CSV row {row_number}: university_code, exam_year, and "
-                        "paper_name must be filled together (no default university)"
-                    )
                 normalized["_row_number"] = str(row_number)
                 rows.append(normalized)
         return rows
