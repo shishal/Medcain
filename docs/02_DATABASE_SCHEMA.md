@@ -713,6 +713,10 @@ and is optional on import (blank ⇒ `should`); the app renders a chip only for
 via appearances → exam_papers.
 
 `universities.slug` is `lower(code)` from sheet sync (not a sheet column).
+`universities.code` is the short form (`KUHS`). `colleges.short_form` is the
+campus short form (`MAMC`), unique per university, case-insensitive
+(`20261018120000_college_short_form.sql`). Pickers show
+`short_form · name`, matching `code · name` for universities.
 `is_fallback` is retired — drop with
 `supabase/migrations/20260913120000_drop_university_fallback.sql`.
 
@@ -745,7 +749,7 @@ Allied subjects are not separate catalog rows. Sync calls
 Unknown subjects fail validation.
 
 Admin seeds (universities, colleges) live under `content/admin/` and are
-applied by the same migration — not by the Questions sync.
+loaded by `scripts/seed_universities_colleges.py` — not by the Questions sync.
 
 Both Google Apps Script and `scripts/sync_content_csv.py` call
 `sync_content_csv(jsonb, boolean)`. Preview (`false`) validates and returns

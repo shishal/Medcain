@@ -1,914 +1,913 @@
-university_code,name
-NTRUHS,"Andhra Medical College, Visakhapatnam"
-NTRUHS,"Guntur Medical College, Guntur"
-NTRUHS,"Kurnool Medical College, Kurnool"
-NTRUHS,"Rangaraya Medical College, Kakinada"
-NTRUHS,"S.V. Medical College, Tirupati"
-NTRUHS,"Government Medical College, Ananthapuram"
-NTRUHS,"Rajiv Gandhi Institute of Medical Sciences, Srikakulam"
-NTRUHS,ACSR Government Medical College
-NTRUHS,"Government Medical College, Kadapa (formerly RIMS Kadapa)"
-NTRUHS,"Government Siddhartha Medical College, Vijayawada"
-NTRUHS,"Government Medical College, Eluru"
-NTRUHS,"Government Medical College, Machilipatnam"
-NTRUHS,"Government Medical College, Nandyal"
-NTRUHS,"Government Medical College, Ongole (formerly RIMS Ongole)"
-NTRUHS,"Government Medical College, Rajamahendravaram"
-NTRUHS,"Government Medical College, Vizianagaram"
-NTRUHS,"Government Medical College, Paderu"
-NTRUHS,"Government Medical College, Piduguralla"
-NTRUHS,"Alluri Sitaram Raju Academy of Medical Sciences, Eluru"
-NTRUHS,"GSL Medical College, Rajahmundry"
-NTRUHS,"Narayana Medical College, Nellore"
-NTRUHS,"NRI Institute of Medical Sciences, Visakhapatnam"
-NTRUHS,"Santhiram Medical College, Nandyal"
-NTRUHS,Viswabharathi Medical College
-NTRUHS,"Gayathri Vidya Parishad Institute of Health Care & Medical Technology, Visakhapatnam"
-NTRUHS,"Konaseema Institute of Medical Sciences & Research Foundation, Amalapuram"
-NTRUHS,"Maharajah Institute of Medical Sciences, Vizianagaram"
-NTRUHS,"Nimra Institute of Medical Sciences, Krishna District"
-NTRUHS,"NRI Medical College, Guntur"
-NTRUHS,Anna Gowri Medical College and Hospital
-NTRUHS,"Apollo Institute of Medical Sciences and Research, Chittoor"
-NTRUHS,"Dr. P.S.I. Medical College, Chinoutpalli"
-NTRUHS,"Great Eastern Medical School and Hospital, Srikakulam"
-NTRUHS,"Katuri Medical College, Guntur"
-NTRUHS,"P.E.S. Institute of Medical Sciences and Research, Kuppam"
-NTRUHS,"Sri Balaji Medical College, Hospital and Research Institute, Chittoor"
-NTRUHS,"Fathima Institute of Medical Sciences, Kadapa"
-NTRUHS,RVS Institute of Medical Sciences
-NTRUHS,Other / not listed
-GITAM,"GITAM Institute of Medical Sciences and Research, Visakhapatnam"
-GITAM,Other / not listed
-SVIMS,"SVIMS - Sri Padmavathi Medical College for Women, Alipiri Road, Tirupati"
-SVIMS,Other / not listed
-RGU,"Tomo Riba Institute of Health & Medical Sciences (TRIHMS), Naharlagun"
-RGU,Other / not listed
-SSUHS,"Assam Medical College, Dibrugarh"
-SSUHS,"Gauhati Medical College, Guwahati"
-SSUHS,"Silchar Medical College, Silchar"
-SSUHS,"Fakhruddin Ali Ahmed Medical College (Barpeta Medical College), Barpeta"
-SSUHS,"Jorhat Medical College & Hospital, Jorhat"
-SSUHS,"Tezpur Medical College & Hospital, Tezpur"
-SSUHS,"Dhubri Medical College, Dhubri"
-SSUHS,"Diphu Medical College & Hospital, Diphu"
-SSUHS,Kokrajhar Medical College
-SSUHS,Lakhimpur Medical College
-SSUHS,Nagaon Medical College
-SSUHS,"Nalbari Medical College, Nalbari"
-SSUHS,"Pragjyotishpur Medical College, Guwahati"
-SSUHS,Tinsukia Medical College
-SSUHS,"ESIC Medical College and Hospital, Beltola"
-SSUHS,Bongaigaon Medical College
-SSUHS,Other / not listed
-BUHS,"Patna Medical College, Patna"
-BUHS,"Indira Gandhi Institute of Medical Sciences, Sheikhpura, Patna"
-BUHS,"Nalanda Medical College, Patna"
-BUHS,"Anugrah Narayan Magadh Medical College, Gaya"
-BUHS,"Bhagwan Mahavir Institute of Medical Sciences, Pawapuri (Nalanda)"
-BUHS,"Darbhanga Medical College, Lehriasarai"
-BUHS,"Government Medical College, Bettiah"
-BUHS,"Jawaharlal Nehru Medical College, Bhagalpur"
-BUHS,"Shri Krishna Medical College, Muzaffarpur"
-BUHS,"Employees State Insurance Corporation Medical College, Patna (Bihta)"
-BUHS,"Government Medical College, Purnea"
-BUHS,"Jannayak Karpoori Thakur Medical College & Hospital, Madhepura"
-BUHS,"Government Medical College and Hospital, Chapra, Saran"
-BUHS,"Shri Ram Janki Medical College and Hospital, Samastipur"
-BUHS,"Madhubani Medical College, Madhubani"
-BUHS,"Narayan Medical College & Hospital, Sasaram"
-BUHS,"Katihar Medical College, Katihar"
-BUHS,Radha Devi Jageshwari Memorial Medical College and Hospital
-BUHS,"Himalaya Medical College and Hospital, Patna"
-BUHS,"Lord Buddha Koshi Medical College and Hospital, Saharsa"
-BUHS,"Mata Gujri Memorial Medical College, Kishanganj"
-BUHS,"Netaji Subhas Medical College & Hospital, Bihta, Patna"
-BUHS,Shree Narayan Medical Institute and Hospital
-BUHS,Mahabodhi Medical College & Hospital
-BUHS,Shyamlal Chandrashekhar Medical College & SPNM Hospital
-BUHS,Viraat Ramayan Institute of Medical Sciences
-BUHS,Buddha Hospital and Research Institute
-BUHS,K.K. Medical College & Hospital
-BUHS,Kurma Sanskriti Medical College and Hospital
-BUHS,Mamta Medical College & Hospital
-BUHS,Shrinivas G Educational & Research Institute of Medical Sciences
-BUHS,Other / not listed
-CGHSAU,"Pt. J.N.M. Medical College, Raipur"
-CGHSAU,"Chandulal Chandrakar Memorial Medical College, Durg"
-CGHSAU,"Chhattisgarh Institute of Medical Sciences, Bilaspur"
-CGHSAU,"Government Medical College (Bharat Ratna Atal Bihari Vajpayee Memorial), Rajnandgaon"
-CGHSAU,"Government Medical College, Korba"
-CGHSAU,"Government Medical College, Mahasamund"
-CGHSAU,"Late Shri Baliram Kashyap Memorial NDMC Govt. Medical College, Jagdalpur"
-CGHSAU,"Rajmata Devendra Kumari Singhdeo Government Medical College, Ambikapur (Surguja)"
-CGHSAU,"Shrimati Indira Gandhi Memorial Govt. Medical College, Kanker (formerly GMC Kanker)"
-CGHSAU,"Late Shri Lakhi Ram Agrawal Memorial Govt. Medical College, Raigarh"
-CGHSAU,"Government Medical College, Dantewada"
-CGHSAU,"Government Medical College, Janjgir-Champa"
-CGHSAU,"Government Medical College, Jashpur-Kunkuri"
-CGHSAU,"Government Medical College, Kabeerdham"
-CGHSAU,"Government Medical College, Manendragarh"
-CGHSAU,Shri Balaji Institute of Medical Science
-CGHSAU,"Shri Shankaracharya Institute of Medical Sciences, Bhilai"
-CGHSAU,"Abhishek Mishra Memorial Medical College & RC, Bhiali, Durg"
-CGHSAU,"Raipur Institute of Medical Sciences (RIMS), Raipur"
-CGHSAU,"Shri Rawatpura Sarkar Institute of Medical Sciences and Research, Nava Raipur"
-CGHSAU,Maa Padmavati Institute of Medical Sciences
-CGHSAU,Other / not listed
-GGSIPU,"Vardhman Mahavir Medical College & Safdarjung Hospital, Delhi"
-GGSIPU,"Dr. Baba Saheb Ambedkar Medical College, Rohini, Delhi"
-GGSIPU,"Atal Bihari Vajpayee Institute of Medical Sciences (ABVIMS) & Dr. RML Hospital, New Delhi"
-GGSIPU,"Army College of Medical Sciences, New Delhi (Army wards only)"
-GGSIPU,"North Delhi Municipal Corporation Medical College, Delhi"
-GGSIPU,"ESIC Medical College & Hospital, Basaidarapur, New Delhi"
-GGSIPU,Other / not listed
-Jamia Hamdard,"Hamdard Institute of Medical Sciences & Research (HIMSR), New Delhi"
-Jamia Hamdard,Other / not listed
-DU,"Maulana Azad Medical College, New Delhi"
-DU,"Lady Hardinge Medical College, New Delhi (women-only)"
-DU,"University College of Medical Sciences & GTB Hospital, New Delhi"
-DU,Other / not listed
-GU-goa,"Goa Medical College, Panaji (Bambolim)"
-GU-goa,Other / not listed
-BU,"Pramukhswami Medical College, Karmsad"
-BU,Other / not listed
-BKNMU,"Government Medical College, Porbandar"
-BKNMU,Other / not listed
-DDU,"Dr. N.D. Desai Faculty of Medical Science and Research, Nadiad"
-DDU,Other / not listed
-GU-gujarat,"B.J. Medical College, Ahmedabad"
-GU-gujarat,"Smt. N.H.L. Municipal Medical College, Ahmedabad"
-GU-gujarat,"Dr. M.K. Shah Medical College & Research Centre, Ahmedabad"
-GU-gujarat,"GMERS Medical College, Gandhinagar"
-GU-gujarat,"GMERS Medical College, Sola, Ahmedabad"
-GU-gujarat,"Narendra Modi Medical College, Ahmedabad"
-GU-gujarat,"GCS Medical College, Ahmedabad"
-GU-gujarat,"Swaminarayan Institute of Medical Sciences & Research, Ahmedabad"
-GU-gujarat,"Ananya College of Medicine & Research, Kalol"
-GU-gujarat,"SAL Institute of Medical Sciences, Ahmedabad"
-GU-gujarat,"ESIC Medical College, Naroda-Bapunagar, Ahmedabad"
-GU-gujarat,Other / not listed
-HNGU,"GMERS Medical College, Dharpur, Patan"
-HNGU,"GMERS Medical College, Hadiyol, Himmatnagar"
-HNGU,"GMERS Medical College, Vadnagar, Mehsana"
-HNGU,"Banas Medical College and Research Institute, Palanpur"
-HNGU,"Bhagyoday Medical College, Kadi, Mehsana"
-HNGU,Other / not listed
-KSKVKU,"Gujarat Adani Institute of Medical Sciences, Bhuj"
-KSKVKU,Other / not listed
-MKBU,"Government Medical College, Bhavnagar"
-MKBU,Other / not listed
-MSU Baroda,"Medical College, Baroda (Govt.)"
-MSU Baroda,"GMERS Medical College, Gotri, Vadodara"
-MSU Baroda,Other / not listed
-PU,"Parul Institute of Medical Sciences & Research, Vadodara"
-PU,Other / not listed
-SPU,"Nootan Medical College and Research Centre, Mehsana"
-SPU,Other / not listed
-SU-gujarat,"M.P. Shah Medical College, Jamnagar"
-SU-gujarat,"Pandit Deendayal Upadhyay Medical College, Rajkot"
-SU-gujarat,"GMERS Medical College, Junagadh"
-SU-gujarat,"Shantabaa Medical College, Amreli"
-SU-gujarat,"Matushri Prabhaben Khodabhai Boghara Medical College, Atkot/Rajkot"
-SU-gujarat,"Government Medical College, Morbi"
-SU-gujarat,"CU Shah Medical College, Surendra Nagar"
-SU-gujarat,Other / not listed
-SGGU,"Zydus Medical College & Hospital, Dahod"
-SGGU,"Government Medical College, Panchmahal, Godhra"
-SGGU,Other / not listed
-SVDU,"SBKS Medical Institute & Research Centre, Vadodara"
-SVDU,Other / not listed
-VNSGU,"Government Medical College, Surat"
-VNSGU,"Surat Municipal Institute of Medical Education & Research (SMIMER), Surat"
-VNSGU,"GMERS Medical College, Valsad"
-VNSGU,Dr. Kiran C. Patel Medical College and Research Institute
-VNSGU,"Kiran Medical College, Surat"
-VNSGU,"GMERS Medical College, Navsari"
-VNSGU,"GMERS Medical College, Rajpipla"
-VNSGU,Other / not listed
-AVV-haryana,Amrita School of Medicine
-AVV-haryana,Other / not listed
-MMDU,"Maharishi Markandeshwar Institute of Medical Sciences & Research, Mullana, Ambala"
-MMDU,Other / not listed
-MMU,"Maharishi Markandeshwar College of Medical Sciences & Research, Sadopur"
-MMU,Other / not listed
-UHS Rohtak,"Pt. B.D. Sharma Postgraduate Institute of Medical Sciences, Rohtak"
-UHS Rohtak,"Employees State Insurance Corporation Medical College, Faridabad"
-UHS Rohtak,"BPS Government Medical College for Women, Sonepat"
-UHS Rohtak,"Kalpana Chawla Govt. Medical College, Karnal"
-UHS Rohtak,"Shaheed Hasan Khan Mewati Government Medical College, Nalhar"
-UHS Rohtak,"Maharishi Chyawan Medical College, Koriawas"
-UHS Rohtak,"Pt. Neki Ram Sharma Government Medical College, Bhiwani"
-UHS Rohtak,"Shri Atal Bihari Vajpayee Government Medical College, Faridabad"
-UHS Rohtak,"Adesh Medical College and Hospital, Shahabad, Kurukshetra"
-UHS Rohtak,"World College of Medical Sciences & Research, Jhajjar"
-UHS Rohtak,"Al Falah School of Medical Sciences & Research Centre, Faridabad"
-UHS Rohtak,"N.C. Medical College & Hospital, Panipat"
-UHS Rohtak,"Maharaja Agrasen Medical College, Agroha"
-UHS Rohtak,Sanskaram School of Medical Sciences
-UHS Rohtak,Other / not listed
-SGTU,"Faculty of Medicine and Health Sciences, Gurgaon (formerly SGGST Medical College)"
-SGTU,Other / not listed
-AMRU,"Dr. Radhakrishnan Government Medical College, Hamirpur"
-AMRU,"Dr. Rajendra Prasad Government Medical College, Tanda"
-AMRU,"Dr. Yashwant Singh Parmar Government Medical College, Nahan (Sirmour)"
-AMRU,"Indira Gandhi Medical College, Shimla"
-AMRU,"Pt. Jawahar Lal Nehru Government Medical College, Chamba"
-AMRU,"Shri Lal Bahadur Shastri Government Medical College, Mandi (Ner Chowk)"
-AMRU,"Maharishi Markandeshwar Medical College & Hospital, Solan"
-AMRU,Other / not listed
-BBMKU,"Hazaribagh Medical College, Hazaribagh"
-BBMKU,"Shaheed Nirmal Mahto Medical College & Hospital, Dhanbad"
-BBMKU,Other / not listed
-KU,"M.G.M. Medical College, Jamshedpur"
-KU,"Netaji Subhas Medical College and Hospital, Adityapur/Saraikela"
-KU,Other / not listed
-MAHE-jharkhand,"Manipal Tata Medical College, Baridih, Jamshedpur"
-MAHE-jharkhand,Other / not listed
-NPU,"Palamu Medical College, Palamu"
-NPU,Other / not listed
-NC,Birsa Institute of Medical Sciences and Research
-NC,Other / not listed
-RCU,"Laxmi Chandravansi Medical College & Hospital, Bishrampur, Palamu"
-RCU,Other / not listed
-RU,"Rajendra Institute of Medical Sciences, Ranchi"
-RU,Other / not listed
-SKMU,"Dumka Medical College, Dighi Dumka"
-SKMU,Sido Kanhu Medical College and Hospital
-SKMU,Other / not listed
-ACU,"Adichunchanagiri Institute of Medical Sciences, Bellur (B.G. Nagar)"
-ACU,Other / not listed
-BLDE,"Shri B.M. Patil Medical College, Hospital & Research Centre, Vijayapura"
-BLDE,Other / not listed
-JSSAHER,"JSS Medical College, Mysore"
-JSSAHER,Other / not listed
-KAHER,"Jawaharlal Nehru Medical College, Belgaum"
-KAHER,Other / not listed
-KBNU,"Khaja Bandanawaz University, Faculty of Medical Sciences, Gulbarga"
-KBNU,Other / not listed
-MAHE-karnataka,"Kasturba Medical College, Manipal"
-MAHE-karnataka,"Kasturba Medical College, Mangalore"
-MAHE-karnataka,Other / not listed
-Nitte,"K.S. Hegde Medical Academy, Mangalore"
-Nitte,Other / not listed
-RGUHS,"Bangalore Medical College and Research Institute, Bangalore"
-RGUHS,"Mysore Medical College and Research Institute, Mysore"
-RGUHS,"Vijaynagar Institute of Medical Sciences, Bellary"
-RGUHS,"Belagavi Institute of Medical Sciences, Belagavi"
-RGUHS,"Bidar Institute of Medical Sciences, Bidar"
-RGUHS,"Gulbarga Institute of Medical Sciences, Gulbarga"
-RGUHS,"Hassan Institute of Medical Sciences, Hassan"
-RGUHS,"Karnataka Medical College and Research Institute, Hubballi"
-RGUHS,"Raichur Institute of Medical Sciences, Raichur"
-RGUHS,"Shri Atal Bihari Vajpayee Medical College and Research Institute, Bengaluru"
-RGUHS,Chamrajanagar Institute of Medical Sciences
-RGUHS,Chikkamagaluru Institute of Medical Sciences
-RGUHS,Chitradurga Medical College and Research Institute
-RGUHS,"Employees State Insurance Corporation Medical College, Bangalore"
-RGUHS,"Employees State Insurance Corporation Medical College, Gulbarga"
-RGUHS,"Haveri Institute of Medical Sciences, Haveri"
-RGUHS,"K.H. Patil Institute of Medical Sciences, Gadag"
-RGUHS,"Karwar Institute of Medical Sciences, Karwar"
-RGUHS,"Kodagu Institute of Medical Sciences, Kodagu"
-RGUHS,"Koppal Institute of Medical Sciences, Koppal"
-RGUHS,"Mandya Institute of Medical Sciences, Mandya"
-RGUHS,"Nandi Medical College and Research Institute, Chikkaballapura"
-RGUHS,"Shimoga Institute of Medical Sciences, Shimoga"
-RGUHS,"Yadgiri Institute of Medical Sciences, Yadgiri"
-RGUHS,"A.J. Institute of Medical Sciences & Research Centre, Mangalore"
-RGUHS,"Akash Institute of Medical Sciences & Research Centre, Devanhalli, Bangalore"
-RGUHS,"BGS Medical College and Hospital, Bengaluru"
-RGUHS,"Kempegowda Institute of Medical Sciences, Bangalore"
-RGUHS,"MVJ Medical College and Research Hospital, Bangalore"
-RGUHS,"Raja Rajeswari Medical College & Hospital, Bangalore"
-RGUHS,"S. Nijalingappa Medical College & HSK Hospital & Research Centre, Bagalkot"
-RGUHS,"Sapthagiri Institute of Medical Sciences & Research Centre, Bangalore"
-RGUHS,"Shridevi Institute of Medical Sciences & Research Hospital, Tumkur"
-RGUHS,"Subbaiah Institute of Medical Sciences, Shimoga"
-RGUHS,"Srinivas Institute of Medical Sciences & Research Centre, Mangalore"
-RGUHS,"Vydehi Institute of Medical Sciences & Research Centre, Bangalore"
-RGUHS,"JJM Medical College, Davangere"
-RGUHS,Jagadguru Gangadhar Mahaswamigalu Moorusavirmath Medical College (JGMMMC)
-RGUHS,"Kanachur Institute of Medical Sciences, Mangalore"
-RGUHS,"Mahadevappa Rampure Medical College, Kalaburagi"
-RGUHS,"Navodaya Medical College, Raichur"
-RGUHS,"S.S. Institute of Medical Sciences & Research Centre, Davangere"
-RGUHS,"Siddaganga Medical College and Research Institute, Tumakuru"
-RGUHS,"The Oxford Medical College, Hospital & Research Centre, Bangalore"
-RGUHS,"Dr. Chandramma Dayananda Sagar Institute of Medical Education & Research, Harohalli"
-RGUHS,"East Point College of Medical Sciences & Research Centre, Bangalore"
-RGUHS,"Al-Ameen Medical College, Bijapur"
-RGUHS,"Basaveswara Medical College and Hospital, Chitradurga"
-RGUHS,"BGS Global Institute of Medical Sciences, Bangalore"
-RGUHS,"Dr. B.R. Ambedkar Medical College, Bangalore"
-RGUHS,"Father Muller's Medical College, Mangalore"
-RGUHS,G.R. Medical College Hospital & Research Centre
-RGUHS,"K.V.G. Medical College, Sullia"
-RGUHS,"M.S. Ramaiah Medical College, Bangalore"
-RGUHS,"PES University Institute of Medical Sciences and Research, Bangalore"
-RGUHS,Sri Chamundeshwari Medical College Hospital & Research Institute
-RGUHS,Farookh Academy of Medical Education Hospital and Research Institute
-RGUHS,"SR Patil Medical College and Hospital, Bagalkot"
-RGUHS,"Sri Madhusudan Sai Institute of Medical Sciences & Research, Chikballapur"
-RGUHS,Alva's Institute of Medical Sciences and Research Centre
-RGUHS,Chettinad Institute of Medical Education and Research
-RGUHS,Other / not listed
-SDUAHER,"Sri Devaraj URS Medical College, Kolar"
-SDUAHER,Other / not listed
-SSAHE,"Sri Siddhartha Medical College, Tumkur"
-SSAHE,"Sri Siddhartha Institute of Medical Sciences & Research Centre, Bangalore"
-SSAHE,Other / not listed
-Yenepoya,"Yenepoya Medical College, Mangalore"
-Yenepoya,Other / not listed
-AVV-kerala,"Amrita School of Medicine, Elamkara, Kochi"
-AVV-kerala,Other / not listed
-KUHS,"Medical College, Thiruvananthapuram"
-KUHS,"Government Medical College, Kozhikode (Calicut)"
-KUHS,"Government Medical College, Kottayam"
-KUHS,"T.D. Medical College, Alleppey (Alappuzha)"
-KUHS,"Government Medical College, Thrissur"
-KUHS,"Government Medical College, Ernakulam"
-KUHS,"Government Medical College, Manjeri, Malappuram"
-KUHS,"Government Medical College, Parippally, Kollam"
-KUHS,"Government Medical College (Institute of Integrated Medical Sciences), Yakkara, Palakkad"
-KUHS,"Government Medical College, Idukki"
-KUHS,"Government Medical College, Konni"
-KUHS,"Govt. Medical College, Pariyaram, Kannur"
-KUHS,"Government Medical College, Kasaragod"
-KUHS,"Government Medical College, Wayanad"
-KUHS,"Al-Azhar Medical College and Super Speciality Hospital, Thodupuzha"
-KUHS,"KMCT Medical College, Kozhikode (Calicut)"
-KUHS,"Malabar Medical College, Kozhikode (Calicut)"
-KUHS,"P.K. Das Institute of Medical Sciences, Palakkad"
-KUHS,"Sree Uthradom Thirunal Academy of Medical Sciences, Trivandrum"
-KUHS,"Travancore Medical College, Kollam"
-KUHS,"Dr. Moopen Medical College, Wayanad"
-KUHS,"Dr. Somervel Memorial CSI Hospital & Medical College, Karakonam"
-KUHS,"Jubilee Mission Medical College & Research Institute, Thrissur"
-KUHS,"Karuna Medical College, Palakkad"
-KUHS,"Kerala Medical College, Mangode"
-KUHS,"M.E.S. Medical College, Perintalmanna, Malappuram"
-KUHS,"Mount Zion Medical College, Chayalode, Ezhamkulam, Adoor"
-KUHS,"Palakkad Institute of Medical Sciences, Palakkad"
-KUHS,"Sree Gokulam Medical College Trust & Research Foundation, Trivandrum"
-KUHS,"Sree Narayana Institute of Medical Sciences, Chalakka, Ernakulam"
-KUHS,"Amala Institute of Medical Sciences, Thrissur"
-KUHS,"Azeezia Institute of Medical Science, Meeyannoor, Kollam"
-KUHS,"Believers Church Medical College Hospital, Thiruvalla"
-KUHS,"Malankara Orthodox Syrian Church Medical College, Kolenchery"
-KUHS,"Pushpagiri Institute of Medical Sciences and Research Centre, Tiruvalla"
-KUHS,Other / not listed
-MPMSU,"Gandhi Medical College, Bhopal"
-MPMSU,"MGM Medical College, Indore"
-MPMSU,"Netaji Subhash Chandra Bose Medical College, Jabalpur"
-MPMSU,"Gajra Raja Medical College, Gwalior"
-MPMSU,"Dr. Laxminarayan Pandey Government Medical College, Ratlam"
-MPMSU,"Government Medical College, Vidisha (Atal Bihari Vajpayee GMC)"
-MPMSU,"Bundelkhand Medical College, Sagar"
-MPMSU,"Government Medical College, Chhindwara"
-MPMSU,"Government Medical College, Satna"
-MPMSU,"Shyam Shah Medical College, Rewa"
-MPMSU,"Government Medical College, Datia"
-MPMSU,"Government Medical College, Khandwa"
-MPMSU,"Government Medical College, Sheopur"
-MPMSU,"Government Medical College, Singrauli"
-MPMSU,"Government Medical College, Seoni"
-MPMSU,"Government Medical College, Shahdol"
-MPMSU,"Government Medical College, Shivpuri"
-MPMSU,Sundarlal Patwa Government Medical College
-MPMSU,Virendra Kumar Sakhlecha Government Medical College
-MPMSU,"ESIC Medical College and Hospital, Indore"
-MPMSU,"Amaltas Institute of Medical Sciences, Dewas"
-MPMSU,"Chirayu Medical College and Hospital, Bhopal"
-MPMSU,"Index Medical College Hospital & Research Centre, Indore"
-MPMSU,"L.N. Medical College and Research Centre, Bhopal"
-MPMSU,"Peoples College of Medical Sciences & Research Centre, Bhopal"
-MPMSU,"Sri Aurobindo Medical College and Post Graduate Institute, Indore"
-MPMSU,"Sukh Sagar Medical College & Hospital, Jabalpur"
-MPMSU,"LNCT Medical College & Sewakunj Hospital, Indore"
-MPMSU,"Mahaveer Institute of Medical Sciences & Research, Bhopal"
-MPMSU,Mansarovar Medical College and MGU Hospital
-MPMSU,"Ram Krishna College Hospital & Research Centre, Bhopal"
-MPMSU,"RKDF Medical College Hospital & Research Centre, Bhopal"
-MPMSU,"Ruxmaniben Deepchand Gardi Medical College, Ujjain"
-MPMSU,"School of Medical Sciences, Sri Satya Sai University of Technology and Medical Sciences, Sehore"
-MPMSU,Other / not listed
-BVDU,"Bharati Vidyapeeth University Medical College, Pune"
-BVDU,"Bharati Vidyapeeth Deemed University Medical College & Hospital, Sangli"
-BVDU,Other / not listed
-DMIMS,"Jawaharlal Nehru Medical College, Sawangi (Meghe), Wardha"
-DMIMS,"Datta Meghe Medical College, Nagpur"
-DMIMS,Other / not listed
-DPU,"Padmashree Dr. D.Y. Patil Medical College, Navi Mumbai"
-DPU,"Dr. D.Y. Patil Medical College, Hospital and Research Centre, Pimpri, Pune"
-DPU,"Dr. D.Y. Patil Medical College, Kolhapur"
-DPU,"DY Patil University, School of Medicine, Navi Mumbai"
-DPU,Other / not listed
-KVV,"Krishna Institute of Medical Sciences, Karad"
-KVV,Other / not listed
-MGMIHS,"Mahatma Gandhi Mission's Medical College, Aurangabad (Chhatrapati Sambhajinagar)"
-MGMIHS,"Mahatma Gandhi Mission's Medical College, Kamothe, Navi Mumbai"
-MGMIHS,"Mahatma Gandhi Mission Medical College, Vashi"
-MGMIHS,"Mahatma Gandhi Mission's Medical College, Panvel"
-MGMIHS,"Mahatma Gandhi Mission's Medical College, Nerul, Navi Mumbai"
-MGMIHS,Other / not listed
-MUHS,"Government Medical College, Nagpur"
-MUHS,"Grant Medical College, Mumbai"
-MUHS,"Seth GS Medical College, Mumbai"
-MUHS,"B.J. Government Medical College, Pune"
-MUHS,"Government Medical College, Akola"
-MUHS,"Government Medical College, Aurangabad"
-MUHS,"Government Medical College, Miraj"
-MUHS,"H.B.T. Medical College & Dr. R.N. Cooper Municipal Hospital, Mumbai"
-MUHS,"Indira Gandhi Medical College & Hospital, Nagpur"
-MUHS,"Lokmanya Tilak Municipal Medical College, Sion, Mumbai"
-MUHS,"Shri Vasant Rao Naik Government Medical College, Yavatmal"
-MUHS,"Dr. Vaishampayan Memorial Medical College, Solapur"
-MUHS,"Armed Forces Medical College, Pune"
-MUHS,"Dr. Shankarrao Chavan Government Medical College, Nanded"
-MUHS,"Government Medical College, Chandrapur"
-MUHS,"Government Medical College, Gondia"
-MUHS,"Government Medical College, Jalgaon"
-MUHS,"Government Medical College, Latur"
-MUHS,"Rajashree Chatrapati Shahu Maharaj Government Medical College, Kolhapur"
-MUHS,"Sri Bhausaheb Hire Government Medical College, Dhule"
-MUHS,"SRTR Medical College, Ambajogai"
-MUHS,"Topiwala National Medical College, Mumbai"
-MUHS,"Government Medical College & Hospital, Baramati"
-MUHS,"Government Medical College, Alibag"
-MUHS,"Government Medical College, Ambernath"
-MUHS,"Government Medical College, Amravati"
-MUHS,"Government Medical College, Bhandara"
-MUHS,"Government Medical College, Buldhana"
-MUHS,"Government Medical College, Gadchiroli"
-MUHS,"Government Medical College, Hingoli"
-MUHS,"Government Medical College, Jalna"
-MUHS,"Government Medical College, Nandurbar"
-MUHS,"Government Medical College, Osmanabad"
-MUHS,"Government Medical College, Parbhani"
-MUHS,"Government Medical College, Satara"
-MUHS,"Government Medical College, Sindhudurg"
-MUHS,"Government Medical College, Washim"
-MUHS,"Government Medical College and District Hospital, Ratnagiri"
-MUHS,"Rajiv Gandhi Medical College and Chhatrapati Shivaji Maharaj Hospital, Thane"
-MUHS,"ESIC Medical College and Hospital, Andheri"
-MUHS,"Government Medical College, L.T. Marg, Mumbai"
-MUHS,"Government Medical College, Nashik"
-MUHS,"N.K.P. Salve Institute of Medical Sciences & Research Centre and Lata Mangeshkar Hospital, Nagpur"
-MUHS,"Dr. Ulhas Patil Medical College & Hospital, Jalgaon"
-MUHS,"Dr. Vithalrao Vikhe Patil Foundation's Medical College & Hospital, Ahmednagar"
-MUHS,"Ashwini Rural Medical College, Hospital & Research Centre, Solapur"
-MUHS,"B.K.L. Walawalkar Rural Medical College, Ratnagiri"
-MUHS,"Dr. Panjabrao Deshmukh Memorial Medical College, Amravati"
-MUHS,"Dr. Rajendra Gode Medical College, Amravati"
-MUHS,"Dr. Vasantrao Pawar Medical College, Hospital & Research Centre, Nashik"
-MUHS,"Indian Institute of Medical Science & Research, Jalna"
-MUHS,"Maharashtra Institute of Medical Education & Research, Talegaon, Pune"
-MUHS,"Maharashtra Institute of Medical Sciences & Research, Latur"
-MUHS,Parbhani Medical College
-MUHS,"Prakash Institute of Medical Sciences & Research, Sangli"
-MUHS,"R.K. Damani Medical College (Shri Ramchandra Institute of Medical Sciences), Chhatrapati Sambhajinagar"
-MUHS,"SMBT Institute of Medical Sciences & Research Centre, Nashik"
-MUHS,"Smt. Kashibai Navale Medical College and General Hospital, Pune"
-MUHS,"Terna Medical College, Navi Mumbai"
-MUHS,"Vedantaa Institute of Medical Sciences, Palghar"
-MUHS,"SSPM Medical College & Lifetime Hospital, Sindhudurg"
-MUHS,"ACPM Medical College, Dhule"
-MUHS,"Bharatratna Atal Bihari Vajpayee Medical College, Pune"
-MUHS,Dr. N.Y. Tasgaonkar Institute of Medical Science
-MUHS,"K.J. Somaiya Medical College & Research Centre, Mumbai"
-MUHS,Smt. Sakhubai Narayanrao Katkade Medical College and Research Center
-MUHS,Malati Multispeciality Hospital and Medical College
-MUHS,B.S.P. Medical College and Hospital
-MUHS,Mauli Medical College Hospital & Research Center
-MUHS,Ideal Institute of Medical Science
-MUHS,Other / not listed
-MGIMS,"Mahatma Gandhi Institute of Medical Sciences, Sevagram, Wardha"
-MGIMS,Other / not listed
-PIMS-DU,"Rural Medical College, Loni"
-PIMS-DU,Other / not listed
-SIU,"Symbiosis Medical College for Women, Pune"
-SIU,Other / not listed
-MU,"Jawaharlal Nehru Institute of Medical Sciences (JNIMS), Porompat, Imphal"
-MU,"Regional Institute of Medical Sciences (RIMS), Imphal"
-MU,"Government Medical College, Churachandpur"
-MU,Shija Academy of Health Sciences
-MU,Other / not listed
-NEHU,Shillong Medical College
-NEHU,"North Eastern Indira Gandhi Regional Institute of Health and Medical Sciences (NEIGRIHMS), Shillong"
-NEHU,Other / not listed
-USTM,"PA Sangma International Medical College and Hospital (PIMC), Ri-Bhoi"
-USTM,Other / not listed
-MZU,"Zoram Medical College and Hospital (ZMC&H), Falkawn, Aizawl"
-MZU,Other / not listed
-NU,"Nagaland Institute of Medical Sciences and Research (NIMSR), Kohima"
-NU,Other / not listed
-KIIT,"Kalinga Institute of Medical Sciences, Bhubaneswar"
-KIIT,Other / not listed
-OUHS,"MKCG Medical College, Berhampur"
-OUHS,"SCB Medical College, Cuttack"
-OUHS,"Veer Surendra Sai Institute of Medical Sciences and Research, Burla"
-OUHS,"Pt. Raghunath Murmu Medical College and Hospital, Baripada"
-OUHS,"Saheed Laxman Nayak Medical College & Hospital, Koraput"
-OUHS,Dharanidhar Medical College and Hospital (formerly GMC Keonjhar)
-OUHS,"Government Medical College & Hospital / Bhima Bhoi Medical College & Hospital, Balangir"
-OUHS,"Government Medical College & Hospital / Fakir Mohan Medical College & Hospital, Balasore"
-OUHS,"Government Medical College, Phulbani, Kandhamal"
-OUHS,"Government Medical College, Sundargarh"
-OUHS,"Pabitra Mohan Pradhan Medical College, Talcher"
-OUHS,"Saheed Rendo Majhi Medical College and Hospital, Bhawanipatna, Kalahandi"
-OUHS,"Sri Jagannath Medical College & Hospital, Puri"
-OUHS,Mahraja Jajati Keshari Medical College (formerly GMC Jajpur)
-OUHS,"Hi-Tech Medical College & Hospital, Bhubaneswar"
-OUHS,"DRIEMS Institute of Health Sciences and Hospital, Kairapari"
-OUHS,"Hi-Tech Medical College & Hospital, Rourkela"
-OUHS,Other / not listed
-SOA,"Institute of Medical Sciences & SUM Hospital, Bhubaneswar"
-SOA,Other / not listed
-AU,"Adesh Institute of Medical Sciences & Research, Bathinda"
-AU,Other / not listed
-BFUHS,"Government Medical College, Amritsar"
-BFUHS,"Government Medical College, Patiala"
-BFUHS,"Guru Gobind Singh Medical College, Faridkot"
-BFUHS,"Dr. B.R. Ambedkar State Institute of Medical Sciences, SAS Nagar, Mohali"
-BFUHS,"ESIC Medical College, Ludhiana"
-BFUHS,"Dayanand Medical College & Hospital, Ludhiana"
-BFUHS,"Gian Sagar Medical College & Hospital, Patiala"
-BFUHS,"Punjab Institute of Medical Sciences, Jalandhar"
-BFUHS,"Christian Medical College, Ludhiana"
-BFUHS,"RIMT Medical College and Hospital, Fatehgarh Sahib (Mandi Gobindgarh)"
-BFUHS,Other / not listed
-SGRDUHS,"Sri Guru Ram Das Institute of Medical Sciences and Research, Sri Amritsar"
-SGRDUHS,Other / not listed
-GUU,"Geetanjali Medical College & Hospital, Udaipur"
-GUU,Geetanjali Institute of Medical Sciences
-GUU,Other / not listed
-JNU,"Jaipur National University Institute for Medical Sciences and Research Centre, Jagatpura, Jaipur"
-JNU,Other / not listed
-MGUMST,"Mahatma Gandhi Medical College and Hospital, Sitapura, Jaipur"
-MGUMST,Other / not listed
-NIMSU,"National Institute of Medical Science & Research, Jaipur"
-NIMSU,Other / not listed
-PMU,"Pacific Institute of Medical Sciences, Umarda, Udaipur"
-PMU,"Pacific Medical College & Hospital, Bhilo Ka Bedla, Udaipur"
-PMU,Other / not listed
-RUHS,"Dr. S.N. Medical College, Jodhpur"
-RUHS,"Government Medical College, Kota"
-RUHS,"Jawaharlal Nehru Medical College, Ajmer"
-RUHS,"R.N.T. Medical College, Udaipur"
-RUHS,"Sardar Patel Medical College, Bikaner"
-RUHS,"SMS Medical College, Jaipur"
-RUHS,"Jhalawar Medical College, Jhalawar"
-RUHS,"Government Medical College, Bharatpur"
-RUHS,"Government Medical College, Bhilwara"
-RUHS,"Government Medical College, Churu"
-RUHS,"Government Medical College, Dungarpur"
-RUHS,"Government Medical College, Pali"
-RUHS,"RUHS College of Medical Sciences, Jaipur"
-RUHS,"Government Medical College, Barmer"
-RUHS,"Government Medical College, Alwar"
-RUHS,"Government Medical College, Banswara"
-RUHS,"Government Medical College, Baran"
-RUHS,"Government Medical College, Bundi"
-RUHS,"Government Medical College, Chittorgarh"
-RUHS,"Government Medical College, Dausa"
-RUHS,"Government Medical College, Dholpur"
-RUHS,"Government Medical College, Hanumangarh"
-RUHS,"Government Medical College, Jhunjhunu"
-RUHS,"Government Medical College, Karauli"
-RUHS,"Government Medical College, Nagaur"
-RUHS,"Government Medical College, Sawai Madhopur"
-RUHS,"Government Medical College, Sirohi"
-RUHS,"Government Medical College, Sri Ganganagar"
-RUHS,"Employees State Insurance Corporation Medical College, Alwar"
-RUHS,"Shri Kalyan Government Medical College, Sikar"
-RUHS,"ESIC Medical College and Hospital, Jaipur"
-RUHS,"Government Medical College, Jaisalmer"
-RUHS,"Government Medical College, Tonk"
-RUHS,"Dr. S.S. Tantia Medical College, Hospital & Research Centre, Sri Ganganagar"
-RUHS,"American International Institute of Medical Sciences, Bedwas, Udaipur"
-RUHS,"Ananta Institute of Medical Sciences & Research Centre, Rajsamand"
-RUHS,"Balvir Singh Tomar Institute of Medical Sciences and Research, Jaipur"
-RUHS,"JIET Medical College and Hospital, Jodhpur"
-RUHS,"Sudha Medical College, Kota"
-RUHS,"Vyas Medical College & Hospital, Jodhpur"
-RUHS,Arya Medical College and Hospital
-RUHS,Bharat Vikas Institute of Medical Sciences
-RUHS,Dr. B.S. Tomar Institute of Medical Sciences and Research
-RUHS,Prince Medical College & Hospital
-RUHS,Other / not listed
-SMU,"Sikkim Manipal Institute of Medical Sciences (SMIMS), Gangtok"
-SMU,Other / not listed
-SU-sikkim,"Helen Lepcha Sikkim Government Medical College and Hospital (HLSGMC), Sokeythang"
-SU-sikkim,Other / not listed
-BIHER,"Sree Balaji Medical College and Hospital, Chennai"
-BIHER,Other / not listed
-CARE,"Chettinad Hospital & Research Institute, Kanchipuram"
-CARE,Other / not listed
-MGRERI,"ACS Medical College and Hospital, Chennai"
-MGRERI,Other / not listed
-MAHER,"Meenakshi Medical College and Research Institute, Enathur"
-MAHER,Other / not listed
-SRMIST,"SRM Medical College Hospital & Research Centre, Kancheepuram"
-SRMIST,"Trichy SRM Medical College Hospital & Research Centre, Trichy"
-SRMIST,Other / not listed
-SIMATS,"Saveetha Medical College and Hospital, Kanchipuram"
-SIMATS,Other / not listed
-SBV,"Shri Sathya Sai Medical College and Research Institute, Kancheepuram"
-SBV,Other / not listed
-SRIHER,"Sri Ramachandra Medical College & Research Institute, Chennai"
-SRIHER,Other / not listed
-TNMGRMU,"Madras Medical College, Chennai"
-TNMGRMU,"Madurai Medical College, Madurai"
-TNMGRMU,"Stanley Medical College, Chennai"
-TNMGRMU,"Tirunelveli Medical College, Tirunelveli"
-TNMGRMU,"Coimbatore Medical College, Coimbatore"
-TNMGRMU,"Government Medical College & Hospital, Cuddalore"
-TNMGRMU,"Government Medical College, Ariyalur"
-TNMGRMU,"Government Medical College, Dindigul"
-TNMGRMU,"Government Medical College, Kallakurichi"
-TNMGRMU,"Government Medical College, Karur"
-TNMGRMU,"Government Medical College, Krishnagiri"
-TNMGRMU,"Government Medical College, Nagapattinam"
-TNMGRMU,"Government Medical College, Pudukottai"
-TNMGRMU,"Government Medical College, The Nilgiris"
-TNMGRMU,"Government Medical College, Virudhunagar"
-TNMGRMU,"K.A.P. Viswanathan Government Medical College, Trichy"
-TNMGRMU,"Kanyakumari Government Medical College, Asaripallam"
-TNMGRMU,"Kilpauk Medical College, Chennai"
-TNMGRMU,"Thanjavur Medical College, Thanjavur"
-TNMGRMU,"Thoothukudi Medical College, Thoothukudi"
-TNMGRMU,"ESIC Medical College & PGIMSR, K.K. Nagar, Chennai"
-TNMGRMU,"Government Dharmapuri Medical College, Dharmapuri"
-TNMGRMU,"Government Erode Medical College & Hospital, Perundurai"
-TNMGRMU,"Government Medical College & ESIC Hospital, Coimbatore"
-TNMGRMU,"Government Medical College, Namakkal"
-TNMGRMU,"Government Medical College, Omandurar"
-TNMGRMU,"Government Medical College, Ramanathapuram"
-TNMGRMU,"Government Medical College, Thiruvallur"
-TNMGRMU,"Government Medical College, Tiruppur"
-TNMGRMU,"Government Sivagangai Medical College, Sivaganga"
-TNMGRMU,"Government Thiruvannamalai Medical College, Thiruvannamalai"
-TNMGRMU,"Government Vellore Medical College, Vellore"
-TNMGRMU,"Government Villupuram Medical College, Villupuram"
-TNMGRMU,"Govt. Mohan Kumaramangalam Medical College, Salem"
-TNMGRMU,"Theni Government Medical College, Theni"
-TNMGRMU,"Thiruvarur Government Medical College, Thiruvarur"
-TNMGRMU,"Chengalpattu Medical College, Chengalpattu"
-TNMGRMU,Bhaarat Medical College & Hospital
-TNMGRMU,"Dhanalakshmi Srinivasan Medical College and Hospital, Perambalur"
-TNMGRMU,"PSG Institute of Medical Sciences, Coimbatore"
-TNMGRMU,"Sri Venkateswaraa Medical College Hospital and Research Institute, Chennai"
-TNMGRMU,Srinivasan Medical College and Hospital
-TNMGRMU,"ST Peters Medical College, Hospital & Research Institute"
-TNMGRMU,"Tagore Medical College and Hospital, Chennai"
-TNMGRMU,Arunai Medical College And Hospital
-TNMGRMU,"Faculty of Medicine, Sri Lalithambigai Medical College and Hospital"
-TNMGRMU,"J.R. Medical College and Hospital, Villupuram"
-TNMGRMU,"Madha Medical College and Hospital, Thandalam, Chennai"
-TNMGRMU,"Panimalar Medical College Hospital & Research Institute, Chennai"
-TNMGRMU,Rajalakshmi Medical College Hospital and Research Institute
-TNMGRMU,Swamy Vivekanandha Medical College Hospital And Research Institute
-TNMGRMU,"Annapoorna Medical College & Hospital, Salem"
-TNMGRMU,"Dhanalakshmi Srinivasan Institute of Medical Sciences and Hospital, Perambalur"
-TNMGRMU,"Indira Medical College & Hospitals, Thiruvallur"
-TNMGRMU,"Karpaga Vinayaga Institute of Medical Sciences, Maduranthagam"
-TNMGRMU,"Karpagam Faculty of Medical Sciences & Research, Coimbatore"
-TNMGRMU,"KMCH Institute of Health Sciences and Research, Coimbatore"
-TNMGRMU,Melmaruvathur Adiparasakthi Institute of Medical Sciences and Research
-TNMGRMU,"Nandha Medical College & Hospital, Erode"
-TNMGRMU,"PSP Medical College Hospital and Research Institute, Chennai"
-TNMGRMU,"Sree Mookambika Institute of Medical Sciences, Kanyakumari"
-TNMGRMU,"Sri Muthukumaran Medical College, Chennai"
-TNMGRMU,"Velammal Medical College Hospital and Research Institute, Madurai"
-TNMGRMU,"Christian Medical College, Vellore"
-TNMGRMU,Kanyakumari Medical Mission Research Centre
-TNMGRMU,Takshashila Medical College
-TNMGRMU,APS Medical College Hospital and Research Institute
-TNMGRMU,Other / not listed
-VISTAS,VELS Medical College & Hospital
-VISTAS,Other / not listed
-VMRF,"Vinayaka Missions Kirupananda Variyar Medical College, Salem"
-VMRF,Other / not listed
-KNRUHS,"Gandhi Medical College, Secunderabad"
-KNRUHS,"Kakatiya Medical College, Warangal"
-KNRUHS,"Osmania Medical College, Hyderabad"
-KNRUHS,"Government Medical College, Mahabubnagar"
-KNRUHS,"Government Medical College, Siddipet"
-KNRUHS,"ESIC Medical College, Sanath Nagar, Hyderabad"
-KNRUHS,"Government Medical College, Bhadradri Kothagudem"
-KNRUHS,"Government Medical College, Jagtial"
-KNRUHS,"Government Medical College, Mahabubabad"
-KNRUHS,"Government Medical College, Nagarkurnool"
-KNRUHS,"Government Medical College, Nalgonda"
-KNRUHS,"Government Medical College, Ramagundam"
-KNRUHS,"Government Medical College, Sangareddy"
-KNRUHS,"Government Medical College, Suryapet"
-KNRUHS,"Government Medical College, Wanaparthy"
-KNRUHS,"Government Medical College, Nizamabad"
-KNRUHS,"Rajiv Gandhi Institute of Medical Sciences, Adilabad"
-KNRUHS,"Government Medical College, Jangaon"
-KNRUHS,"Government Medical College, Khammam"
-KNRUHS,"Government Medical College, Kumuram Bheem Asifabad"
-KNRUHS,"Government Medical College, Jayashankar Bhupalpally"
-KNRUHS,"Government Medical College, Kamareddy"
-KNRUHS,"Government Medical College, Karimnagar"
-KNRUHS,"Government Medical College, Mancherial"
-KNRUHS,"Government Medical College, Nirmal"
-KNRUHS,"Government Medical College, Rajanna Sircilla"
-KNRUHS,"Government Medical College, Vikarabad"
-KNRUHS,"Government Medical College, Medak"
-KNRUHS,"Government Medical College, Jogulumba Gadwal"
-KNRUHS,"Government Medical College, Kodangal"
-KNRUHS,"Government Medical College, Maheshwaram"
-KNRUHS,"Government Medical College, Mulugu"
-KNRUHS,"Government Medical College, Narayanpet"
-KNRUHS,"Government Medical College, Narsampet"
-KNRUHS,"Government Medical College, Quthbullapur"
-KNRUHS,"Government Medical College, Yadadri"
-KNRUHS,CMR Institute of Medical Science
-KNRUHS,Nova Institute of Medical Sciences and Research Centre
-KNRUHS,"Prathima Institute of Medical Sciences, Karimnagar"
-KNRUHS,"R.V.M. Institute of Medical Sciences and Research Centre, Siddipet"
-KNRUHS,"Chalmeda Anand Rao Institute of Medical Sciences, Karimnagar"
-KNRUHS,"Dr. Patnam Mahender Reddy Institute of Medical Sciences, Chevella"
-KNRUHS,"Kamineni Institute of Medical Sciences, Narketpally"
-KNRUHS,"Mahavir Institute of Medical Sciences, Vikarabad"
-KNRUHS,"Malla Reddy Institute of Medical Sciences, Hyderabad"
-KNRUHS,"Mallareddy Medical College for Women, Hyderabad"
-KNRUHS,"Mamata Medical College, Khammam"
-KNRUHS,Neelima Institute of Medical Sciences
-KNRUHS,"Surabhi Institute of Medical Sciences, Siddipet"
-KNRUHS,"Apollo Institute of Medical Sciences and Research, Hyderabad"
-KNRUHS,"Arundathi Institute of Medical Sciences, Medchal"
-KNRUHS,"Ayaan Institute of Medical Sciences, Teaching Hospital & Research Centre"
-KNRUHS,"Bhaskar Medical College, Yenkapally"
-KNRUHS,Deccan College of Medical Sciences
-KNRUHS,"Father Colombo Institute of Medical Sciences, Warangal"
-KNRUHS,"Kamineni Academy of Medical Sciences & Research Center, Hyderabad"
-KNRUHS,"Maheshwara Medical College, Chitkul, Patancheru, Medak"
-KNRUHS,"Mamata Academy of Medical Sciences, Bachupally"
-KNRUHS,"Mediciti Institute of Medical Sciences, Ghanpur"
-KNRUHS,"MNR Medical College & Hospital, Sangareddy"
-KNRUHS,"Prathima Relief Institute of Medical Sciences, Warangal"
-KNRUHS,"S.V.S. Medical College, Mehboobnagar"
-KNRUHS,"Shadan Institute of Medical Sciences, Research Centre and Teaching Hospital, Peerancheru"
-KNRUHS,"TRR Institute of Medical Sciences, Patancheru"
-KNRUHS,"Dr. VRK Women's Medical College, Aziznagar"
-KNRUHS,Raja Rajeshwari Institute of Medical Sciences - Girls
-KNRUHS,Other / not listed
-TU,"Agartala Government Medical College, Agartala"
-TU,"Tripura Medical College & Dr. B.R. Ambedkar Memorial Teaching Hospital, Agartala"
-TU,"Tripura Santiniketan Medical College, West Tripura"
-TU,Other / not listed
-AMU,"Jawaharlal Nehru Medical College, Aligarh (Aligarh Muslim University)"
-AMU,Other / not listed
-ABVMU,"GSVM Medical College, Kanpur"
-ABVMU,"Moti Lal Nehru Medical College, Allahabad (Prayagraj)"
-ABVMU,"Dr. Ram Manohar Lohia Institute of Medical Sciences (RMLIMS), Lucknow"
-ABVMU,"S.N. Medical College, Agra"
-ABVMU,"BRD Medical College, Gorakhpur"
-ABVMU,"LLRM Medical College, Meerut"
-ABVMU,"Maharani Laxmi Bai Medical College, Jhansi"
-ABVMU,"Autonomous State Medical College, Amethi"
-ABVMU,"Autonomous State Medical College & Hospital, Gonda"
-ABVMU,"Autonomous State Medical College & Hospital, Kaushambi"
-ABVMU,"Autonomous State Medical College & Hospital, Lakhimpur Kheri"
-ABVMU,"Autonomous State Medical College, Kushinagar"
-ABVMU,"Autonomous State Medical College, Lalitpur"
-ABVMU,"Autonomous State Medical College, Pilibhit"
-ABVMU,"Autonomous State Medical College, Pratapgarh"
-ABVMU,"Autonomous State Medical College Society, Ghazipur"
-ABVMU,"Autonomous State Medical College Society, Etah"
-ABVMU,"Autonomous State Medical College Society, Fatehpur"
-ABVMU,"Autonomous State Medical College Society, Hardoi"
-ABVMU,"Autonomous State Medical College, Sultanpur"
-ABVMU,"Autonomous State Medical College, Akbarpur, Kanpur"
-ABVMU,"Autonomous State Medical College, Siddharthnagar"
-ABVMU,"Autonomous State Medical College, Sonebhadra"
-ABVMU,"Autonomous State Society Medical College, Mirzapur"
-ABVMU,"Baba Kina Ram Autonomous State Medical College, Chandauli"
-ABVMU,"Dr. Bhimrao Ramji Ambedkar Government Medical College, Kannauj"
-ABVMU,"Government Allopathic Medical College, Banda"
-ABVMU,"Government Institute of Medical Sciences (GIMS), Kasna, Greater Noida"
-ABVMU,"Government Medical College, Azamgarh"
-ABVMU,"Government Medical College, Badaun"
-ABVMU,"Government Medical College, Faizabad (Ayodhya)"
-ABVMU,"Government Medical College, Firozabad"
-ABVMU,"Government Medical College, Rampur, Basti"
-ABVMU,"Government Medical College, Shahjahanpur"
-ABVMU,Kalyan Singh Government Medical College
-ABVMU,"Mahamaya Rajkiya Allopathic Medical College, Ambedkarnagar"
-ABVMU,"Maharshi Devraha Baba Autonomous State Medical College, Deoria"
-ABVMU,Mahatma Vidur Autonomous State Medical College
-ABVMU,"Punyashloka Lokmata Devi Ahilyabai Holkar ASMC, Auraiya"
-ABVMU,"Rajkiya Allopathic Medical College, Bahraich"
-ABVMU,"Rajkiya Medical College, Jalaun (Orai)"
-ABVMU,"Shaikh-Ul-Hind Maulana Mahmood Hasan Medical College, Saharanpur"
-ABVMU,"Uma Nath Singh Autonomous State Medical College Society, Jaunpur"
-ABVMU,"ESIC Medical College and Hospital, Noida"
-ABVMU,"ESIC Medical College and Hospital, Varanasi"
-ABVMU,"Dr. KNS Memorial Institute of Medical Sciences (formerly Mayo), Lucknow"
-ABVMU,"Era Lucknow Medical College, Lucknow"
-ABVMU,"F.H. Medical College & Hospital, Agra"
-ABVMU,"G.S. Medical College & Hospital, Hapur"
-ABVMU,"K.D. Medical College Hospital & Research Centre, Mathura"
-ABVMU,Naraina Medical College & Research Centre
-ABVMU,"Rajshree Medical Research Institute, Bareilly"
-ABVMU,"Rama Medical College Hospital and Research Centre, Hapur"
-ABVMU,"Rohilkhand Medical College & Hospital, Bareilly"
-ABVMU,"Saraswati Institute of Medical Sciences, Hapur"
-ABVMU,"Sharda School of Medical Sciences & Research, Greater Noida"
-ABVMU,"T.S. Misra Medical College & Hospital, Lucknow"
-ABVMU,"Teerthanker Mahaveer Medical College, Moradabad"
-ABVMU,"Varun Arjun Medical College, Shahjahanpur"
-ABVMU,"Venkateshwara Institute of Medical Sciences, Gajraula"
-ABVMU,"Ajay Sangaal Institute of Medical Sciences, Shamli"
-ABVMU,"Heritage Institute of Medical Sciences, Varanasi"
-ABVMU,"Integral Institute of Medical Sciences & Research, Lucknow"
-ABVMU,"KMC Medical College & Hospital, Maharajganj"
-ABVMU,"Krishna Mohan Medical College & Hospital, Mathura"
-ABVMU,"Muzaffarnagar Medical College, Muzaffarnagar"
-ABVMU,"National Capital Region Institute of Medical Sciences (NCR), Meerut"
-ABVMU,"Shri Ram Murti Smarak Institute of Medical Sciences, Bareilly"
-ABVMU,SKS Hospital Medical College & Research Centre
-ABVMU,"Subharti Medical College, Meerut"
-ABVMU,"Career Institute of Medical Sciences & Hospital, Lucknow"
-ABVMU,"Dr. B.S. Kushwah Medical College, Kanpur"
-ABVMU,"Hind Institute of Medical Sciences, Sitapur"
-ABVMU,Noida International Institute of Medical Sciences
-ABVMU,"Prasad Institute of Medical Sciences, Lucknow"
-ABVMU,"Rama Medical College Hospital & Research Centre, Kanpur"
-ABVMU,"Santosh Medical College, Ghaziabad"
-ABVMU,"Saraswati Medical College, Unnao"
-ABVMU,"Shri Gorakshnath Medical College Hospital & Arogya Dham, Gorakhpur"
-ABVMU,"Shri Siddhi Vinayak Medical College & Hospital, Sambhal"
-ABVMU,"United Institute of Medical Sciences, Allahabad (Prayagraj)"
-ABVMU,"Hind Institute of Medical Sciences, Barabanki"
-ABVMU,Fulan Singh Medical College (FS University)
-ABVMU,Sardar Patel Institute of Medical Education
-ABVMU,Radha Govind Institute of Medical Sciences
-ABVMU,Kalpanath Rai Institute of Medical Science
-ABVMU,Prasad Medical College Unnao
-ABVMU,RSS Medical College
-ABVMU,Other / not listed
-BHU,"Institute of Medical Sciences, BHU, Varanasi (Banaras Hindu University)"
-BHU,Other / not listed
-KGMU,"King George Medical University, Lucknow"
-KGMU,Other / not listed
-UPUMS,"UP University of Medical Sciences, Etawah"
-UPUMS,Other / not listed
-GEU,"Graphic Era Institute of Medical Sciences, Dehradun"
-GEU,Other / not listed
-HNBUMU,"Doon Medical College, Dehradun"
-HNBUMU,"Veer Chandra Singh Garhwali Govt. Medical Science & Research Institute, Srinagar, Pauri Garhwal"
-HNBUMU,"Government Medical College (formerly Uttarakhand Forest Hospital Trust Medical College), Haldwani"
-HNBUMU,"Government Medical College, Haridwar"
-HNBUMU,"Soban Singh Jeena Government Institute of Medical Science & Research, Almora"
-HNBUMU,"Gautam Buddha Chikitsa Mahavidyalaya, Dehradun"
-HNBUMU,"Shri Guru Ram Rai Institute of Medical & Health Sciences, Dehradun"
-HNBUMU,Other / not listed
-SRHU,"Himalayan Institute of Medical Sciences, Dehradun"
-SRHU,Other / not listed
-WBUHS,"Calcutta National Medical College, Kolkata"
-WBUHS,"Government Medical College, Kolkata"
-WBUHS,"Nilratan Sircar Medical College, Kolkata"
-WBUHS,"RG Kar Medical College, Kolkata"
-WBUHS,"Institute of Postgraduate Medical Education & Research, Kolkata"
-WBUHS,"Bankura Sammilani Medical College, Bankura"
-WBUHS,"Burdwan Medical College, Burdwan"
-WBUHS,Midnapore Medical College
-WBUHS,"North Bengal Medical College, Darjeeling"
-WBUHS,"College of Medicine and JNM Hospital, Kalyani, Nadia"
-WBUHS,Coochbehar Government Medical College & Hospital
-WBUHS,Diamond Harbour Government Medical College and Hospital
-WBUHS,"ESIC Medical College, Joka, Kolkata"
-WBUHS,Purulia Government Medical College & Hospital
-WBUHS,Raiganj Government Medical College & Hospital
-WBUHS,Rampurhat Government Medical College & Hospital
-WBUHS,"College of Medicine and Sagore Dutta Hospital, Kolkata"
-WBUHS,Malda Medical College & Hospital
-WBUHS,Murshidabad Medical College & Hospitals
-WBUHS,Barasat Government Medical College & Hospital
-WBUHS,Jalpaiguri Government Medical College
-WBUHS,Jhargram Government Medical College & Hospital
-WBUHS,Prafulla Chandra Sen Government Medical College & Hospital
-WBUHS,Sarat Chandra Chattopadhyay Government Medical College & Hospital
-WBUHS,Tamralipto Government Medical College & Hospital
-WBUHS,"IQ-City Medical College, Burdwan"
-WBUHS,"Jagannath Gupta Institute of Medical Sciences & Hospital, Kolkata"
-WBUHS,"Shri Ramkrishna Institute of Medical Sciences & Sanaka Hospitals, Durgapur"
-WBUHS,"KPC Medical College, Jadavpur, Kolkata"
-WBUHS,"Gouri Devi Institute of Medical Sciences and Hospital, Durgapur"
-WBUHS,"ICARE Institute of Medical Sciences & Research, Haldia"
-WBUHS,"JIS School of Medical Science & Research, Howrah"
-WBUHS,"JMN Medical College, Nadia"
-WBUHS,"Krishnanagar Institute of Medical Sciences, Nadia"
-WBUHS,"Santiniketan Medical College, Bolpur"
-WBUHS,"East West Institute of Medical Sciences and Research, Burdwan"
-WBUHS,Jagannath Gupta Institute of Medical Sciences and Hospital
-WBUHS,"Jakir Hossain Medical College, Burdwan"
-WBUHS,Raniganj Institute of Medical Science
-WBUHS,PKG Medical College & Hospital
-WBUHS,SKS Medical College
-WBUHS,Other / not listed
+university_code,name,short_form
+NTRUHS,"Andhra Medical College, Visakhapatnam",AMC
+NTRUHS,"Guntur Medical College, Guntur",GMC Guntur
+NTRUHS,"Kurnool Medical College, Kurnool",KMC Kurnool
+NTRUHS,"Rangaraya Medical College, Kakinada",RMC Kakinada
+NTRUHS,"S.V. Medical College, Tirupati",SVMC
+NTRUHS,"Government Medical College, Ananthapuram",GMC Ananthapuram
+NTRUHS,"Rajiv Gandhi Institute of Medical Sciences, Srikakulam",RIMS Srikakulam
+NTRUHS,ACSR Government Medical College,ACSRGMC
+NTRUHS,"Government Medical College, Kadapa (formerly RIMS Kadapa)",GMC Kadapa (RIMS)
+NTRUHS,"Government Siddhartha Medical College, Vijayawada",GSMC Vijayawada
+NTRUHS,"Government Medical College, Eluru",GMC Eluru
+NTRUHS,"Government Medical College, Machilipatnam",GMC Machilipatnam
+NTRUHS,"Government Medical College, Nandyal",GMC Nandyal
+NTRUHS,"Government Medical College, Ongole (formerly RIMS Ongole)",GMC Ongole (RIMS)
+NTRUHS,"Government Medical College, Rajamahendravaram",GMC Rajamahendravaram
+NTRUHS,"Government Medical College, Vizianagaram",GMC Vizianagaram
+NTRUHS,"Government Medical College, Paderu",GMC Paderu
+NTRUHS,"Government Medical College, Piduguralla",GMC Piduguralla
+NTRUHS,"Alluri Sitaram Raju Academy of Medical Sciences, Eluru",ASRAM
+NTRUHS,"GSL Medical College, Rajahmundry",GSLMC
+NTRUHS,"Narayana Medical College, Nellore",NMC Nellore
+NTRUHS,"NRI Institute of Medical Sciences, Visakhapatnam",NRIIMS
+NTRUHS,"Santhiram Medical College, Nandyal",SMC Nandyal
+NTRUHS,Viswabharathi Medical College,VMC
+NTRUHS,"Gayathri Vidya Parishad Institute of Health Care & Medical Technology, Visakhapatnam",GVPIHCMT
+NTRUHS,"Konaseema Institute of Medical Sciences & Research Foundation, Amalapuram",KIMS Amalapuram
+NTRUHS,"Maharajah Institute of Medical Sciences, Vizianagaram",MIMS Vizianagaram
+NTRUHS,"Nimra Institute of Medical Sciences, Krishna District",NIMS Nimra
+NTRUHS,"NRI Medical College, Guntur",NRIMC
+NTRUHS,Anna Gowri Medical College and Hospital,AGMCH
+NTRUHS,"Apollo Institute of Medical Sciences and Research, Chittoor",AIMSR Chittoor
+NTRUHS,"Dr. P.S.I. Medical College, Chinoutpalli",PSIMC
+NTRUHS,"Great Eastern Medical School and Hospital, Srikakulam",GEMSH
+NTRUHS,"Katuri Medical College, Guntur",KMC Guntur
+NTRUHS,"P.E.S. Institute of Medical Sciences and Research, Kuppam",PESIMSR
+NTRUHS,"Sri Balaji Medical College, Hospital and Research Institute, Chittoor",SBMCHRI Chittoor
+NTRUHS,"Fathima Institute of Medical Sciences, Kadapa",FIMS
+NTRUHS,RVS Institute of Medical Sciences,RVSIMS
+NTRUHS,Other / not listed,Other
+GITAM,"GITAM Institute of Medical Sciences and Research, Visakhapatnam",GIMSR
+GITAM,Other / not listed,Other
+SVIMS,"SVIMS - Sri Padmavathi Medical College for Women, Alipiri Road, Tirupati",SVIMS-SPMCW
+SVIMS,Other / not listed,Other
+RGU,"Tomo Riba Institute of Health & Medical Sciences (TRIHMS), Naharlagun",TRIHMS
+RGU,Other / not listed,Other
+SSUHS,"Assam Medical College, Dibrugarh",AMCH Dibrugarh
+SSUHS,"Gauhati Medical College, Guwahati",GMCH
+SSUHS,"Silchar Medical College, Silchar",SMCH Silchar
+SSUHS,"Fakhruddin Ali Ahmed Medical College (Barpeta Medical College), Barpeta",FAAMCH
+SSUHS,"Jorhat Medical College & Hospital, Jorhat",JMCH
+SSUHS,"Tezpur Medical College & Hospital, Tezpur",TMCH
+SSUHS,"Dhubri Medical College, Dhubri",DhMCH
+SSUHS,"Diphu Medical College & Hospital, Diphu",DiMCH
+SSUHS,Kokrajhar Medical College,KMC
+SSUHS,Lakhimpur Medical College,LMC
+SSUHS,Nagaon Medical College,NMC
+SSUHS,"Nalbari Medical College, Nalbari",NMC Nalbari
+SSUHS,"Pragjyotishpur Medical College, Guwahati",PMCH Guwahati
+SSUHS,Tinsukia Medical College,TMC Tinsukia
+SSUHS,"ESIC Medical College and Hospital, Beltola",ESIC MCH Beltola
+SSUHS,Bongaigaon Medical College,BMC Bongaigaon
+SSUHS,Other / not listed,Other
+BUHS,"Patna Medical College, Patna",PMCH
+BUHS,"Indira Gandhi Institute of Medical Sciences, Sheikhpura, Patna",IGIMS
+BUHS,"Nalanda Medical College, Patna",NMCH
+BUHS,"Anugrah Narayan Magadh Medical College, Gaya",ANMMCH
+BUHS,"Bhagwan Mahavir Institute of Medical Sciences, Pawapuri (Nalanda)",BMIMS
+BUHS,"Darbhanga Medical College, Lehriasarai",DMCH
+BUHS,"Government Medical College, Bettiah",GMC Bettiah
+BUHS,"Jawaharlal Nehru Medical College, Bhagalpur",JLNMCH
+BUHS,"Shri Krishna Medical College, Muzaffarpur",SKMCH
+BUHS,"Employees State Insurance Corporation Medical College, Patna (Bihta)",ESIC MC Patna
+BUHS,"Government Medical College, Purnea",GMC Purnea
+BUHS,"Jannayak Karpoori Thakur Medical College & Hospital, Madhepura",JKTMCH
+BUHS,"Government Medical College and Hospital, Chapra, Saran",GMC Chapra
+BUHS,"Shri Ram Janki Medical College and Hospital, Samastipur",SRJMCH
+BUHS,"Madhubani Medical College, Madhubani",MMC Madhubani
+BUHS,"Narayan Medical College & Hospital, Sasaram",NMCH Sasaram
+BUHS,"Katihar Medical College, Katihar",KMC Katihar
+BUHS,Radha Devi Jageshwari Memorial Medical College and Hospital,RDJMMCH
+BUHS,"Himalaya Medical College and Hospital, Patna",HMCH
+BUHS,"Lord Buddha Koshi Medical College and Hospital, Saharsa",LBKMCH
+BUHS,"Mata Gujri Memorial Medical College, Kishanganj",MGMMC Kishanganj
+BUHS,"Netaji Subhas Medical College & Hospital, Bihta, Patna",NSMCH Bihta
+BUHS,Shree Narayan Medical Institute and Hospital,SNMIH
+BUHS,Mahabodhi Medical College & Hospital,MMCH Mahabodhi
+BUHS,Shyamlal Chandrashekhar Medical College & SPNM Hospital,SCMC SPNM
+BUHS,Viraat Ramayan Institute of Medical Sciences,VRIMS
+BUHS,Buddha Hospital and Research Institute,BHRI
+BUHS,K.K. Medical College & Hospital,KKMCH
+BUHS,Kurma Sanskriti Medical College and Hospital,KSMCH
+BUHS,Mamta Medical College & Hospital,MMCH Mamta
+BUHS,Shrinivas G Educational & Research Institute of Medical Sciences,SGERIMS
+BUHS,Other / not listed,Other
+CGHSAU,"Pt. J.N.M. Medical College, Raipur",JNM MC Raipur
+CGHSAU,"Chandulal Chandrakar Memorial Medical College, Durg",CCMMC
+CGHSAU,"Chhattisgarh Institute of Medical Sciences, Bilaspur",CIMS Bilaspur
+CGHSAU,"Government Medical College (Bharat Ratna Atal Bihari Vajpayee Memorial), Rajnandgaon",ABVMGMC Rajnandgaon
+CGHSAU,"Government Medical College, Korba",GMC Korba
+CGHSAU,"Government Medical College, Mahasamund",GMC Mahasamund
+CGHSAU,"Late Shri Baliram Kashyap Memorial NDMC Govt. Medical College, Jagdalpur",LSBKM NDMC GMC
+CGHSAU,"Rajmata Devendra Kumari Singhdeo Government Medical College, Ambikapur (Surguja)",RDKSGMC
+CGHSAU,"Shrimati Indira Gandhi Memorial Govt. Medical College, Kanker (formerly GMC Kanker)",SIGMGMC
+CGHSAU,"Late Shri Lakhi Ram Agrawal Memorial Govt. Medical College, Raigarh",LSLRAM GMC
+CGHSAU,"Government Medical College, Dantewada",GMC Dantewada
+CGHSAU,"Government Medical College, Janjgir-Champa",GMC Janjgir-Champa
+CGHSAU,"Government Medical College, Jashpur-Kunkuri",GMC Jashpur-Kunkuri
+CGHSAU,"Government Medical College, Kabeerdham",GMC Kabeerdham
+CGHSAU,"Government Medical College, Manendragarh",GMC Manendragarh
+CGHSAU,Shri Balaji Institute of Medical Science,SBIMS
+CGHSAU,"Shri Shankaracharya Institute of Medical Sciences, Bhilai",SSIMS Bhilai
+CGHSAU,"Abhishek Mishra Memorial Medical College & RC, Bhiali, Durg",AMMCRC
+CGHSAU,"Raipur Institute of Medical Sciences (RIMS), Raipur",RIMS Raipur
+CGHSAU,"Shri Rawatpura Sarkar Institute of Medical Sciences and Research, Nava Raipur",SRIMSR
+CGHSAU,Maa Padmavati Institute of Medical Sciences,MPIMS
+CGHSAU,Other / not listed,Other
+GGSIPU,"Vardhman Mahavir Medical College & Safdarjung Hospital, Delhi",VMMC
+GGSIPU,"Dr. Baba Saheb Ambedkar Medical College, Rohini, Delhi",BSAMC
+GGSIPU,"Atal Bihari Vajpayee Institute of Medical Sciences (ABVIMS) & Dr. RML Hospital, New Delhi",ABVIMS
+GGSIPU,"Army College of Medical Sciences, New Delhi (Army wards only)",ACMS
+GGSIPU,"North Delhi Municipal Corporation Medical College, Delhi",NDMC MC
+GGSIPU,"ESIC Medical College & Hospital, Basaidarapur, New Delhi",ESIC MC New Delhi
+GGSIPU,Other / not listed,Other
+Jamia Hamdard,"Hamdard Institute of Medical Sciences & Research (HIMSR), New Delhi",HIMSR
+Jamia Hamdard,Other / not listed,Other
+DU,"Maulana Azad Medical College, New Delhi",MAMC
+DU,"Lady Hardinge Medical College, New Delhi (women-only)",LHMC
+DU,"University College of Medical Sciences & GTB Hospital, New Delhi",UCMS
+DU,Other / not listed,Other
+GU-goa,"Goa Medical College, Panaji (Bambolim)",GMC Goa
+GU-goa,Other / not listed,Other
+BU,"Pramukhswami Medical College, Karmsad",PSMC
+BU,Other / not listed,Other
+BKNMU,"Government Medical College, Porbandar",GMC Porbandar
+BKNMU,Other / not listed,Other
+DDU,"Dr. N.D. Desai Faculty of Medical Science and Research, Nadiad",NDDFMSR
+DDU,Other / not listed,Other
+GU-gujarat,"B.J. Medical College, Ahmedabad",BJMC
+GU-gujarat,"Smt. N.H.L. Municipal Medical College, Ahmedabad",NHLMMC
+GU-gujarat,"Dr. M.K. Shah Medical College & Research Centre, Ahmedabad",MKSMCRC
+GU-gujarat,"GMERS Medical College, Gandhinagar",GMERS Gandhinagar
+GU-gujarat,"GMERS Medical College, Sola, Ahmedabad",GMERS Ahmedabad
+GU-gujarat,"Narendra Modi Medical College, Ahmedabad",NMMC
+GU-gujarat,"GCS Medical College, Ahmedabad",GCSMC
+GU-gujarat,"Swaminarayan Institute of Medical Sciences & Research, Ahmedabad",SIMSR
+GU-gujarat,"Ananya College of Medicine & Research, Kalol",ACMR
+GU-gujarat,"SAL Institute of Medical Sciences, Ahmedabad",SALIMS
+GU-gujarat,"ESIC Medical College, Naroda-Bapunagar, Ahmedabad",ESIC MC Ahmedabad
+GU-gujarat,Other / not listed,Other
+HNGU,"GMERS Medical College, Dharpur, Patan",GMERS Patan
+HNGU,"GMERS Medical College, Hadiyol, Himmatnagar",GMERS Himmatnagar
+HNGU,"GMERS Medical College, Vadnagar, Mehsana",GMERS Mehsana
+HNGU,"Banas Medical College and Research Institute, Palanpur",BMCRI Palanpur
+HNGU,"Bhagyoday Medical College, Kadi, Mehsana",BMC Mehsana
+HNGU,Other / not listed,Other
+KSKVKU,"Gujarat Adani Institute of Medical Sciences, Bhuj",GAIMS
+KSKVKU,Other / not listed,Other
+MKBU,"Government Medical College, Bhavnagar",GMC Bhavnagar
+MKBU,Other / not listed,Other
+MSU Baroda,"Medical College, Baroda (Govt.)",MC Baroda
+MSU Baroda,"GMERS Medical College, Gotri, Vadodara",GMERS Vadodara
+MSU Baroda,Other / not listed,Other
+PU,"Parul Institute of Medical Sciences & Research, Vadodara",PIMSR Parul
+PU,Other / not listed,Other
+SPU,"Nootan Medical College and Research Centre, Mehsana",NMCRC Mehsana
+SPU,Other / not listed,Other
+SU-gujarat,"M.P. Shah Medical College, Jamnagar",MPSMC
+SU-gujarat,"Pandit Deendayal Upadhyay Medical College, Rajkot",PDUMC
+SU-gujarat,"GMERS Medical College, Junagadh",GMERS Junagadh
+SU-gujarat,"Shantabaa Medical College, Amreli",SMC Amreli
+SU-gujarat,"Matushri Prabhaben Khodabhai Boghara Medical College, Atkot/Rajkot",MPKBMC
+SU-gujarat,"Government Medical College, Morbi",GMC Morbi
+SU-gujarat,"CU Shah Medical College, Surendra Nagar",CU Shah MC
+SU-gujarat,Other / not listed,Other
+SGGU,"Zydus Medical College & Hospital, Dahod",ZMCH
+SGGU,"Government Medical College, Panchmahal, Godhra",GMC Panchmahal
+SGGU,Other / not listed,Other
+SVDU,"SBKS Medical Institute & Research Centre, Vadodara",SBKSMIRC
+SVDU,Other / not listed,Other
+VNSGU,"Government Medical College, Surat",GMC Surat
+VNSGU,"Surat Municipal Institute of Medical Education & Research (SMIMER), Surat",SMIMER
+VNSGU,"GMERS Medical College, Valsad",GMERS Valsad
+VNSGU,Dr. Kiran C. Patel Medical College and Research Institute,KCPMCRI
+VNSGU,"Kiran Medical College, Surat",KMC Surat
+VNSGU,"GMERS Medical College, Navsari",GMERS Navsari
+VNSGU,"GMERS Medical College, Rajpipla",GMERS Rajpipla
+VNSGU,Other / not listed,Other
+AVV-haryana,Amrita School of Medicine,ASOM Faridabad
+AVV-haryana,Other / not listed,Other
+MMDU,"Maharishi Markandeshwar Institute of Medical Sciences & Research, Mullana, Ambala",MMIMSR
+MMDU,Other / not listed,Other
+MMU,"Maharishi Markandeshwar College of Medical Sciences & Research, Sadopur",MMCMSR
+MMU,Other / not listed,Other
+UHS Rohtak,"Pt. B.D. Sharma Postgraduate Institute of Medical Sciences, Rohtak",PGIMS Rohtak
+UHS Rohtak,"Employees State Insurance Corporation Medical College, Faridabad",ESIC MC Faridabad
+UHS Rohtak,"BPS Government Medical College for Women, Sonepat",BPSGMCW
+UHS Rohtak,"Kalpana Chawla Govt. Medical College, Karnal",KCGMC
+UHS Rohtak,"Shaheed Hasan Khan Mewati Government Medical College, Nalhar",SHKM GMC
+UHS Rohtak,"Maharishi Chyawan Medical College, Koriawas",MCMC
+UHS Rohtak,"Pt. Neki Ram Sharma Government Medical College, Bhiwani",NRSGMC
+UHS Rohtak,"Shri Atal Bihari Vajpayee Government Medical College, Faridabad",ABVGMC Faridabad
+UHS Rohtak,"Adesh Medical College and Hospital, Shahabad, Kurukshetra",AMCH Kurukshetra
+UHS Rohtak,"World College of Medical Sciences & Research, Jhajjar",WCMSR
+UHS Rohtak,"Al Falah School of Medical Sciences & Research Centre, Faridabad",AFSMSRC
+UHS Rohtak,"N.C. Medical College & Hospital, Panipat",NCMCH
+UHS Rohtak,"Maharaja Agrasen Medical College, Agroha",MAMC Agroha
+UHS Rohtak,Sanskaram School of Medical Sciences,SSMS
+UHS Rohtak,Other / not listed,Other
+SGTU,"Faculty of Medicine and Health Sciences, Gurgaon (formerly SGGST Medical College)",SGT FMHS
+SGTU,Other / not listed,Other
+AMRU,"Dr. Radhakrishnan Government Medical College, Hamirpur",DRPGMC Hamirpur
+AMRU,"Dr. Rajendra Prasad Government Medical College, Tanda",RPGMC Tanda
+AMRU,"Dr. Yashwant Singh Parmar Government Medical College, Nahan (Sirmour)",YSPGMC Nahan
+AMRU,"Indira Gandhi Medical College, Shimla",IGMC Shimla
+AMRU,"Pt. Jawahar Lal Nehru Government Medical College, Chamba",PJNGMC Chamba
+AMRU,"Shri Lal Bahadur Shastri Government Medical College, Mandi (Ner Chowk)",SLBSGMC
+AMRU,"Maharishi Markandeshwar Medical College & Hospital, Solan",MMMCH Solan
+AMRU,Other / not listed,Other
+BBMKU,"Hazaribagh Medical College, Hazaribagh",HMC Hazaribagh
+BBMKU,"Shaheed Nirmal Mahto Medical College & Hospital, Dhanbad",SNMMCH
+BBMKU,Other / not listed,Other
+KU,"M.G.M. Medical College, Jamshedpur",MGMMC Jamshedpur
+KU,"Netaji Subhas Medical College and Hospital, Adityapur/Saraikela",NSMCH Adityapur
+KU,Other / not listed,Other
+MAHE-jharkhand,"Manipal Tata Medical College, Baridih, Jamshedpur",MTMC
+MAHE-jharkhand,Other / not listed,Other
+NPU,"Palamu Medical College, Palamu",PMC Palamu
+NPU,Other / not listed,Other
+NC,Birsa Institute of Medical Sciences and Research,BIMSR
+NC,Other / not listed,Other
+RCU,"Laxmi Chandravansi Medical College & Hospital, Bishrampur, Palamu",LCMCH
+RCU,Other / not listed,Other
+RU,"Rajendra Institute of Medical Sciences, Ranchi",RIMS Ranchi
+RU,Other / not listed,Other
+SKMU,"Dumka Medical College, Dighi Dumka",DMC Dumka
+SKMU,Sido Kanhu Medical College and Hospital,SKMCH Dumka
+SKMU,Other / not listed,Other
+ACU,"Adichunchanagiri Institute of Medical Sciences, Bellur (B.G. Nagar)",AIMS Bellur
+ACU,Other / not listed,Other
+BLDE,"Shri B.M. Patil Medical College, Hospital & Research Centre, Vijayapura",BMPMC
+BLDE,Other / not listed,Other
+JSSAHER,"JSS Medical College, Mysore",JSSMC
+JSSAHER,Other / not listed,Other
+KAHER,"Jawaharlal Nehru Medical College, Belgaum",JNMC Belagavi
+KAHER,Other / not listed,Other
+KBNU,"Khaja Bandanawaz University, Faculty of Medical Sciences, Gulbarga",KBN FMS
+KBNU,Other / not listed,Other
+MAHE-karnataka,"Kasturba Medical College, Manipal",KMC Manipal
+MAHE-karnataka,"Kasturba Medical College, Mangalore",KMC Mangalore
+MAHE-karnataka,Other / not listed,Other
+Nitte,"K.S. Hegde Medical Academy, Mangalore",KSHEMA
+Nitte,Other / not listed,Other
+RGUHS,"Bangalore Medical College and Research Institute, Bangalore",BMCRI
+RGUHS,"Mysore Medical College and Research Institute, Mysore",MMCRI
+RGUHS,"Vijaynagar Institute of Medical Sciences, Bellary",VIMS Bellary
+RGUHS,"Belagavi Institute of Medical Sciences, Belagavi",BIMS Belagavi
+RGUHS,"Bidar Institute of Medical Sciences, Bidar",BRIMS
+RGUHS,"Gulbarga Institute of Medical Sciences, Gulbarga",GIMS Gulbarga
+RGUHS,"Hassan Institute of Medical Sciences, Hassan",HIMS Hassan
+RGUHS,"Karnataka Medical College and Research Institute, Hubballi",KMCRI
+RGUHS,"Raichur Institute of Medical Sciences, Raichur",RIMS Raichur
+RGUHS,"Shri Atal Bihari Vajpayee Medical College and Research Institute, Bengaluru",ABVMC Bengaluru
+RGUHS,Chamrajanagar Institute of Medical Sciences,CIMS Chamarajanagar
+RGUHS,Chikkamagaluru Institute of Medical Sciences,CIMS Chikkamagaluru
+RGUHS,Chitradurga Medical College and Research Institute,CMCRI
+RGUHS,"Employees State Insurance Corporation Medical College, Bangalore",ESIC MC Bangalore
+RGUHS,"Employees State Insurance Corporation Medical College, Gulbarga",ESIC MC Gulbarga
+RGUHS,"Haveri Institute of Medical Sciences, Haveri",HIMS Haveri
+RGUHS,"K.H. Patil Institute of Medical Sciences, Gadag",KHPIMS
+RGUHS,"Karwar Institute of Medical Sciences, Karwar",KRIMS
+RGUHS,"Kodagu Institute of Medical Sciences, Kodagu",KIMS Kodagu
+RGUHS,"Koppal Institute of Medical Sciences, Koppal",KIMS Koppal
+RGUHS,"Mandya Institute of Medical Sciences, Mandya",MIMS Mandya
+RGUHS,"Nandi Medical College and Research Institute, Chikkaballapura",NMCRI
+RGUHS,"Shimoga Institute of Medical Sciences, Shimoga",SIMS Shimoga
+RGUHS,"Yadgiri Institute of Medical Sciences, Yadgiri",YIMS
+RGUHS,"A.J. Institute of Medical Sciences & Research Centre, Mangalore",AJIMS
+RGUHS,"Akash Institute of Medical Sciences & Research Centre, Devanhalli, Bangalore",AIMSRC
+RGUHS,"BGS Medical College and Hospital, Bengaluru",BGS MCH
+RGUHS,"Kempegowda Institute of Medical Sciences, Bangalore",KIMS Bangalore
+RGUHS,"MVJ Medical College and Research Hospital, Bangalore",MVJMC
+RGUHS,"Raja Rajeswari Medical College & Hospital, Bangalore",RRMCH
+RGUHS,"S. Nijalingappa Medical College & HSK Hospital & Research Centre, Bagalkot",SNMC Bagalkot
+RGUHS,"Sapthagiri Institute of Medical Sciences & Research Centre, Bangalore",SIMS Sapthagiri
+RGUHS,"Shridevi Institute of Medical Sciences & Research Hospital, Tumkur",SIMSRH
+RGUHS,"Subbaiah Institute of Medical Sciences, Shimoga",SSIMS Shimoga
+RGUHS,"Srinivas Institute of Medical Sciences & Research Centre, Mangalore",SIMSRC
+RGUHS,"Vydehi Institute of Medical Sciences & Research Centre, Bangalore",VIMSRC
+RGUHS,"JJM Medical College, Davangere",JJMMC
+RGUHS,Jagadguru Gangadhar Mahaswamigalu Moorusavirmath Medical College (JGMMMC),JGMMMC
+RGUHS,"Kanachur Institute of Medical Sciences, Mangalore",KIMS Kanachur
+RGUHS,"Mahadevappa Rampure Medical College, Kalaburagi",MRMC
+RGUHS,"Navodaya Medical College, Raichur",NMC Raichur
+RGUHS,"S.S. Institute of Medical Sciences & Research Centre, Davangere",SSIMSRC
+RGUHS,"Siddaganga Medical College and Research Institute, Tumakuru",SMCRI
+RGUHS,"The Oxford Medical College, Hospital & Research Centre, Bangalore",OMCHRC
+RGUHS,"Dr. Chandramma Dayananda Sagar Institute of Medical Education & Research, Harohalli",CDSIMER
+RGUHS,"East Point College of Medical Sciences & Research Centre, Bangalore",EPCMSRC
+RGUHS,"Al-Ameen Medical College, Bijapur",AAMC
+RGUHS,"Basaveswara Medical College and Hospital, Chitradurga",BMCH Chitradurga
+RGUHS,"BGS Global Institute of Medical Sciences, Bangalore",BGS GIMS
+RGUHS,"Dr. B.R. Ambedkar Medical College, Bangalore",BRAMC
+RGUHS,"Father Muller's Medical College, Mangalore",FMMC
+RGUHS,G.R. Medical College Hospital & Research Centre,GRMCHRC
+RGUHS,"K.V.G. Medical College, Sullia",KVGMC
+RGUHS,"M.S. Ramaiah Medical College, Bangalore",MSRMC
+RGUHS,"PES University Institute of Medical Sciences and Research, Bangalore",PESUIMSR
+RGUHS,Sri Chamundeshwari Medical College Hospital & Research Institute,SCMCHRI
+RGUHS,Farookh Academy of Medical Education Hospital and Research Institute,FAMEHRI
+RGUHS,"SR Patil Medical College and Hospital, Bagalkot",SRPMC
+RGUHS,"Sri Madhusudan Sai Institute of Medical Sciences & Research, Chikballapur",SMSIMSR
+RGUHS,Alva's Institute of Medical Sciences and Research Centre,AIMSRC Alva
+RGUHS,Chettinad Institute of Medical Education and Research,CIMER
+RGUHS,Other / not listed,Other
+SDUAHER,"Sri Devaraj URS Medical College, Kolar",SDUMC
+SDUAHER,Other / not listed,Other
+SSAHE,"Sri Siddhartha Medical College, Tumkur",SSMC Tumkur
+SSAHE,"Sri Siddhartha Institute of Medical Sciences & Research Centre, Bangalore",SSIMSRC Bangalore
+SSAHE,Other / not listed,Other
+Yenepoya,"Yenepoya Medical College, Mangalore",YMC
+Yenepoya,Other / not listed,Other
+AVV-kerala,"Amrita School of Medicine, Elamkara, Kochi",ASOM Kochi
+AVV-kerala,Other / not listed,Other
+KUHS,"Medical College, Thiruvananthapuram",GMC Thiruvananthapuram
+KUHS,"Government Medical College, Kozhikode (Calicut)",GMC Kozhikode
+KUHS,"Government Medical College, Kottayam",GMC Kottayam
+KUHS,"T.D. Medical College, Alleppey (Alappuzha)",TDMC
+KUHS,"Government Medical College, Thrissur",GMC Thrissur
+KUHS,"Government Medical College, Ernakulam",GMC Ernakulam
+KUHS,"Government Medical College, Manjeri, Malappuram",GMC Manjeri
+KUHS,"Government Medical College, Parippally, Kollam",GMC Parippally
+KUHS,"Government Medical College (Institute of Integrated Medical Sciences), Yakkara, Palakkad",GMC Palakkad
+KUHS,"Government Medical College, Idukki",GMC Idukki
+KUHS,"Government Medical College, Konni",GMC Konni
+KUHS,"Govt. Medical College, Pariyaram, Kannur",GMC Kannur (Pariyaram)
+KUHS,"Government Medical College, Kasaragod",GMC Kasaragod
+KUHS,"Government Medical College, Wayanad",GMC Wayanad
+KUHS,"Al-Azhar Medical College and Super Speciality Hospital, Thodupuzha",AAMC Thodupuzha
+KUHS,"KMCT Medical College, Kozhikode (Calicut)",KMCT MC
+KUHS,"Malabar Medical College, Kozhikode (Calicut)",MMC Kozhikode
+KUHS,"P.K. Das Institute of Medical Sciences, Palakkad",PKDIMS
+KUHS,"Sree Uthradom Thirunal Academy of Medical Sciences, Trivandrum",SUTAMS
+KUHS,"Travancore Medical College, Kollam",TMC Kollam
+KUHS,"Dr. Moopen Medical College, Wayanad",MMC Wayanad
+KUHS,"Dr. Somervel Memorial CSI Hospital & Medical College, Karakonam",SMCSIH
+KUHS,"Jubilee Mission Medical College & Research Institute, Thrissur",JMMC
+KUHS,"Karuna Medical College, Palakkad",KMC Palakkad
+KUHS,"Kerala Medical College, Mangode",KMC Mangode
+KUHS,"M.E.S. Medical College, Perintalmanna, Malappuram",MES MC
+KUHS,"Mount Zion Medical College, Chayalode, Ezhamkulam, Adoor",MZMC
+KUHS,"Palakkad Institute of Medical Sciences, Palakkad",PIMS Palakkad
+KUHS,"Sree Gokulam Medical College Trust & Research Foundation, Trivandrum",SGMC
+KUHS,"Sree Narayana Institute of Medical Sciences, Chalakka, Ernakulam",SNIMS
+KUHS,"Amala Institute of Medical Sciences, Thrissur",AIMS Thrissur
+KUHS,"Azeezia Institute of Medical Science, Meeyannoor, Kollam",AIMS Kollam
+KUHS,"Believers Church Medical College Hospital, Thiruvalla",BCMCH
+KUHS,"Malankara Orthodox Syrian Church Medical College, Kolenchery",MOSCMC
+KUHS,"Pushpagiri Institute of Medical Sciences and Research Centre, Tiruvalla",PIMSRC
+KUHS,Other / not listed,Other
+MPMSU,"Gandhi Medical College, Bhopal",GMC Bhopal
+MPMSU,"MGM Medical College, Indore",MGMMC Indore
+MPMSU,"Netaji Subhash Chandra Bose Medical College, Jabalpur",NSCBMC
+MPMSU,"Gajra Raja Medical College, Gwalior",GRMC
+MPMSU,"Dr. Laxminarayan Pandey Government Medical College, Ratlam",LNPGMC
+MPMSU,"Government Medical College, Vidisha (Atal Bihari Vajpayee GMC)",GMC Vidisha
+MPMSU,"Bundelkhand Medical College, Sagar",BMC Sagar
+MPMSU,"Government Medical College, Chhindwara",GMC Chhindwara
+MPMSU,"Government Medical College, Satna",GMC Satna
+MPMSU,"Shyam Shah Medical College, Rewa",SSMC Rewa
+MPMSU,"Government Medical College, Datia",GMC Datia
+MPMSU,"Government Medical College, Khandwa",GMC Khandwa
+MPMSU,"Government Medical College, Sheopur",GMC Sheopur
+MPMSU,"Government Medical College, Singrauli",GMC Singrauli
+MPMSU,"Government Medical College, Seoni",GMC Seoni
+MPMSU,"Government Medical College, Shahdol",GMC Shahdol
+MPMSU,"Government Medical College, Shivpuri",GMC Shivpuri
+MPMSU,Sundarlal Patwa Government Medical College,SPGMC
+MPMSU,Virendra Kumar Sakhlecha Government Medical College,VKSGMC
+MPMSU,"ESIC Medical College and Hospital, Indore",ESIC MC Indore
+MPMSU,"Amaltas Institute of Medical Sciences, Dewas",AIMS Dewas
+MPMSU,"Chirayu Medical College and Hospital, Bhopal",CMCH
+MPMSU,"Index Medical College Hospital & Research Centre, Indore",IMCHRC
+MPMSU,"L.N. Medical College and Research Centre, Bhopal",LNMC Bhopal
+MPMSU,"Peoples College of Medical Sciences & Research Centre, Bhopal",PCMSRC
+MPMSU,"Sri Aurobindo Medical College and Post Graduate Institute, Indore",SAMCPGI
+MPMSU,"Sukh Sagar Medical College & Hospital, Jabalpur",SSMCH
+MPMSU,"LNCT Medical College & Sewakunj Hospital, Indore",LNCTMC Indore
+MPMSU,"Mahaveer Institute of Medical Sciences & Research, Bhopal",MIMSR Bhopal
+MPMSU,Mansarovar Medical College and MGU Hospital,MMC MGU
+MPMSU,"Ram Krishna College Hospital & Research Centre, Bhopal",RKCHRC
+MPMSU,"RKDF Medical College Hospital & Research Centre, Bhopal",RKDFMCH
+MPMSU,"Ruxmaniben Deepchand Gardi Medical College, Ujjain",RDGMC
+MPMSU,"School of Medical Sciences, Sri Satya Sai University of Technology and Medical Sciences, Sehore",SMS SSSUTMS
+MPMSU,Other / not listed,Other
+BVDU,"Bharati Vidyapeeth University Medical College, Pune",BVUMC Pune
+BVDU,"Bharati Vidyapeeth Deemed University Medical College & Hospital, Sangli",BVDUMC Sangli
+BVDU,Other / not listed,Other
+DMIMS,"Jawaharlal Nehru Medical College, Sawangi (Meghe), Wardha",JNMC Wardha
+DMIMS,"Datta Meghe Medical College, Nagpur",DMMC
+DMIMS,Other / not listed,Other
+DPU,"Padmashree Dr. D.Y. Patil Medical College, Navi Mumbai",DYPMC Navi Mumbai
+DPU,"Dr. D.Y. Patil Medical College, Hospital and Research Centre, Pimpri, Pune",DYPMC Pimpri
+DPU,"Dr. D.Y. Patil Medical College, Kolhapur",DYPMC Kolhapur
+DPU,"DY Patil University, School of Medicine, Navi Mumbai",DYPU SoM
+DPU,Other / not listed,Other
+KVV,"Krishna Institute of Medical Sciences, Karad",KIMSDU
+KVV,Other / not listed,Other
+MGMIHS,"Mahatma Gandhi Mission's Medical College, Aurangabad (Chhatrapati Sambhajinagar)",MGM MC Aurangabad
+MGMIHS,"Mahatma Gandhi Mission's Medical College, Kamothe, Navi Mumbai",MGM MC Kamothe
+MGMIHS,"Mahatma Gandhi Mission Medical College, Vashi",MGM MC Vashi
+MGMIHS,"Mahatma Gandhi Mission's Medical College, Panvel",MGM MC Panvel
+MGMIHS,"Mahatma Gandhi Mission's Medical College, Nerul, Navi Mumbai",MGM MC Nerul
+MGMIHS,Other / not listed,Other
+MUHS,"Government Medical College, Nagpur",GMC Nagpur
+MUHS,"Grant Medical College, Mumbai",GGMC Mumbai
+MUHS,"Seth GS Medical College, Mumbai",GSMC
+MUHS,"B.J. Government Medical College, Pune",BJGMC
+MUHS,"Government Medical College, Akola",GMC Akola
+MUHS,"Government Medical College, Aurangabad",GMC Aurangabad
+MUHS,"Government Medical College, Miraj",GMC Miraj
+MUHS,"H.B.T. Medical College & Dr. R.N. Cooper Municipal Hospital, Mumbai",HBTMC
+MUHS,"Indira Gandhi Medical College & Hospital, Nagpur",IGGMCH
+MUHS,"Lokmanya Tilak Municipal Medical College, Sion, Mumbai",LTMMC
+MUHS,"Shri Vasant Rao Naik Government Medical College, Yavatmal",VNGMC
+MUHS,"Dr. Vaishampayan Memorial Medical College, Solapur",VMMC Solapur
+MUHS,"Armed Forces Medical College, Pune",AFMC
+MUHS,"Dr. Shankarrao Chavan Government Medical College, Nanded",SCGMC
+MUHS,"Government Medical College, Chandrapur",GMC Chandrapur
+MUHS,"Government Medical College, Gondia",GMC Gondia
+MUHS,"Government Medical College, Jalgaon",GMC Jalgaon
+MUHS,"Government Medical College, Latur",GMC Latur
+MUHS,"Rajashree Chatrapati Shahu Maharaj Government Medical College, Kolhapur",RCSMGMC
+MUHS,"Sri Bhausaheb Hire Government Medical College, Dhule",SBHGMC
+MUHS,"SRTR Medical College, Ambajogai",SRTRMC
+MUHS,"Topiwala National Medical College, Mumbai",TNMC
+MUHS,"Government Medical College & Hospital, Baramati",GMC Baramati
+MUHS,"Government Medical College, Alibag",GMC Alibag
+MUHS,"Government Medical College, Ambernath",GMC Ambernath
+MUHS,"Government Medical College, Amravati",GMC Amravati
+MUHS,"Government Medical College, Bhandara",GMC Bhandara
+MUHS,"Government Medical College, Buldhana",GMC Buldhana
+MUHS,"Government Medical College, Gadchiroli",GMC Gadchiroli
+MUHS,"Government Medical College, Hingoli",GMC Hingoli
+MUHS,"Government Medical College, Jalna",GMC Jalna
+MUHS,"Government Medical College, Nandurbar",GMC Nandurbar
+MUHS,"Government Medical College, Osmanabad",GMC Osmanabad
+MUHS,"Government Medical College, Parbhani",GMC Parbhani
+MUHS,"Government Medical College, Satara",GMC Satara
+MUHS,"Government Medical College, Sindhudurg",GMC Sindhudurg
+MUHS,"Government Medical College, Washim",GMC Washim
+MUHS,"Government Medical College and District Hospital, Ratnagiri",GMC Ratnagiri
+MUHS,"Rajiv Gandhi Medical College and Chhatrapati Shivaji Maharaj Hospital, Thane",RGMC Thane
+MUHS,"ESIC Medical College and Hospital, Andheri",ESIC MC Andheri
+MUHS,"Government Medical College, L.T. Marg, Mumbai",GMC Mumbai
+MUHS,"Government Medical College, Nashik",GMC Nashik
+MUHS,"N.K.P. Salve Institute of Medical Sciences & Research Centre and Lata Mangeshkar Hospital, Nagpur",NKPSIMS
+MUHS,"Dr. Ulhas Patil Medical College & Hospital, Jalgaon",DUPMCH
+MUHS,"Dr. Vithalrao Vikhe Patil Foundation's Medical College & Hospital, Ahmednagar",DVVPFMC
+MUHS,"Ashwini Rural Medical College, Hospital & Research Centre, Solapur",ARMCHRC
+MUHS,"B.K.L. Walawalkar Rural Medical College, Ratnagiri",BKLWRMC
+MUHS,"Dr. Panjabrao Deshmukh Memorial Medical College, Amravati",PDMMC
+MUHS,"Dr. Rajendra Gode Medical College, Amravati",RGMC Amravati
+MUHS,"Dr. Vasantrao Pawar Medical College, Hospital & Research Centre, Nashik",VPMCHRC
+MUHS,"Indian Institute of Medical Science & Research, Jalna",IIMSR Jalna
+MUHS,"Maharashtra Institute of Medical Education & Research, Talegaon, Pune",MIMER
+MUHS,"Maharashtra Institute of Medical Sciences & Research, Latur",MIMSR
+MUHS,Parbhani Medical College,PMC
+MUHS,"Prakash Institute of Medical Sciences & Research, Sangli",PIMSR Sangli
+MUHS,"R.K. Damani Medical College (Shri Ramchandra Institute of Medical Sciences), Chhatrapati Sambhajinagar",RKDMC
+MUHS,"SMBT Institute of Medical Sciences & Research Centre, Nashik",SMBTIMSRC
+MUHS,"Smt. Kashibai Navale Medical College and General Hospital, Pune",SKNMCGH
+MUHS,"Terna Medical College, Navi Mumbai",TMC Navi Mumbai
+MUHS,"Vedantaa Institute of Medical Sciences, Palghar",VIMS Palghar
+MUHS,"SSPM Medical College & Lifetime Hospital, Sindhudurg",SSPMMC
+MUHS,"ACPM Medical College, Dhule",ACPMMC
+MUHS,"Bharatratna Atal Bihari Vajpayee Medical College, Pune",BABVMC
+MUHS,Dr. N.Y. Tasgaonkar Institute of Medical Science,NYTIMS
+MUHS,"K.J. Somaiya Medical College & Research Centre, Mumbai",KJSMCRC
+MUHS,Smt. Sakhubai Narayanrao Katkade Medical College and Research Center,SNKMCRC
+MUHS,Malati Multispeciality Hospital and Medical College,MMHMC
+MUHS,B.S.P. Medical College and Hospital,BSPMCH
+MUHS,Mauli Medical College Hospital & Research Center,MMCHRC
+MUHS,Ideal Institute of Medical Science,IIMS
+MUHS,Other / not listed,Other
+MGIMS,"Mahatma Gandhi Institute of Medical Sciences, Sevagram, Wardha",MGIMS
+MGIMS,Other / not listed,Other
+PIMS-DU,"Rural Medical College, Loni",RMC Loni
+PIMS-DU,Other / not listed,Other
+SIU,"Symbiosis Medical College for Women, Pune",SMCW
+SIU,Other / not listed,Other
+MU,"Jawaharlal Nehru Institute of Medical Sciences (JNIMS), Porompat, Imphal",JNIMS
+MU,"Regional Institute of Medical Sciences (RIMS), Imphal",RIMS Imphal
+MU,"Government Medical College, Churachandpur",GMC Churachandpur
+MU,Shija Academy of Health Sciences,SAHS
+MU,Other / not listed,Other
+NEHU,Shillong Medical College,SMC Shillong
+NEHU,"North Eastern Indira Gandhi Regional Institute of Health and Medical Sciences (NEIGRIHMS), Shillong",NEIGRIHMS
+NEHU,Other / not listed,Other
+USTM,"PA Sangma International Medical College and Hospital (PIMC), Ri-Bhoi",PIMC
+USTM,Other / not listed,Other
+MZU,"Zoram Medical College and Hospital (ZMC&H), Falkawn, Aizawl",ZMCH Aizawl
+MZU,Other / not listed,Other
+NU,"Nagaland Institute of Medical Sciences and Research (NIMSR), Kohima",NIMSR
+NU,Other / not listed,Other
+KIIT,"Kalinga Institute of Medical Sciences, Bhubaneswar",KIMS Bhubaneswar
+KIIT,Other / not listed,Other
+OUHS,"MKCG Medical College, Berhampur",MKCGMCH
+OUHS,"SCB Medical College, Cuttack",SCBMCH
+OUHS,"Veer Surendra Sai Institute of Medical Sciences and Research, Burla",VIMSAR
+OUHS,"Pt. Raghunath Murmu Medical College and Hospital, Baripada",PRMMCH
+OUHS,"Saheed Laxman Nayak Medical College & Hospital, Koraput",SLNMCH
+OUHS,Dharanidhar Medical College and Hospital (formerly GMC Keonjhar),DMCH Keonjhar
+OUHS,"Government Medical College & Hospital / Bhima Bhoi Medical College & Hospital, Balangir",BBMCH
+OUHS,"Government Medical College & Hospital / Fakir Mohan Medical College & Hospital, Balasore",FMMCH
+OUHS,"Government Medical College, Phulbani, Kandhamal",GMC Phulbani
+OUHS,"Government Medical College, Sundargarh",GMC Sundargarh
+OUHS,"Pabitra Mohan Pradhan Medical College, Talcher",PMPMC
+OUHS,"Saheed Rendo Majhi Medical College and Hospital, Bhawanipatna, Kalahandi",SRMMCH
+OUHS,"Sri Jagannath Medical College & Hospital, Puri",SJMCH
+OUHS,Mahraja Jajati Keshari Medical College (formerly GMC Jajpur),MJKMC
+OUHS,"Hi-Tech Medical College & Hospital, Bhubaneswar",HMCH Bhubaneswar
+OUHS,"DRIEMS Institute of Health Sciences and Hospital, Kairapari",DRIEMS IHSH
+OUHS,"Hi-Tech Medical College & Hospital, Rourkela",HMCH Rourkela
+OUHS,Other / not listed,Other
+SOA,"Institute of Medical Sciences & SUM Hospital, Bhubaneswar",IMS SUM
+SOA,Other / not listed,Other
+AU,"Adesh Institute of Medical Sciences & Research, Bathinda",AIMSR Bathinda
+AU,Other / not listed,Other
+BFUHS,"Government Medical College, Amritsar",GMC Amritsar
+BFUHS,"Government Medical College, Patiala",GMC Patiala
+BFUHS,"Guru Gobind Singh Medical College, Faridkot",GGSMCH
+BFUHS,"Dr. B.R. Ambedkar State Institute of Medical Sciences, SAS Nagar, Mohali",AIMS Mohali
+BFUHS,"ESIC Medical College, Ludhiana",ESIC MC Ludhiana
+BFUHS,"Dayanand Medical College & Hospital, Ludhiana",DMCH Ludhiana
+BFUHS,"Gian Sagar Medical College & Hospital, Patiala",GSMCH
+BFUHS,"Punjab Institute of Medical Sciences, Jalandhar",PIMS Jalandhar
+BFUHS,"Christian Medical College, Ludhiana",CMC Ludhiana
+BFUHS,"RIMT Medical College and Hospital, Fatehgarh Sahib (Mandi Gobindgarh)",RIMT MCH
+BFUHS,Other / not listed,Other
+SGRDUHS,"Sri Guru Ram Das Institute of Medical Sciences and Research, Sri Amritsar",SGRDIMSR
+SGRDUHS,Other / not listed,Other
+GUU,"Geetanjali Medical College & Hospital, Udaipur",GMCH Udaipur
+GUU,Geetanjali Institute of Medical Sciences,GIMS Udaipur
+GUU,Other / not listed,Other
+JNU,"Jaipur National University Institute for Medical Sciences and Research Centre, Jagatpura, Jaipur",JNUIMSRC
+JNU,Other / not listed,Other
+MGUMST,"Mahatma Gandhi Medical College and Hospital, Sitapura, Jaipur",MGMCH Jaipur
+MGUMST,Other / not listed,Other
+NIMSU,"National Institute of Medical Science & Research, Jaipur",NIMSR Jaipur
+NIMSU,Other / not listed,Other
+PMU,"Pacific Institute of Medical Sciences, Umarda, Udaipur",PIMS Udaipur
+PMU,"Pacific Medical College & Hospital, Bhilo Ka Bedla, Udaipur",PMCH Udaipur
+PMU,Other / not listed,Other
+RUHS,"Dr. S.N. Medical College, Jodhpur",SNMC Jodhpur
+RUHS,"Government Medical College, Kota",GMC Kota
+RUHS,"Jawaharlal Nehru Medical College, Ajmer",JLNMC Ajmer
+RUHS,"R.N.T. Medical College, Udaipur",RNTMC
+RUHS,"Sardar Patel Medical College, Bikaner",SPMC Bikaner
+RUHS,"SMS Medical College, Jaipur",SMS MC
+RUHS,"Jhalawar Medical College, Jhalawar",JMC
+RUHS,"Government Medical College, Bharatpur",GMC Bharatpur
+RUHS,"Government Medical College, Bhilwara",GMC Bhilwara
+RUHS,"Government Medical College, Churu",GMC Churu
+RUHS,"Government Medical College, Dungarpur",GMC Dungarpur
+RUHS,"Government Medical College, Pali",GMC Pali
+RUHS,"RUHS College of Medical Sciences, Jaipur",RUHS CMS
+RUHS,"Government Medical College, Barmer",GMC Barmer
+RUHS,"Government Medical College, Alwar",GMC Alwar
+RUHS,"Government Medical College, Banswara",GMC Banswara
+RUHS,"Government Medical College, Baran",GMC Baran
+RUHS,"Government Medical College, Bundi",GMC Bundi
+RUHS,"Government Medical College, Chittorgarh",GMC Chittorgarh
+RUHS,"Government Medical College, Dausa",GMC Dausa
+RUHS,"Government Medical College, Dholpur",GMC Dholpur
+RUHS,"Government Medical College, Hanumangarh",GMC Hanumangarh
+RUHS,"Government Medical College, Jhunjhunu",GMC Jhunjhunu
+RUHS,"Government Medical College, Karauli",GMC Karauli
+RUHS,"Government Medical College, Nagaur",GMC Nagaur
+RUHS,"Government Medical College, Sawai Madhopur",GMC Sawai Madhopur
+RUHS,"Government Medical College, Sirohi",GMC Sirohi
+RUHS,"Government Medical College, Sri Ganganagar",GMC Sri Ganganagar
+RUHS,"Employees State Insurance Corporation Medical College, Alwar",ESIC MC Alwar
+RUHS,"Shri Kalyan Government Medical College, Sikar",KGMC
+RUHS,"ESIC Medical College and Hospital, Jaipur",ESIC MC Jaipur
+RUHS,"Government Medical College, Jaisalmer",GMC Jaisalmer
+RUHS,"Government Medical College, Tonk",GMC Tonk
+RUHS,"Dr. S.S. Tantia Medical College, Hospital & Research Centre, Sri Ganganagar",SSTMCHRC
+RUHS,"American International Institute of Medical Sciences, Bedwas, Udaipur",AIMS Bedwas
+RUHS,"Ananta Institute of Medical Sciences & Research Centre, Rajsamand",AIMSRC Rajsamand
+RUHS,"Balvir Singh Tomar Institute of Medical Sciences and Research, Jaipur",BSTIMSR
+RUHS,"JIET Medical College and Hospital, Jodhpur",JIET MCH
+RUHS,"Sudha Medical College, Kota",SMC Kota
+RUHS,"Vyas Medical College & Hospital, Jodhpur",VMCH Jodhpur
+RUHS,Arya Medical College and Hospital,AMCH Arya
+RUHS,Bharat Vikas Institute of Medical Sciences,BVIMS
+RUHS,Dr. B.S. Tomar Institute of Medical Sciences and Research,BSTIMSR Jaipur
+RUHS,Prince Medical College & Hospital,Prince MCH
+RUHS,Other / not listed,Other
+SMU,"Sikkim Manipal Institute of Medical Sciences (SMIMS), Gangtok",SMIMS
+SMU,Other / not listed,Other
+SU-sikkim,"Helen Lepcha Sikkim Government Medical College and Hospital (HLSGMC), Sokeythang",HLSGMCH
+SU-sikkim,Other / not listed,Other
+BIHER,"Sree Balaji Medical College and Hospital, Chennai",SBMCH
+BIHER,Other / not listed,Other
+CARE,"Chettinad Hospital & Research Institute, Kanchipuram",CHRI
+CARE,Other / not listed,Other
+MGRERI,"ACS Medical College and Hospital, Chennai",ACSMCH
+MGRERI,Other / not listed,Other
+MAHER,"Meenakshi Medical College and Research Institute, Enathur",MMCRI Enathur
+MAHER,Other / not listed,Other
+SRMIST,"SRM Medical College Hospital & Research Centre, Kancheepuram",SRM MCH
+SRMIST,"Trichy SRM Medical College Hospital & Research Centre, Trichy",SRM MCH Trichy
+SRMIST,Other / not listed,Other
+SIMATS,"Saveetha Medical College and Hospital, Kanchipuram",SMCH Kanchipuram
+SIMATS,Other / not listed,Other
+SBV,"Shri Sathya Sai Medical College and Research Institute, Kancheepuram",SSSMCRI
+SBV,Other / not listed,Other
+SRIHER,"Sri Ramachandra Medical College & Research Institute, Chennai",SRMC
+SRIHER,Other / not listed,Other
+TNMGRMU,"Madras Medical College, Chennai",MMC Chennai
+TNMGRMU,"Madurai Medical College, Madurai",MMC Madurai
+TNMGRMU,"Stanley Medical College, Chennai",SMC Chennai
+TNMGRMU,"Tirunelveli Medical College, Tirunelveli",TMC Tirunelveli
+TNMGRMU,"Coimbatore Medical College, Coimbatore",CMC Coimbatore
+TNMGRMU,"Government Medical College & Hospital, Cuddalore",GMC Cuddalore
+TNMGRMU,"Government Medical College, Ariyalur",GMC Ariyalur
+TNMGRMU,"Government Medical College, Dindigul",GMC Dindigul
+TNMGRMU,"Government Medical College, Kallakurichi",GMC Kallakurichi
+TNMGRMU,"Government Medical College, Karur",GMC Karur
+TNMGRMU,"Government Medical College, Krishnagiri",GMC Krishnagiri
+TNMGRMU,"Government Medical College, Nagapattinam",GMC Nagapattinam
+TNMGRMU,"Government Medical College, Pudukottai",GMC Pudukottai
+TNMGRMU,"Government Medical College, The Nilgiris",GMC The Nilgiris
+TNMGRMU,"Government Medical College, Virudhunagar",GMC Virudhunagar
+TNMGRMU,"K.A.P. Viswanathan Government Medical College, Trichy",KAPVGMC
+TNMGRMU,"Kanyakumari Government Medical College, Asaripallam",GMC Kanyakumari
+TNMGRMU,"Kilpauk Medical College, Chennai",KMC Chennai
+TNMGRMU,"Thanjavur Medical College, Thanjavur",TMC Thanjavur
+TNMGRMU,"Thoothukudi Medical College, Thoothukudi",TMC Thoothukudi
+TNMGRMU,"ESIC Medical College & PGIMSR, K.K. Nagar, Chennai",ESIC PGIMSR Chennai
+TNMGRMU,"Government Dharmapuri Medical College, Dharmapuri",GMC Dharmapuri
+TNMGRMU,"Government Erode Medical College & Hospital, Perundurai",GMC Erode
+TNMGRMU,"Government Medical College & ESIC Hospital, Coimbatore",GMC ESIC Coimbatore
+TNMGRMU,"Government Medical College, Namakkal",GMC Namakkal
+TNMGRMU,"Government Medical College, Omandurar",GMC Omandurar
+TNMGRMU,"Government Medical College, Ramanathapuram",GMC Ramanathapuram
+TNMGRMU,"Government Medical College, Thiruvallur",GMC Thiruvallur
+TNMGRMU,"Government Medical College, Tiruppur",GMC Tiruppur
+TNMGRMU,"Government Sivagangai Medical College, Sivaganga",GMC Sivagangai
+TNMGRMU,"Government Thiruvannamalai Medical College, Thiruvannamalai",GMC Thiruvannamalai
+TNMGRMU,"Government Vellore Medical College, Vellore",GMC Vellore
+TNMGRMU,"Government Villupuram Medical College, Villupuram",GMC Villupuram
+TNMGRMU,"Govt. Mohan Kumaramangalam Medical College, Salem",GMKMC
+TNMGRMU,"Theni Government Medical College, Theni",GMC Theni
+TNMGRMU,"Thiruvarur Government Medical College, Thiruvarur",GMC Thiruvarur
+TNMGRMU,"Chengalpattu Medical College, Chengalpattu",CMC Chengalpattu
+TNMGRMU,Bhaarat Medical College & Hospital,BMCH
+TNMGRMU,"Dhanalakshmi Srinivasan Medical College and Hospital, Perambalur",DSMCH
+TNMGRMU,"PSG Institute of Medical Sciences, Coimbatore",PSGIMSR
+TNMGRMU,"Sri Venkateswaraa Medical College Hospital and Research Institute, Chennai",SVMCHRI Chennai
+TNMGRMU,Srinivasan Medical College and Hospital,SMCH
+TNMGRMU,"ST Peters Medical College, Hospital & Research Institute",STPMC
+TNMGRMU,"Tagore Medical College and Hospital, Chennai",TMCH Chennai
+TNMGRMU,Arunai Medical College And Hospital,AMCH Arunai
+TNMGRMU,"Faculty of Medicine, Sri Lalithambigai Medical College and Hospital",SLMCH
+TNMGRMU,"J.R. Medical College and Hospital, Villupuram",JRMCH
+TNMGRMU,"Madha Medical College and Hospital, Thandalam, Chennai",MMCH
+TNMGRMU,"Panimalar Medical College Hospital & Research Institute, Chennai",PMCHRI
+TNMGRMU,Rajalakshmi Medical College Hospital and Research Institute,RMCHRI
+TNMGRMU,Swamy Vivekanandha Medical College Hospital And Research Institute,SVMCHRI
+TNMGRMU,"Annapoorna Medical College & Hospital, Salem",AMCH
+TNMGRMU,"Dhanalakshmi Srinivasan Institute of Medical Sciences and Hospital, Perambalur",DSIMSH
+TNMGRMU,"Indira Medical College & Hospitals, Thiruvallur",IMCH
+TNMGRMU,"Karpaga Vinayaga Institute of Medical Sciences, Maduranthagam",KVIMS
+TNMGRMU,"Karpagam Faculty of Medical Sciences & Research, Coimbatore",KMSR
+TNMGRMU,"KMCH Institute of Health Sciences and Research, Coimbatore",KMCHIHSR
+TNMGRMU,Melmaruvathur Adiparasakthi Institute of Medical Sciences and Research,MAIMSR
+TNMGRMU,"Nandha Medical College & Hospital, Erode",NMCH Erode
+TNMGRMU,"PSP Medical College Hospital and Research Institute, Chennai",PSPMCHRI
+TNMGRMU,"Sree Mookambika Institute of Medical Sciences, Kanyakumari",SMIMS Kanyakumari
+TNMGRMU,"Sri Muthukumaran Medical College, Chennai",SMMC
+TNMGRMU,"Velammal Medical College Hospital and Research Institute, Madurai",VMCHRI
+TNMGRMU,"Christian Medical College, Vellore",CMC Vellore
+TNMGRMU,Kanyakumari Medical Mission Research Centre,KMMRC
+TNMGRMU,Takshashila Medical College,TMC Takshashila
+TNMGRMU,APS Medical College Hospital and Research Institute,APSMCHRI
+TNMGRMU,Other / not listed,Other
+VISTAS,VELS Medical College & Hospital,VMCH
+VISTAS,Other / not listed,Other
+VMRF,"Vinayaka Missions Kirupananda Variyar Medical College, Salem",VMKVMC
+VMRF,Other / not listed,Other
+KNRUHS,"Gandhi Medical College, Secunderabad",GMC Secunderabad
+KNRUHS,"Kakatiya Medical College, Warangal",KMC Warangal
+KNRUHS,"Osmania Medical College, Hyderabad",OMC
+KNRUHS,"Government Medical College, Mahabubnagar",GMC Mahabubnagar
+KNRUHS,"Government Medical College, Siddipet",GMC Siddipet
+KNRUHS,"ESIC Medical College, Sanath Nagar, Hyderabad",ESIC MC Sanath Nagar
+KNRUHS,"Government Medical College, Bhadradri Kothagudem",GMC Bhadradri Kothagudem
+KNRUHS,"Government Medical College, Jagtial",GMC Jagtial
+KNRUHS,"Government Medical College, Mahabubabad",GMC Mahabubabad
+KNRUHS,"Government Medical College, Nagarkurnool",GMC Nagarkurnool
+KNRUHS,"Government Medical College, Nalgonda",GMC Nalgonda
+KNRUHS,"Government Medical College, Ramagundam",GMC Ramagundam
+KNRUHS,"Government Medical College, Sangareddy",GMC Sangareddy
+KNRUHS,"Government Medical College, Suryapet",GMC Suryapet
+KNRUHS,"Government Medical College, Wanaparthy",GMC Wanaparthy
+KNRUHS,"Government Medical College, Nizamabad",GMC Nizamabad
+KNRUHS,"Rajiv Gandhi Institute of Medical Sciences, Adilabad",RIMS Adilabad
+KNRUHS,"Government Medical College, Jangaon",GMC Jangaon
+KNRUHS,"Government Medical College, Khammam",GMC Khammam
+KNRUHS,"Government Medical College, Kumuram Bheem Asifabad",GMC Kumuram Bheem Asifabad
+KNRUHS,"Government Medical College, Jayashankar Bhupalpally",GMC Jayashankar Bhupalpally
+KNRUHS,"Government Medical College, Kamareddy",GMC Kamareddy
+KNRUHS,"Government Medical College, Karimnagar",GMC Karimnagar
+KNRUHS,"Government Medical College, Mancherial",GMC Mancherial
+KNRUHS,"Government Medical College, Nirmal",GMC Nirmal
+KNRUHS,"Government Medical College, Rajanna Sircilla",GMC Rajanna Sircilla
+KNRUHS,"Government Medical College, Vikarabad",GMC Vikarabad
+KNRUHS,"Government Medical College, Medak",GMC Medak
+KNRUHS,"Government Medical College, Jogulumba Gadwal",GMC Jogulumba Gadwal
+KNRUHS,"Government Medical College, Kodangal",GMC Kodangal
+KNRUHS,"Government Medical College, Maheshwaram",GMC Maheshwaram
+KNRUHS,"Government Medical College, Mulugu",GMC Mulugu
+KNRUHS,"Government Medical College, Narayanpet",GMC Narayanpet
+KNRUHS,"Government Medical College, Narsampet",GMC Narsampet
+KNRUHS,"Government Medical College, Quthbullapur",GMC Quthbullapur
+KNRUHS,"Government Medical College, Yadadri",GMC Yadadri
+KNRUHS,CMR Institute of Medical Science,CMRIMS
+KNRUHS,Nova Institute of Medical Sciences and Research Centre,NIMSRC
+KNRUHS,"Prathima Institute of Medical Sciences, Karimnagar",PIMS Karimnagar
+KNRUHS,"R.V.M. Institute of Medical Sciences and Research Centre, Siddipet",RVMIMSRC
+KNRUHS,"Chalmeda Anand Rao Institute of Medical Sciences, Karimnagar",CAIMS
+KNRUHS,"Dr. Patnam Mahender Reddy Institute of Medical Sciences, Chevella",PMRIMS
+KNRUHS,"Kamineni Institute of Medical Sciences, Narketpally",KIMS Narketpally
+KNRUHS,"Mahavir Institute of Medical Sciences, Vikarabad",MIMS
+KNRUHS,"Malla Reddy Institute of Medical Sciences, Hyderabad",MRIMS
+KNRUHS,"Mallareddy Medical College for Women, Hyderabad",MRMCW
+KNRUHS,"Mamata Medical College, Khammam",MMC Khammam
+KNRUHS,Neelima Institute of Medical Sciences,NIMS
+KNRUHS,"Surabhi Institute of Medical Sciences, Siddipet",SIMS Siddipet
+KNRUHS,"Apollo Institute of Medical Sciences and Research, Hyderabad",AIMSR Hyderabad
+KNRUHS,"Arundathi Institute of Medical Sciences, Medchal",AIMS Medchal
+KNRUHS,"Ayaan Institute of Medical Sciences, Teaching Hospital & Research Centre",AIMSTHRC
+KNRUHS,"Bhaskar Medical College, Yenkapally",BMC Yenkapally
+KNRUHS,Deccan College of Medical Sciences,DCMS
+KNRUHS,"Father Colombo Institute of Medical Sciences, Warangal",FCIMS
+KNRUHS,"Kamineni Academy of Medical Sciences & Research Center, Hyderabad",KAMSRC
+KNRUHS,"Maheshwara Medical College, Chitkul, Patancheru, Medak",MMC Medak
+KNRUHS,"Mamata Academy of Medical Sciences, Bachupally",MAMS
+KNRUHS,"Mediciti Institute of Medical Sciences, Ghanpur",MIMS Mediciti
+KNRUHS,"MNR Medical College & Hospital, Sangareddy",MNRMCH
+KNRUHS,"Prathima Relief Institute of Medical Sciences, Warangal",PRIMS
+KNRUHS,"S.V.S. Medical College, Mehboobnagar",SVSMC
+KNRUHS,"Shadan Institute of Medical Sciences, Research Centre and Teaching Hospital, Peerancheru",SIMSRCTH
+KNRUHS,"TRR Institute of Medical Sciences, Patancheru",TRRIMS
+KNRUHS,"Dr. VRK Women's Medical College, Aziznagar",VRKWMC
+KNRUHS,Raja Rajeshwari Institute of Medical Sciences - Girls,RRIMS Girls
+KNRUHS,Other / not listed,Other
+TU,"Agartala Government Medical College, Agartala",AGMC
+TU,"Tripura Medical College & Dr. B.R. Ambedkar Memorial Teaching Hospital, Agartala",TMC Tripura
+TU,"Tripura Santiniketan Medical College, West Tripura",TSMC
+TU,Other / not listed,Other
+AMU,"Jawaharlal Nehru Medical College, Aligarh (Aligarh Muslim University)",JNMC AMU
+AMU,Other / not listed,Other
+ABVMU,"GSVM Medical College, Kanpur",GSVM
+ABVMU,"Moti Lal Nehru Medical College, Allahabad (Prayagraj)",MLNMC
+ABVMU,"Dr. Ram Manohar Lohia Institute of Medical Sciences (RMLIMS), Lucknow",RMLIMS
+ABVMU,"S.N. Medical College, Agra",SNMC Agra
+ABVMU,"BRD Medical College, Gorakhpur",BRDMC
+ABVMU,"LLRM Medical College, Meerut",LLRMMC
+ABVMU,"Maharani Laxmi Bai Medical College, Jhansi",MLBMC
+ABVMU,"Autonomous State Medical College, Amethi",ASMC Amethi
+ABVMU,"Autonomous State Medical College & Hospital, Gonda",ASMC Gonda
+ABVMU,"Autonomous State Medical College & Hospital, Kaushambi",ASMC Kaushambi
+ABVMU,"Autonomous State Medical College & Hospital, Lakhimpur Kheri",ASMC Lakhimpur Kheri
+ABVMU,"Autonomous State Medical College, Kushinagar",ASMC Kushinagar
+ABVMU,"Autonomous State Medical College, Lalitpur",ASMC Lalitpur
+ABVMU,"Autonomous State Medical College, Pilibhit",ASMC Pilibhit
+ABVMU,"Autonomous State Medical College, Pratapgarh",ASMC Pratapgarh
+ABVMU,"Autonomous State Medical College Society, Ghazipur",ASMC Ghazipur
+ABVMU,"Autonomous State Medical College Society, Etah",ASMC Etah
+ABVMU,"Autonomous State Medical College Society, Fatehpur",ASMC Fatehpur
+ABVMU,"Autonomous State Medical College Society, Hardoi",ASMC Hardoi
+ABVMU,"Autonomous State Medical College, Sultanpur",ASMC Sultanpur
+ABVMU,"Autonomous State Medical College, Akbarpur, Kanpur",ASMC Akbarpur
+ABVMU,"Autonomous State Medical College, Siddharthnagar",ASMC Siddharthnagar
+ABVMU,"Autonomous State Medical College, Sonebhadra",ASMC Sonebhadra
+ABVMU,"Autonomous State Society Medical College, Mirzapur",ASMC Mirzapur
+ABVMU,"Baba Kina Ram Autonomous State Medical College, Chandauli",BKRASMC
+ABVMU,"Dr. Bhimrao Ramji Ambedkar Government Medical College, Kannauj",BRAGMC
+ABVMU,"Government Allopathic Medical College, Banda",GAMC Banda
+ABVMU,"Government Institute of Medical Sciences (GIMS), Kasna, Greater Noida",GIMS Greater Noida
+ABVMU,"Government Medical College, Azamgarh",GMC Azamgarh
+ABVMU,"Government Medical College, Badaun",GMC Badaun
+ABVMU,"Government Medical College, Faizabad (Ayodhya)",GMC Faizabad
+ABVMU,"Government Medical College, Firozabad",GMC Firozabad
+ABVMU,"Government Medical College, Rampur, Basti",GMC Rampur
+ABVMU,"Government Medical College, Shahjahanpur",GMC Shahjahanpur
+ABVMU,Kalyan Singh Government Medical College,KSGMC
+ABVMU,"Mahamaya Rajkiya Allopathic Medical College, Ambedkarnagar",MRAMC
+ABVMU,"Maharshi Devraha Baba Autonomous State Medical College, Deoria",MDBASMC
+ABVMU,Mahatma Vidur Autonomous State Medical College,MVASMC
+ABVMU,"Punyashloka Lokmata Devi Ahilyabai Holkar ASMC, Auraiya",PLDAH ASMC
+ABVMU,"Rajkiya Allopathic Medical College, Bahraich",RAMC
+ABVMU,"Rajkiya Medical College, Jalaun (Orai)",RMC
+ABVMU,"Shaikh-Ul-Hind Maulana Mahmood Hasan Medical College, Saharanpur",SUHMMH MC
+ABVMU,"Uma Nath Singh Autonomous State Medical College Society, Jaunpur",UNS ASMC
+ABVMU,"ESIC Medical College and Hospital, Noida",ESIC MC Noida
+ABVMU,"ESIC Medical College and Hospital, Varanasi",ESIC MC Varanasi
+ABVMU,"Dr. KNS Memorial Institute of Medical Sciences (formerly Mayo), Lucknow",KNSMIMS
+ABVMU,"Era Lucknow Medical College, Lucknow",ELMC
+ABVMU,"F.H. Medical College & Hospital, Agra",FHMC
+ABVMU,"G.S. Medical College & Hospital, Hapur",GSMCH Hapur
+ABVMU,"K.D. Medical College Hospital & Research Centre, Mathura",KDMCHRC
+ABVMU,Naraina Medical College & Research Centre,NMCRC
+ABVMU,"Rajshree Medical Research Institute, Bareilly",RMRI
+ABVMU,"Rama Medical College Hospital and Research Centre, Hapur",RMCH Hapur
+ABVMU,"Rohilkhand Medical College & Hospital, Bareilly",RMCH Bareilly
+ABVMU,"Saraswati Institute of Medical Sciences, Hapur",SIMS Hapur
+ABVMU,"Sharda School of Medical Sciences & Research, Greater Noida",SSMSR
+ABVMU,"T.S. Misra Medical College & Hospital, Lucknow",TSMMCH
+ABVMU,"Teerthanker Mahaveer Medical College, Moradabad",TMMC
+ABVMU,"Varun Arjun Medical College, Shahjahanpur",VAMC
+ABVMU,"Venkateshwara Institute of Medical Sciences, Gajraula",VIMS Gajraula
+ABVMU,"Ajay Sangaal Institute of Medical Sciences, Shamli",ASIMS
+ABVMU,"Heritage Institute of Medical Sciences, Varanasi",HIMS Varanasi
+ABVMU,"Integral Institute of Medical Sciences & Research, Lucknow",IIMSR
+ABVMU,"KMC Medical College & Hospital, Maharajganj",KMCMCH
+ABVMU,"Krishna Mohan Medical College & Hospital, Mathura",KMMCH
+ABVMU,"Muzaffarnagar Medical College, Muzaffarnagar",MMC Muzaffarnagar
+ABVMU,"National Capital Region Institute of Medical Sciences (NCR), Meerut",NCRIMS
+ABVMU,"Shri Ram Murti Smarak Institute of Medical Sciences, Bareilly",SRMSIMS
+ABVMU,SKS Hospital Medical College & Research Centre,SKSHMCRC
+ABVMU,"Subharti Medical College, Meerut",SMC Meerut
+ABVMU,"Career Institute of Medical Sciences & Hospital, Lucknow",CIMSH
+ABVMU,"Dr. B.S. Kushwah Medical College, Kanpur",BSKMC
+ABVMU,"Hind Institute of Medical Sciences, Sitapur",HIMS Sitapur
+ABVMU,Noida International Institute of Medical Sciences,NIIMS
+ABVMU,"Prasad Institute of Medical Sciences, Lucknow",PIMS Lucknow
+ABVMU,"Rama Medical College Hospital & Research Centre, Kanpur",RMCHRC Kanpur
+ABVMU,"Santosh Medical College, Ghaziabad",SMC Ghaziabad
+ABVMU,"Saraswati Medical College, Unnao",SMC Unnao
+ABVMU,"Shri Gorakshnath Medical College Hospital & Arogya Dham, Gorakhpur",GMCHAD
+ABVMU,"Shri Siddhi Vinayak Medical College & Hospital, Sambhal",SVMCH
+ABVMU,"United Institute of Medical Sciences, Allahabad (Prayagraj)",UIMS
+ABVMU,"Hind Institute of Medical Sciences, Barabanki",HIMS Barabanki
+ABVMU,Fulan Singh Medical College (FS University),FSMC
+ABVMU,Sardar Patel Institute of Medical Education,SPIME
+ABVMU,Radha Govind Institute of Medical Sciences,RGIMS
+ABVMU,Kalpanath Rai Institute of Medical Science,KRIMS Kalpanath
+ABVMU,Prasad Medical College Unnao,PMCU
+ABVMU,RSS Medical College,RSSMC
+ABVMU,Other / not listed,Other
+BHU,"Institute of Medical Sciences, BHU, Varanasi (Banaras Hindu University)",IMS BHU
+BHU,Other / not listed,Other
+KGMU,"King George Medical University, Lucknow",KGMU
+KGMU,Other / not listed,Other
+UPUMS,"UP University of Medical Sciences, Etawah",UPUMS
+UPUMS,Other / not listed,Other
+GEU,"Graphic Era Institute of Medical Sciences, Dehradun",GEIMS
+GEU,Other / not listed,Other
+HNBUMU,"Doon Medical College, Dehradun",DMC Dehradun
+HNBUMU,"Veer Chandra Singh Garhwali Govt. Medical Science & Research Institute, Srinagar, Pauri Garhwal",VCSGGMSRI
+HNBUMU,"Government Medical College (formerly Uttarakhand Forest Hospital Trust Medical College), Haldwani",GMC Haldwani
+HNBUMU,"Government Medical College, Haridwar",GMC Haridwar
+HNBUMU,"Soban Singh Jeena Government Institute of Medical Science & Research, Almora",SSJGIMSR
+HNBUMU,"Gautam Buddha Chikitsa Mahavidyalaya, Dehradun",GBCM Dehradun
+HNBUMU,"Shri Guru Ram Rai Institute of Medical & Health Sciences, Dehradun",SGRRIMHS
+HNBUMU,Other / not listed,Other
+SRHU,"Himalayan Institute of Medical Sciences, Dehradun",HIMS Dehradun
+SRHU,Other / not listed,Other
+WBUHS,"Calcutta National Medical College, Kolkata",CNMC
+WBUHS,"Government Medical College, Kolkata",MCH Kolkata
+WBUHS,"Nilratan Sircar Medical College, Kolkata",NRS MCH
+WBUHS,"RG Kar Medical College, Kolkata",RGKMC
+WBUHS,"Institute of Postgraduate Medical Education & Research, Kolkata",IPGMER
+WBUHS,"Bankura Sammilani Medical College, Bankura",BSMC
+WBUHS,"Burdwan Medical College, Burdwan",BMC Burdwan
+WBUHS,Midnapore Medical College,MMC Midnapore
+WBUHS,"North Bengal Medical College, Darjeeling",NBMC
+WBUHS,"College of Medicine and JNM Hospital, Kalyani, Nadia",CoM JNMH
+WBUHS,Coochbehar Government Medical College & Hospital,GMC Coochbehar
+WBUHS,Diamond Harbour Government Medical College and Hospital,DHGMCH
+WBUHS,"ESIC Medical College, Joka, Kolkata",ESIC MC Kolkata
+WBUHS,Purulia Government Medical College & Hospital,GMC Purulia
+WBUHS,Raiganj Government Medical College & Hospital,GMC Raiganj
+WBUHS,Rampurhat Government Medical College & Hospital,GMC Rampurhat
+WBUHS,"College of Medicine and Sagore Dutta Hospital, Kolkata",CoM SDH
+WBUHS,Malda Medical College & Hospital,MMCH Malda
+WBUHS,Murshidabad Medical College & Hospitals,MMCH Murshidabad
+WBUHS,Barasat Government Medical College & Hospital,GMC Barasat
+WBUHS,Jalpaiguri Government Medical College,GMC Jalpaiguri
+WBUHS,Jhargram Government Medical College & Hospital,GMC Jhargram
+WBUHS,Prafulla Chandra Sen Government Medical College & Hospital,PCSGMCH
+WBUHS,Sarat Chandra Chattopadhyay Government Medical College & Hospital,SCCGMCH
+WBUHS,Tamralipto Government Medical College & Hospital,GMC Tamralipto
+WBUHS,"IQ-City Medical College, Burdwan",IQ-City MC
+WBUHS,"Jagannath Gupta Institute of Medical Sciences & Hospital, Kolkata",JGIMSH
+WBUHS,"Shri Ramkrishna Institute of Medical Sciences & Sanaka Hospitals, Durgapur",SRIMS Durgapur
+WBUHS,"KPC Medical College, Jadavpur, Kolkata",KPCMC
+WBUHS,"Gouri Devi Institute of Medical Sciences and Hospital, Durgapur",GDIMSH
+WBUHS,"ICARE Institute of Medical Sciences & Research, Haldia",ICARE IMSR
+WBUHS,"JIS School of Medical Science & Research, Howrah",JIS SMSR
+WBUHS,"JMN Medical College, Nadia",JMNMC
+WBUHS,"Krishnanagar Institute of Medical Sciences, Nadia",KIMS Nadia
+WBUHS,"Santiniketan Medical College, Bolpur",SMC Bolpur
+WBUHS,"East West Institute of Medical Sciences and Research, Burdwan",EWIMSR
+WBUHS,"Jakir Hossain Medical College, Burdwan",JHMC
+WBUHS,Raniganj Institute of Medical Science,RIMS Raniganj
+WBUHS,PKG Medical College & Hospital,PKGMCH
+WBUHS,SKS Medical College,SKS MC Bengal
+WBUHS,Other / not listed,Other

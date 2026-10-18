@@ -8,11 +8,17 @@ Source of truth:
   content/admin/MBBS_Colleges_by_State.xlsx
 
 This script:
-  1. Parses the Excel (State, University name, University short form, College)
-  2. Disambiguates colliding short forms so `universities.code` stays unique
+  1. Parses the Excel (State, University name, University short form,
+     College name, College short form)
+  2. Disambiguates colliding university short forms so `universities.code`
+     stays unique. College short forms must already be unique within a
+     university (case-insensitive); a repeated short form is skipped.
   3. Rewrites content/admin/Universities.csv and Colleges.csv
   4. Clears profile academic FKs that would break, deletes old colleges /
-     universities not in the new list, upserts the catalog
+     universities not in the new list, upserts the catalog. Sample exam
+     papers on a university that is leaving are deleted so the wipe can
+     finish; questions left with no paper are deleted when no attempt
+     still references them.
 
 Usage (from repo root):
   python3 scripts/seed_universities_colleges.py            # dry-run (default)
@@ -43,6 +49,7 @@ COLLEGES_CSV = ADMIN_DIR / "Colleges.csv"
 
 # Appended to every university so onboarding never dead-ends on a missing campus.
 OTHER_COLLEGE_NAME = "Other / not listed"
+OTHER_COLLEGE_SHORT = "Other"
 
 # Old DB codes → new sheet codes (same affiliating university, renamed short form).
 CODE_RENAMES: dict[str, str] = {
@@ -62,6 +69,7 @@ class University:
 class College:
     university_code: str
     name: str
+    short_form: str
 
 
 def load_env() -> None:
@@ -145,38 +153,63 @@ def read_xlsx(path: Path) -> tuple[list[University], list[College], list[str]]:
         "university name",
         "university short form",
         "college name",
+        "college short form",
     ]
-    if header[:4] != expected:
+    if header[:5] != expected:
         raise ValueError(
-            f"Unexpected header {header[:4]!r}; expected {expected!r}"
+            f"Unexpected header {header[:5]!r}; expected {expected!r}"
         )
 
     warnings: list[str] = []
 
-    # (state, name, short_form) → colleges
-    raw_unis: dict[tuple[str, str, str], list[str]] = defaultdict(list)
+    # (state, name, uni short form) → (college name, college short form)
+    raw_unis: dict[tuple[str, str, str], list[tuple[str, str]]] = defaultdict(list)
     for row_number, row in enumerate(rows[1:], start=2):
         if row is None or not any(row):
             continue
-        cells = [(str(c).strip() if c is not None else "") for c in row[:4]]
-        if len(cells) < 4 or not cells[0] or not cells[1] or not cells[3]:
+        cells = [(str(c).strip() if c is not None else "") for c in row[:5]]
+        while len(cells) < 5:
+            cells.append("")
+        if not cells[0] or not cells[1] or not cells[3]:
             raise ValueError(
                 f"Row {row_number}: missing State/University name/College name"
             )
-        state, uni_name, short_form, college = cells
+        state, uni_name, short_form, college, college_short = cells
         short_form = normalize_code(short_form)
+        college_short = normalize_code(college_short)
         if is_placeholder_code(short_form):
             short_form = code_from_name(uni_name)
             warnings.append(
                 f"Row {row_number}: missing short form for {uni_name!r}; "
                 f"using derived code {short_form!r}"
             )
+        if is_placeholder_code(college_short):
+            college_short = code_from_name(college)
+            warnings.append(
+                f"Row {row_number}: missing short form for {college!r}; "
+                f"using derived code {college_short!r}"
+            )
         key = (state, uni_name, short_form)
-        if college in raw_unis[key]:
+        existing = raw_unis[key]
+        if any(name == college for name, _short in existing):
             raise ValueError(
                 f"Row {row_number}: duplicate college {college!r} under {short_form}"
             )
-        raw_unis[key].append(college)
+        prior = next(
+            (
+                name
+                for name, short in existing
+                if short.casefold() == college_short.casefold()
+            ),
+            None,
+        )
+        if prior is not None:
+            warnings.append(
+                f"Row {row_number}: short form {college_short!r} already used "
+                f"by {prior!r} under {short_form}; skipping {college!r}"
+            )
+            continue
+        existing.append((college, college_short))
 
     # Short forms that map to more than one (state, name) need unique codes.
     by_short: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
@@ -224,10 +257,31 @@ def read_xlsx(path: Path) -> tuple[list[University], list[College], list[str]]:
             raise ValueError(f"Duplicate slug {slug!r}")
         seen_slugs.add(slug)
         universities.append(University(code=code, name=name, state=state, slug=slug))
-        for college_name in college_names:
-            colleges.append(College(university_code=code, name=college_name))
+        taken_shorts = {short.casefold() for _name, short in college_names}
+        for college_name, college_short in college_names:
+            colleges.append(
+                College(
+                    university_code=code,
+                    name=college_name,
+                    short_form=college_short,
+                )
+            )
         # Escape hatch for campuses missing from the sheet.
-        colleges.append(College(university_code=code, name=OTHER_COLLEGE_NAME))
+        other_short = OTHER_COLLEGE_SHORT
+        if other_short.casefold() in taken_shorts:
+            other_short = "Not listed"
+        if other_short.casefold() in taken_shorts:
+            raise ValueError(
+                f"{code}: cannot add {OTHER_COLLEGE_NAME!r}; "
+                f"short forms {OTHER_COLLEGE_SHORT!r} and 'Not listed' are taken"
+            )
+        colleges.append(
+            College(
+                university_code=code,
+                name=OTHER_COLLEGE_NAME,
+                short_form=other_short,
+            )
+        )
 
     return universities, colleges, warnings
 
@@ -250,13 +304,16 @@ def write_admin_csvs(
             )
 
     with COLLEGES_CSV.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=["university_code", "name"])
+        writer = csv.DictWriter(
+            handle, fieldnames=["university_code", "name", "short_form"]
+        )
         writer.writeheader()
         for college in colleges:
             writer.writerow(
                 {
                     "university_code": college.university_code,
                     "name": college.name,
+                    "short_form": college.short_form,
                 }
             )
 
@@ -314,6 +371,39 @@ def apply_code_renames(conn, seed_codes: list[str]) -> list[str]:
     return notes
 
 
+def ensure_college_short_form(conn) -> None:
+    """Match supabase/migrations/20261018120000_college_short_form.sql.
+
+    Idempotent so `--apply` works before `supabase db push` records it.
+    A later push of that migration is a no-op on this database.
+    """
+    conn.execute(
+        "alter table public.colleges add column if not exists short_form text"
+    )
+    conn.execute(
+        """
+        update public.colleges
+        set short_form = 'row-' || substr(replace(id::text, '-', ''), 1, 12)
+        where short_form is null or btrim(short_form) = ''
+        """
+    )
+    conn.execute(
+        "alter table public.colleges alter column short_form set not null"
+    )
+    conn.execute(
+        """
+        create unique index if not exists colleges_university_short_form_lower_idx
+        on public.colleges (university_id, lower(short_form))
+        """
+    )
+    conn.execute(
+        """
+        comment on column public.colleges.short_form is
+          'Campus short form (MAMC). Unique within a university, case-insensitive.'
+        """
+    )
+
+
 def apply_to_database(
     universities: list[University], colleges: list[College]
 ) -> dict[str, int]:
@@ -330,11 +420,13 @@ def apply_to_database(
 
     seed_codes = [u.code for u in universities]
     uni_rows = [(u.code, u.name, u.state, u.slug) for u in universities]
-    college_rows = [(c.university_code, c.name) for c in colleges]
+    college_rows = [(c.university_code, c.name, c.short_form) for c in colleges]
 
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         conn.execute("set search_path to public")
         with conn.transaction():
+            ensure_college_short_form(conn)
+
             before_uni = conn.execute(
                 "select count(*)::int as n from public.universities"
             ).fetchone()["n"]
@@ -373,26 +465,62 @@ def apply_to_database(
                 (seed_codes,),
             ).rowcount
 
-            blocked = conn.execute(
+            # Sample papers on a university that is leaving the catalog.
+            # question_appearances cascade with the paper. Capture questions
+            # that will have no paper left so they can be removed too.
+            orphan_questions = conn.execute(
                 """
-                select u.code, count(ep.id)::int as paper_count
-                from public.universities u
-                join public.exam_papers ep on ep.university_id = u.id
+                select distinct qa.question_id
+                from public.question_appearances qa
+                join public.exam_papers ep on ep.id = qa.exam_paper_id
+                join public.universities u on u.id = ep.university_id
                 where u.code <> all(%s)
-                group by u.code
-                order by u.code
+                  and not exists (
+                    select 1
+                    from public.question_appearances qa2
+                    join public.exam_papers ep2 on ep2.id = qa2.exam_paper_id
+                    join public.universities u2 on u2.id = ep2.university_id
+                    where qa2.question_id = qa.question_id
+                      and u2.code = any(%s)
+                  )
+                """,
+                (seed_codes, seed_codes),
+            ).fetchall()
+            orphan_ids = [row["question_id"] for row in orphan_questions]
+
+            deleted_papers = conn.execute(
+                """
+                delete from public.exam_papers ep
+                using public.universities u
+                where ep.university_id = u.id
+                  and u.code <> all(%s)
                 """,
                 (seed_codes,),
-            ).fetchall()
-            if blocked:
-                details = ", ".join(
-                    f"{row['code']} ({row['paper_count']} papers)" for row in blocked
-                )
-                raise RuntimeError(
-                    "Cannot delete universities that still have exam_papers: "
-                    f"{details}. Move or delete those papers first, or add a "
-                    "CODE_RENAMES entry in this script."
-                )
+            ).rowcount
+
+            deleted_questions = 0
+            if orphan_ids:
+                # attempt_answers and test_questions use ON DELETE RESTRICT.
+                # Leave those questions in place; everything else can go.
+                deleted_questions = conn.execute(
+                    """
+                    delete from public.questions q
+                    where q.id = any(%s::uuid[])
+                      and not exists (
+                        select 1 from public.question_appearances qa
+                        where qa.question_id = q.id
+                      )
+                      and not exists (
+                        select 1 from public.test_questions tq
+                        where tq.question_id = q.id
+                      )
+                      and not exists (
+                        select 1 from public.attempt_answers aa
+                        where aa.question_id = q.id
+                      )
+                    """,
+                    (orphan_ids,),
+                ).rowcount
 
             deleted_unis = conn.execute(
                 """
@@ -416,12 +544,13 @@ def apply_to_database(
                 )
                 cur.executemany(
                     """
-                    insert into public.colleges (university_id, name)
-                    select u.id, v.name
+                    insert into public.colleges (university_id, name, short_form)
+                    select u.id, v.name, v.short_form
                     from public.universities u
-                    join (values (%s, %s)) as v(code, name)
+                    join (values (%s, %s, %s)) as v(code, name, short_form)
                       on lower(u.code) = lower(v.code)
-                    on conflict (university_id, name) do nothing
+                    on conflict (university_id, name) do update
+                      set short_form = excluded.short_form
                     """,
                     college_rows,
                 )
@@ -461,6 +590,16 @@ def apply_to_database(
             if orphan_colleges:
                 raise RuntimeError(f"{orphan_colleges} orphan colleges after seed")
 
+            blank_shorts = conn.execute(
+                """
+                select count(*)::int as n
+                from public.colleges
+                where btrim(short_form) = ''
+                """
+            ).fetchone()["n"]
+            if blank_shorts:
+                raise RuntimeError(f"{blank_shorts} colleges missing a short form")
+
             # Slug uniqueness: renamed rows may still hold the old slug until upsert.
             dup_slugs = conn.execute(
                 """
@@ -484,6 +623,8 @@ def apply_to_database(
             "colleges_after": after_colleges,
             "profiles_college_cleared": cleared_colleges,
             "profiles_university_cleared": cleared_unis,
+            "exam_papers_deleted": deleted_papers,
+            "questions_deleted": deleted_questions,
             "code_renames": len(rename_notes),
         }
 

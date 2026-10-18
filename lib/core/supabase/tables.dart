@@ -324,6 +324,7 @@ abstract final class CollegeColumns {
   static const id = 'id';
   static const universityId = 'university_id';
   static const name = 'name';
+  static const shortForm = 'short_form';
 }
 
 abstract final class LessonColumns {

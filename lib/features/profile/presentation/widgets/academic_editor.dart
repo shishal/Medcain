@@ -178,7 +178,7 @@ class _AcademicEditorState extends ConsumerState<AcademicEditor> {
               label: 'College',
               items: items,
               value: selected.isEmpty ? null : selected.first,
-              labelOf: (c) => c.name,
+              labelOf: (c) => c.label,
               onSelected: (c) => setState(() => _collegeId = c.id),
             );
           },

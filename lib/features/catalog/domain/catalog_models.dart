@@ -86,17 +86,26 @@ class College {
     required this.id,
     required this.universityId,
     required this.name,
+    required this.shortForm,
   });
 
   final String id;
   final String universityId;
   final String name;
 
+  /// Campus short form from the catalog, e.g. `MAMC`. Same role as
+  /// [University.code].
+  final String shortForm;
+
+  /// Picker text. Same shape as a university row: `MAMC · Maulana Azad…`.
+  String get label => shortForm.isEmpty ? name : '$shortForm · $name';
+
   factory College.fromJson(Map<String, dynamic> json) {
     return College(
       id: json[CollegeColumns.id] as String,
       universityId: json[CollegeColumns.universityId] as String,
       name: json[CollegeColumns.name] as String,
+      shortForm: json[CollegeColumns.shortForm] as String? ?? '',
     );
   }
 }

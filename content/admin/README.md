@@ -6,9 +6,9 @@ the Questions Google Sheet.
 
 | File | Role |
 |---|---|
-| `MBBS_Colleges_by_State.xlsx` | Source workbook (State, University name, short form, College) |
+| `MBBS_Colleges_by_State.xlsx` | Source workbook (State, University name, University short form, College name, College short form) |
 | `Universities.csv` | Generated → `universities` (`code`, `name`, `state`, `slug`) |
-| `Colleges.csv` | Generated → `colleges` (`university_code`, `name`) |
+| `Colleges.csv` | Generated → `colleges` (`university_code`, `name`, `short_form`) |
 
 There is no separate `states` table — state is the `universities.state` column.
 
@@ -22,16 +22,20 @@ python3 scripts/seed_universities_colleges.py
 python3 scripts/seed_universities_colleges.py --apply
 ```
 
-`--apply` clears every `profiles.college_id`, clears `profiles.university_id`
-when the university code is not in the new list, deletes all colleges, deletes
-universities absent from the seed (blocked if they still have `exam_papers`),
-then upserts universities by `code` and re-inserts colleges.
+`--apply` clears every `profiles.college_id` (college rows are replaced, so
+old ids would dangle), clears `profiles.university_id` when that university
+code is not in the new list, deletes all colleges, and deletes universities
+absent from the seed. Sample `exam_papers` on a university that is leaving
+the catalog are deleted with them (appearances follow). Questions that then
+have no paper left are deleted when nothing in an attempt still points at
+them. Universities whose `code` is still in the sheet are updated in place,
+so their papers stay attached. Colleges are inserted again with `short_form`.
 
 Known legacy renames (exam papers / profiles stay attached):
 - `IPU` → `GGSIPU`
 
-Each university also gets an `Other / not listed` college row so students can
-finish onboarding when their campus is missing from the sheet.
+Each university also gets an `Other / not listed` college (short form `Other`)
+so students can finish onboarding when their campus is missing from the sheet.
 
 Colliding short forms (same code, different state/name) are disambiguated to
 `{CODE}-{state-slug}` so `universities.code` stays unique — see script output.

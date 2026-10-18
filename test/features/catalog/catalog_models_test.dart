@@ -69,4 +69,27 @@ void main() {
     expect(universitiesInState(unis, 'Karnataka'), [rguhs]);
     expect(universitiesInState(unis, 'Goa'), isEmpty);
   });
+
+  test('College label leads with the short form, like a university code', () {
+    const college = College(
+      id: 'c1',
+      universityId: 'u1',
+      name: 'Maulana Azad Medical College, New Delhi',
+      shortForm: 'MAMC',
+    );
+    expect(
+      college.label,
+      'MAMC · Maulana Azad Medical College, New Delhi',
+    );
+  });
+
+  test('College label is the full name when no short form is stored', () {
+    const college = College(
+      id: 'c1',
+      universityId: 'u1',
+      name: 'Other / not listed',
+      shortForm: '',
+    );
+    expect(college.label, 'Other / not listed');
+  });
 }
