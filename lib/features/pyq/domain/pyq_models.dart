@@ -3,6 +3,58 @@ import '../../practice/domain/practice_enums.dart';
 import '../../profile/domain/plan_tier.dart';
 import 'question_format.dart';
 
+/// What kind of sitting a paper was, from `exam_papers.exam_type`.
+enum PaperExamType {
+  prof,
+  supply,
+  preProf,
+  internal;
+
+  /// Unknown or missing values count as the university professional exam,
+  /// the same default the database column uses.
+  static PaperExamType fromDb(String? value) => switch (value) {
+    'supply' => PaperExamType.supply,
+    'pre_prof' => PaperExamType.preProf,
+    'internal' => PaperExamType.internal,
+    _ => PaperExamType.prof,
+  };
+
+  String get label => switch (this) {
+    PaperExamType.prof => 'Prof',
+    PaperExamType.supply => 'Supply',
+    PaperExamType.preProf => 'Pre-prof',
+    PaperExamType.internal => 'Internal',
+  };
+
+  /// Pre-prof and internal papers are set by a campus, not the university.
+  bool get isCampusLevel =>
+      this == PaperExamType.preProf || this == PaperExamType.internal;
+}
+
+/// One exam sitting a question appeared in (an `exam_papers` row).
+class PaperSitting {
+  const PaperSitting({
+    required this.universityId,
+    this.collegeId,
+    this.examType = PaperExamType.prof,
+    required this.year,
+    this.month,
+    this.paperName,
+  });
+
+  final String universityId;
+  final String? collegeId;
+  final PaperExamType examType;
+  final int year;
+  final int? month;
+
+  /// Printed paper label such as `Paper I`. Null when the sheet left it blank.
+  final String? paperName;
+
+  /// Same text the paper chips show, e.g. `October · Paper I`.
+  String get label => paperSittingLabel(month: month, paperName: paperName);
+}
+
 class PyqTeaser {
   const PyqTeaser({
     required this.id,
@@ -19,6 +71,7 @@ class PyqTeaser {
     this.paperNames = const [],
     this.topicName,
     this.lessonName,
+    this.sittings = const [],
   });
 
   final String id;
@@ -37,6 +90,11 @@ class PyqTeaser {
   final List<String> paperNames;
   final String? topicName;
   final String? lessonName;
+
+  /// Every sitting this question appeared in, across all universities.
+  /// Only the subject feed fills this; [appearanceYears] and [paperNames]
+  /// stay scoped to the student's own university.
+  final List<PaperSitting> sittings;
 
   QuestionFormat get format =>
       QuestionFormat.fromKindAndMarks(kind: kind, marks: marks);
@@ -72,6 +130,7 @@ class PyqTeaser {
     String? lessonName,
     String? topicId,
     QuestionPriority? priority,
+    List<PaperSitting>? sittings,
   }) {
     return PyqTeaser(
       id: id,
@@ -88,6 +147,7 @@ class PyqTeaser {
       paperNames: paperNames ?? this.paperNames,
       topicName: topicName ?? this.topicName,
       lessonName: lessonName ?? this.lessonName,
+      sittings: sittings ?? this.sittings,
     );
   }
 }

@@ -291,6 +291,8 @@ class PyqRepository {
           '${AppearanceColumns.questionId},'
           '${AppearanceColumns.examPaperEmbed}:${Tables.examPapers}('
           '${ExamPaperColumns.universityId},'
+          '${ExamPaperColumns.collegeId},'
+          '${ExamPaperColumns.examType},'
           '${ExamPaperColumns.examYear},'
           '${ExamPaperColumns.examMonth},'
           '${ExamPaperColumns.paperName})';
@@ -331,6 +333,7 @@ class PyqRepository {
 
       final yearsByQuestionUni = <String, Map<String, List<int>>>{};
       final papersByQuestionUni = <String, Map<String, Set<String>>>{};
+      final sittingsByQuestion = <String, List<PaperSitting>>{};
       final unisByQuestion = <String, Set<String>>{};
       for (final raw in appRows) {
         final qid = raw[AppearanceColumns.questionId] as String;
@@ -348,6 +351,25 @@ class PyqRepository {
               .add(year.toInt());
         }
         final rawPaper = map[ExamPaperColumns.paperName] as String?;
+        if (uid != null && year is num) {
+          final month = map[ExamPaperColumns.examMonth];
+          sittingsByQuestion
+              .putIfAbsent(qid, () => [])
+              .add(
+                PaperSitting(
+                  universityId: uid,
+                  collegeId: map[ExamPaperColumns.collegeId] as String?,
+                  examType: PaperExamType.fromDb(
+                    map[ExamPaperColumns.examType] as String?,
+                  ),
+                  year: year.toInt(),
+                  month: month is num ? month.toInt() : null,
+                  paperName: (rawPaper == null || rawPaper.trim().isEmpty)
+                      ? null
+                      : rawPaper.trim(),
+                ),
+              );
+        }
         final hasPaper = rawPaper != null && rawPaper.isNotEmpty;
         final hasMonth = examMonthName(map[ExamPaperColumns.examMonth]) != null;
         if (uid != null && (hasPaper || hasMonth)) {
@@ -376,11 +398,11 @@ class PyqRepository {
       for (final t in all) {
         final owned = unisByQuestion[t.id];
         final isMcqBank = t.kind == 'mcq' && (owned == null || owned.isEmpty);
-        final matchesUni =
-            contentUni == null ||
-            isMcqBank ||
-            (owned != null && owned.contains(contentUni));
-        if (!matchesUni) continue;
+        final sittings = sittingsByQuestion[t.id] ?? const <PaperSitting>[];
+        // Other universities' papers stay in the feed: the subject screen
+        // shows them in their own section. Stems with no paper at all are
+        // dropped, except the MCQ bank.
+        if (sittings.isEmpty && !isMcqBank) continue;
         final qYears = {...?yearsByQuestionUni[t.id]?[contentUni]}.toList()
           ..sort();
         final qPapers = {...?papersByQuestionUni[t.id]?[contentUni]}.toList()
@@ -399,6 +421,7 @@ class PyqRepository {
             topicId: topicId,
             topicName: topicId == null ? null : topicNameById[topicId],
             lessonName: t.lessonId == null ? null : lessonNameById[t.lessonId],
+            sittings: sittings,
           ),
         );
       }

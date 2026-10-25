@@ -350,6 +350,7 @@ Full behavioral spec is in `04_TEST_ENGINE_SPEC.md` — read that file in full b
 **8.2 — Dynamic watermark**
 - Expected Outcome: A faint, semi-transparent overlay showing the logged-in user's name/phone/email tiled across content screens — traceability for the iOS case where blocking isn't possible.
 - Validation: visually confirm the watermark is legible enough to trace but not so intrusive it hurts readability of the actual question text — this is a judgment call, get a second opinion from an actual test user if you can.
+- Update: answer screens (PYQ reader, solution review) pass `watermark: false` to `ContentCaptureGuard` and show no overlay. Capture blocking and logging still apply there; the test player keeps the watermark.
 
 ---
 

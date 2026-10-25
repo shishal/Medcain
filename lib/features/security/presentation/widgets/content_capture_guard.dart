@@ -22,11 +22,16 @@ class ContentCaptureGuard extends ConsumerStatefulWidget {
     super.key,
     required this.screen,
     required this.child,
+    this.watermark = true,
   });
 
   /// Stored on `screenshot_events.screen` (see [ContentScreens]).
   final String screen;
   final Widget child;
+
+  /// Set false on answer screens: capture blocking and logging stay on, but
+  /// the identity overlay is not drawn over the answer text.
+  final bool watermark;
 
   static const screenshotWarning =
       "Screenshots of questions aren't allowed. This has been logged.";
@@ -130,7 +135,7 @@ class _ContentCaptureGuardState extends ConsumerState<ContentCaptureGuard> {
           child: Stack(
             children: [
               widget.child,
-              if (watermarkText.isNotEmpty)
+              if (widget.watermark && watermarkText.isNotEmpty)
                 Positioned.fill(child: ContentWatermark(text: watermarkText)),
             ],
           ),

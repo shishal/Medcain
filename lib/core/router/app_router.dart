@@ -147,6 +147,8 @@ GoRouter goRouter(Ref ref) {
             subjectId: id,
             year: year,
             title: title,
+            universityId: state.uri.queryParameters['uni'],
+            section: state.uri.queryParameters['section'],
           );
         },
       ),

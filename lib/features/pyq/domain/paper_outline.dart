@@ -42,13 +42,21 @@ List<PyqTeaser> teasersForOutlineTab({
   required int year,
   required PaperOutlineTab tab,
   String? paperName,
+  String? universityId,
+  PaperExamType? examType,
+  bool? isMcq,
+  bool Function(PaperSitting sitting)? sittingScope,
   String? topicId,
   Set<QuestionPriority> priorities = const {},
 }) {
   final filtered = filterSubjectPyqs(
     teasers: teasers,
     paperName: paperName,
+    universityId: universityId,
+    examType: examType,
+    isMcq: isMcq,
     year: year,
+    sittingScope: sittingScope,
     topicId: topicId,
     priorities: priorities,
   );

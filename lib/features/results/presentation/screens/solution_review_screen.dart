@@ -42,6 +42,7 @@ class _SolutionReviewScreenState extends ConsumerState<SolutionReviewScreen> {
 
     return ContentCaptureGuard(
       screen: ContentScreens.solutionReview,
+      watermark: false,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Solutions'),

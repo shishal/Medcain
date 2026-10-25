@@ -7,12 +7,15 @@ import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
 import '../../../../core/widgets/comic_card.dart';
-import '../../domain/subject_pyq_filters.dart';
+import '../../../catalog/presentation/providers/catalog_providers.dart';
 import '../../../practice/domain/practice_enums.dart';
+import '../../../profile/presentation/providers/user_profile_provider.dart';
+import '../../domain/pyq_sections.dart';
 import '../providers/pyq_providers.dart';
 import '../widgets/subject_pyq_filter_sheet.dart';
 
-/// Subject → exam years. Filters (chapter / paper) carry into the year outline.
+/// Subject → papers in three sections (own university, own college, other
+/// universities), newest year first. Filters carry into the year outline.
 class SubjectPyqScreen extends ConsumerWidget {
   const SubjectPyqScreen({
     super.key,
@@ -27,6 +30,19 @@ class SubjectPyqScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(subjectPyqsProvider(subjectId));
     final filter = ref.watch(subjectPyqFiltersProvider(subjectId));
+    final profile = ref.watch(userProfileProvider).value;
+    final universities = ref.watch(universitiesProvider).value ?? const [];
+    final userUniversityId = profile?.universityId;
+    final colleges = userUniversityId == null
+        ? const []
+        : (ref.watch(collegesProvider(userUniversityId)).value ?? const []);
+
+    final universityCodes = {for (final u in universities) u.id: u.code};
+    String codeOf(String id) => universityCodes[id] ?? 'University';
+    final ownCollege = colleges
+        .where((c) => c.id == profile?.collegeId)
+        .firstOrNull;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
@@ -36,7 +52,7 @@ class SubjectPyqScreen extends ConsumerWidget {
               data: (feed) => showSubjectPyqFilterSheet(
                 context: context,
                 subjectId: subjectId,
-                paperNames: feed.paperNames,
+                teasers: feed.teasers,
                 chapters: feed.chapters,
               ),
             ),
@@ -56,15 +72,21 @@ class SubjectPyqScreen extends ConsumerWidget {
           onAction: () => ref.invalidate(subjectPyqsProvider(subjectId)),
         ),
         data: (feed) {
-          final years = yearSummariesWithMatchingPyqs(
+          final sections = buildPyqSections(
             teasers: feed.teasers,
-            paperName: filter.paperName,
-            topicId: filter.topicId,
-            priorities: filter.priorities,
+            filter: filter,
+            userUniversityId: userUniversityId,
+            userCollegeId: profile?.collegeId,
+            universityCodes: universityCodes,
           );
           final activeSummary = filter.isActive
               ? [
+                  if (filter.universityId != null) codeOf(filter.universityId!),
+                  if (filter.year != null) '${filter.year}',
+                  if (filter.examType != null) filter.examType!.label,
                   if (filter.paperName != null) filter.paperName!,
+                  if (filter.isMcq != null)
+                    filter.isMcq! ? 'MCQ' : 'Theory',
                   if (filter.topicId != null)
                     feed.chapters
                         .where((c) => c.id == filter.topicId)
@@ -78,7 +100,7 @@ class SubjectPyqScreen extends ConsumerWidget {
                 ].whereType<String>().join(' · ')
               : null;
 
-          if (years.isEmpty) {
+          if (sections.isEmpty) {
             return RefreshIndicator(
               onRefresh: () async =>
                   ref.invalidate(subjectPyqsProvider(subjectId)),
@@ -92,7 +114,7 @@ class SubjectPyqScreen extends ConsumerWidget {
                     child: filter.isActive
                         ? AsyncEmptyView(
                             icon: Icons.filter_alt_off_outlined,
-                            message: 'No years match these filters.',
+                            message: 'No papers match these filters.',
                             actionLabel: 'Clear filters',
                             onAction: ref
                                 .read(
@@ -111,6 +133,16 @@ class SubjectPyqScreen extends ConsumerWidget {
               ),
             );
           }
+
+          void open(PyqSittingGroup group) => context.push(
+            AppRoutes.subjectYearPath(
+              subjectId,
+              group.year,
+              title,
+              universityId: group.universityId,
+              section: group.section.name,
+            ),
+          );
 
           return RefreshIndicator(
             onRefresh: () async =>
@@ -135,17 +167,41 @@ class SubjectPyqScreen extends ConsumerWidget {
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                 ],
-                const SizedBox(height: Spacing.md),
-                for (final year in years)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: Spacing.sm),
-                    child: _YearCard(
-                      summary: year,
-                      onTap: () => context.push(
-                        AppRoutes.subjectYearPath(subjectId, year.year, title),
-                      ),
-                    ),
+                if (sections.ownUniversity.isNotEmpty) ...[
+                  _SectionHeader(
+                    userUniversityId == null
+                        ? 'Your university previous year questions'
+                        : '${codeOf(userUniversityId)} previous year questions',
                   ),
+                  for (final group in sections.ownUniversity)
+                    _YearCard(group: group, onTap: () => open(group)),
+                ],
+                if (sections.ownCollege.isNotEmpty) ...[
+                  _SectionHeader(
+                    ownCollege == null || ownCollege.shortForm.isEmpty
+                        ? 'Your college internal / pre-prof'
+                        : '${ownCollege.shortForm} internal / pre-prof',
+                  ),
+                  for (final group in sections.ownCollege)
+                    _YearCard(group: group, onTap: () => open(group)),
+                ],
+                if (sections.other.isNotEmpty) ...[
+                  const _SectionHeader('Other universities'),
+                  for (var i = 0; i < sections.other.length; i++) ...[
+                    // One small heading per university; the list is already
+                    // grouped by university.
+                    if (i == 0 ||
+                        sections.other[i].universityId !=
+                            sections.other[i - 1].universityId)
+                      _UniversityHeading(
+                        codeOf(sections.other[i].universityId),
+                      ),
+                    _YearCard(
+                      group: sections.other[i],
+                      onTap: () => open(sections.other[i]),
+                    ),
+                  ],
+                ],
               ],
             ),
           );
@@ -155,50 +211,93 @@ class SubjectPyqScreen extends ConsumerWidget {
   }
 }
 
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: Spacing.lg, bottom: Spacing.sm),
+      child: Text(
+        text,
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+class _UniversityHeading extends StatelessWidget {
+  const _UniversityHeading(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: Spacing.xs, bottom: Spacing.sm),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
 /// A year row that says what opening it leads to, rather than just the number.
 class _YearCard extends StatelessWidget {
-  const _YearCard({required this.summary, required this.onTap});
+  const _YearCard({required this.group, required this.onTap});
 
-  final SubjectYearSummary summary;
+  final PyqSittingGroup group;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    final count = summary.questionCount;
+    final count = group.questionCount;
     final caption = [
       count == 1 ? '1 question' : '$count questions',
-      if (summary.paperNames.isNotEmpty) summary.paperNames.join(' · '),
+      if (group.examTypes.isNotEmpty)
+        group.examTypes.map((t) => t.label).join(' / '),
+      if (group.paperNames.isNotEmpty) group.paperNames.join(' · '),
     ].join(' · ');
 
-    return ComicCard(
-      onTap: onTap,
-      semanticLabel: '${summary.year}, $caption',
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${summary.year}',
-                  style: textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.sm),
+      child: ComicCard(
+        onTap: onTap,
+        semanticLabel: '${group.year}, $caption',
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${group.year}',
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-                const SizedBox(height: Spacing.xs),
-                Text(
-                  caption,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.bodySmall?.copyWith(color: muted),
-                ),
-              ],
+                  const SizedBox(height: Spacing.xs),
+                  Text(
+                    caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall?.copyWith(color: muted),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.chevron_right_rounded, color: muted),
-        ],
+            Icon(Icons.chevron_right_rounded, color: muted),
+          ],
+        ),
       ),
     );
   }

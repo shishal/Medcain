@@ -56,6 +56,7 @@ void main() {
   Future<void> pumpGuard(
     WidgetTester tester, {
     String watermark = 'Ada Lovelace · ada@example.com',
+    bool showWatermark = true,
     Widget? child,
   }) async {
     await tester.pumpWidget(
@@ -68,6 +69,7 @@ void main() {
         child: MaterialApp(
           home: ContentCaptureGuard(
             screen: ContentScreens.testPlayer,
+            watermark: showWatermark,
             child: child ?? const Scaffold(body: Text('question')),
           ),
         ),
@@ -140,6 +142,12 @@ void main() {
   testWidgets('hides the watermark when identity is empty', (tester) async {
     await pumpGuard(tester, watermark: '');
     expect(find.byType(ContentWatermark), findsNothing);
+  });
+
+  testWidgets('answer screens can opt out of the watermark', (tester) async {
+    await pumpGuard(tester, showWatermark: false);
+    expect(find.byType(ContentWatermark), findsNothing);
+    expect(find.text('question'), findsOneWidget);
   });
 
   testWidgets('watermark does not block taps on the question', (tester) async {

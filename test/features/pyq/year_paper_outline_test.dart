@@ -7,6 +7,8 @@ import 'package:medico/core/router/app_routes.dart';
 import 'package:medico/core/utils/result.dart';
 import 'package:medico/features/bookmarks/presentation/providers/bookmarks_provider.dart';
 import 'package:medico/features/profile/domain/plan_tier.dart';
+import 'package:medico/features/profile/domain/user_profile.dart';
+import 'package:medico/features/profile/presentation/providers/user_profile_provider.dart';
 import 'package:medico/features/pyq/domain/paper_outline.dart';
 import 'package:medico/features/pyq/domain/pyq_models.dart';
 import 'package:medico/features/pyq/presentation/providers/pyq_providers.dart';
@@ -31,6 +33,11 @@ PyqTeaser _teaser({
     appearanceYears: years,
     paperNames: papers,
     topicName: 'Thorax',
+    sittings: [
+      for (final year in years)
+        for (final paper in papers)
+          PaperSitting(universityId: 'u1', year: year, paperName: paper),
+    ],
   );
 }
 
@@ -154,6 +161,7 @@ void main() {
             ),
           ),
           bookmarkedIdsProvider.overrideWith(_StubBookmarkedIds.new),
+          userProfileProvider.overrideWith(_StubProfile.new),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -185,4 +193,14 @@ class _StubBookmarkedIds extends BookmarkedIds {
   Future<Result<void>> toggle(String questionId) async {
     return const Success(null);
   }
+}
+
+class _StubProfile extends UserProfileNotifier {
+  @override
+  Future<UserProfile?> build() async => UserProfile(
+    id: 'me',
+    plan: PlanTier.free,
+    createdAt: DateTime(2026),
+    universityId: 'u1',
+  );
 }

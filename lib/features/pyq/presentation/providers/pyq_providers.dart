@@ -57,36 +57,40 @@ Future<PyqSubjectFeed> subjectPyqs(Ref ref, String subjectId) async {
   };
 }
 
-/// Chapter / paper filters for one subject's year list and paper outline.
+/// University / year / exam type / paper / MCQ-or-theory / chapter picks for
+/// one subject's PYQ screen and its paper outlines.
 @Riverpod(keepAlive: true)
 class SubjectPyqFilters extends _$SubjectPyqFilters {
   @override
   SubjectPyqFilter build(String subjectId) => const SubjectPyqFilter();
 
-  void setPaperName(String? paperName) {
-    state = SubjectPyqFilter(
-      paperName: paperName,
-      topicId: state.topicId,
-      priorities: state.priorities,
-    );
+  // Sitting-level picks are checked against the loaded feed so that changing
+  // a parent (say University) clears a child (say Year) that no longer exists.
+  void _set(SubjectPyqFilter next) {
+    final teasers =
+        ref.read(subjectPyqsProvider(subjectId)).value?.teasers ?? const [];
+    state = reconcileFilter(next, teasers);
   }
 
-  void setTopicId(String? topicId) {
-    state = SubjectPyqFilter(
-      paperName: state.paperName,
-      topicId: topicId,
-      priorities: state.priorities,
-    );
-  }
+  void setUniversity(String? universityId) =>
+      _set(state.copyWith(universityId: universityId));
+
+  void setYear(int? year) => _set(state.copyWith(year: year));
+
+  void setExamType(PaperExamType? examType) =>
+      _set(state.copyWith(examType: examType));
+
+  void setPaperName(String? paperName) =>
+      _set(state.copyWith(paperName: paperName));
+
+  void setFormat({bool? isMcq}) => _set(state.copyWith(isMcq: isMcq));
+
+  void setTopicId(String? topicId) => _set(state.copyWith(topicId: topicId));
 
   void togglePriority(QuestionPriority value) {
     final next = {...state.priorities};
     if (!next.add(value)) next.remove(value);
-    state = SubjectPyqFilter(
-      paperName: state.paperName,
-      topicId: state.topicId,
-      priorities: next,
-    );
+    _set(state.copyWith(priorities: next));
   }
 
   void clear() {

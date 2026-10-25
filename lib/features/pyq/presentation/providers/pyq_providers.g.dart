@@ -269,15 +269,18 @@ final class SubjectPyqsFamily extends $Family
   String toString() => r'subjectPyqsProvider';
 }
 
-/// Chapter / paper filters for one subject's year list and paper outline.
+/// University / year / exam type / paper / MCQ-or-theory / chapter picks for
+/// one subject's PYQ screen and its paper outlines.
 
 @ProviderFor(SubjectPyqFilters)
 final subjectPyqFiltersProvider = SubjectPyqFiltersFamily._();
 
-/// Chapter / paper filters for one subject's year list and paper outline.
+/// University / year / exam type / paper / MCQ-or-theory / chapter picks for
+/// one subject's PYQ screen and its paper outlines.
 final class SubjectPyqFiltersProvider
     extends $NotifierProvider<SubjectPyqFilters, SubjectPyqFilter> {
-  /// Chapter / paper filters for one subject's year list and paper outline.
+  /// University / year / exam type / paper / MCQ-or-theory / chapter picks for
+  /// one subject's PYQ screen and its paper outlines.
   SubjectPyqFiltersProvider._({
     required SubjectPyqFiltersFamily super.from,
     required String super.argument,
@@ -322,9 +325,10 @@ final class SubjectPyqFiltersProvider
   }
 }
 
-String _$subjectPyqFiltersHash() => r'e7dd7423b8392987db4e8257f642c68ba5890132';
+String _$subjectPyqFiltersHash() => r'c4ea3e743e87ae8a22ca7709499161a5b576ca33';
 
-/// Chapter / paper filters for one subject's year list and paper outline.
+/// University / year / exam type / paper / MCQ-or-theory / chapter picks for
+/// one subject's PYQ screen and its paper outlines.
 
 final class SubjectPyqFiltersFamily extends $Family
     with
@@ -344,7 +348,8 @@ final class SubjectPyqFiltersFamily extends $Family
         isAutoDispose: false,
       );
 
-  /// Chapter / paper filters for one subject's year list and paper outline.
+  /// University / year / exam type / paper / MCQ-or-theory / chapter picks for
+  /// one subject's PYQ screen and its paper outlines.
 
   SubjectPyqFiltersProvider call(String subjectId) =>
       SubjectPyqFiltersProvider._(argument: subjectId, from: this);
@@ -353,7 +358,8 @@ final class SubjectPyqFiltersFamily extends $Family
   String toString() => r'subjectPyqFiltersProvider';
 }
 
-/// Chapter / paper filters for one subject's year list and paper outline.
+/// University / year / exam type / paper / MCQ-or-theory / chapter picks for
+/// one subject's PYQ screen and its paper outlines.
 
 abstract class _$SubjectPyqFilters extends $Notifier<SubjectPyqFilter> {
   late final _$args = ref.$arg as String;

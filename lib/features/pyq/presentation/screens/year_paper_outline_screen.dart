@@ -6,8 +6,10 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
+import '../../../profile/presentation/providers/user_profile_provider.dart';
 import '../../domain/paper_outline.dart';
 import '../../domain/pyq_models.dart';
+import '../../domain/pyq_sections.dart';
 import '../providers/pyq_providers.dart';
 import '../widgets/pyq_teaser_card.dart';
 
@@ -18,16 +20,41 @@ class YearPaperOutlineScreen extends ConsumerWidget {
     required this.subjectId,
     required this.year,
     required this.title,
+    this.universityId,
+    this.section,
   });
 
   final String subjectId;
   final int year;
   final String title;
 
+  /// Which row on the subject screen was tapped. Both null shows every
+  /// sitting in [year].
+  final String? universityId;
+
+  /// A [PyqSection] name.
+  final String? section;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(subjectPyqsProvider(subjectId));
     final filter = ref.watch(subjectPyqFiltersProvider(subjectId));
+    final profile = ref.watch(userProfileProvider).value;
+    final scopeSection = PyqSection.values.asNameMap()[section];
+    final scopeUniversityId = universityId;
+    // Narrow to the tapped row so a KUHS 2024 row does not also list the
+    // 2024 stems of another university.
+    final bool Function(PaperSitting)? scope =
+        scopeSection == null || scopeUniversityId == null
+        ? null
+        : (sitting) =>
+              sitting.universityId == scopeUniversityId &&
+              classifySitting(
+                    sitting,
+                    userUniversityId: profile?.universityId,
+                    userCollegeId: profile?.collegeId,
+                  ) ==
+                  scopeSection;
     return Scaffold(
       appBar: AppBar(title: Text('$title · $year')),
       body: async.when(
@@ -42,6 +69,10 @@ class YearPaperOutlineScreen extends ConsumerWidget {
             year: year,
             tab: tab,
             paperName: filter.paperName,
+            universityId: filter.universityId,
+            examType: filter.examType,
+            isMcq: filter.isMcq,
+            sittingScope: scope,
             topicId: filter.topicId,
             priorities: filter.priorities,
           );

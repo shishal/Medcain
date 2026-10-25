@@ -35,6 +35,7 @@ class PyqReaderScreen extends ConsumerWidget {
     final detail = ref.watch(pyqDetailProvider(questionId));
     return ContentCaptureGuard(
       screen: ContentScreens.pyqReader,
+      watermark: false,
       child: detail.when(
         loading: () => Scaffold(
           appBar: AppBar(title: const Text('PYQ')),
