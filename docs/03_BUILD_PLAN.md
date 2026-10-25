@@ -1,6 +1,6 @@
 # Build Plan — Phased Tasks
 
-Work top to bottom. Don't start a phase until the previous phase's validation steps all pass. Load one phase's section into Cursor at a time.
+Work top to bottom. Don't start a phase until the previous phase's validation steps all pass. Load one phase's section into the AI at a time.
 
 Each task has: **Description**, **Expected Outcome** (what "done" means, testable), **Validation** (how you personally confirm it — not the AI's claim, your own check), and **Notes**.
 

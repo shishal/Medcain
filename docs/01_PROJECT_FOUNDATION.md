@@ -1,7 +1,7 @@
 # Project Foundation
 
 Read `docs/00_PRODUCT.md` first. This file is locked engineering decisions — if
-Cursor (or you) later suggests deviating from one of these, treat it as a flag
+the AI (or you) later suggests deviating from one of these, treat it as a flag
 to stop and think, not a default to accept.
 
 **Product:** MBBS university-exam companion. Students pick their university;
@@ -9,7 +9,7 @@ v1 **content** is KUHS. The stack below was chosen for a
 timer-driven MCQ player; that player is now **practice-only**. Do not
 reintroduce a NEET-PG catalog as the home screen.
 
-Read this before writing any code. These are locked decisions — if Cursor (or you) later suggests deviating from one of these, treat it as a flag to stop and think, not a default to accept.
+Read this before writing any code. These are locked decisions — if the AI (or you) later suggests deviating from one of these, treat it as a flag to stop and think, not a default to accept.
 
 ## What "server-side" means in this stack (you're not hosting anything)
 
@@ -99,11 +99,11 @@ Rule for the AI agent: **a feature's `presentation/` layer never calls Supabase 
 - **Error handling**: every repository method that talks to Supabase returns a typed result (success/failure), never lets a raw `PostgrestException` bubble to the UI. Define a small `Result<T>` sealed class or use a package like `fpdart`'s `Either` if you want AI-generated code to follow a consistent pattern — pick one and put it in this file's next revision once decided, then never deviate.
 - **No magic strings for Supabase table/column names.** Define them as constants in `core/supabase/tables.dart` (e.g. `class Tables { static const questions = 'questions'; }`). This alone prevents a whole category of silent typo-bugs that AI-generated code is prone to.
 - **Every screen that reads user-plan-gated data must handle the "content not available on your plan" case explicitly** — not just a generic error state. This is a product requirement, not just a coding style point: users need to see "Upgrade to Pro to unlock this test," not a blank screen or a crash.
-- **Widgets over 150 lines get split.** If Cursor generates a 400-line `build()` method, ask it to extract sub-widgets before you accept the change — long build methods are where subtle layout bugs hide.
+- **Widgets over 150 lines get split.** If the AI generates a 400-line `build()` method, ask it to extract sub-widgets before you accept the change — long build methods are where subtle layout bugs hide.
 
 ## Design direction (MEDCAIN — blue on black)
 
-Concrete enough for Cursor to act on. Docci and the MEDCAIN name stay; do not
+Concrete enough for an AI coding assistant to act on. Docci and the MEDCAIN name stay; do not
 copy a competitor mascot or pixel-identical layouts.
 
 - **Material 3.** Seed / primary is **brand blue** (`#008FD6`) for CTAs,
