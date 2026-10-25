@@ -330,7 +330,7 @@ class _ExplanationPanel extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: Spacing.sm),
-          ComicCard(child: ZoomableMarkdownCopy(data: deep!)),
+          ComicCard(child: ZoomableMarkdownCopy(data: deep)),
         ],
         if (citations.isNotEmpty) ...[
           const SizedBox(height: Spacing.lg),
