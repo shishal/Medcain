@@ -51,143 +51,166 @@ class SubjectPyqFilterSheet extends ConsumerWidget {
     final universities = ref.watch(universitiesProvider).value ?? const [];
     final universityCodes = {for (final u in universities) u.id: u.code};
 
+    // Cap height so the sheet never grows past the screen; chips scroll while
+    // Clear/Done stay pinned at the bottom (otherwise Done falls off a phone
+    // viewport once every chip group is shown).
+    final maxHeight = media.size.height * 0.9;
+
     return Padding(
       padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Spacing.lg,
-            Spacing.sm,
-            Spacing.lg,
-            Spacing.lg,
-          ),
-          // Scrollable because a subject like Anatomy has enough chapters to
-          // push the chip wraps past the sheet height.
-          child: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.lg,
+              Spacing.sm,
+              Spacing.lg,
+              Spacing.lg,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Filters', style: Theme.of(context).textTheme.titleLarge),
-                if (options.universityIds.isNotEmpty)
-                  _ChipGroup(
-                    title: 'University',
-                    allLabel: 'All universities',
-                    isAllSelected: filter.universityId == null,
-                    onAll: () => notifier.setUniversity(null),
-                    chips: [
-                      for (final id in options.universityIds)
-                        _ChipData(
-                          label: universityCodes[id] ?? 'University',
-                          selected: filter.universityId == id,
-                          onSelected: () => notifier.setUniversity(id),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Filters',
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
-                    ],
-                  ),
-                if (options.years.isNotEmpty)
-                  _ChipGroup(
-                    title: 'Year',
-                    allLabel: 'All years',
-                    isAllSelected: filter.year == null,
-                    onAll: () => notifier.setYear(null),
-                    chips: [
-                      for (final year in options.years)
-                        _ChipData(
-                          label: '$year',
-                          selected: filter.year == year,
-                          onSelected: () => notifier.setYear(year),
+                        if (options.universityIds.isNotEmpty)
+                          _ChipGroup(
+                            title: 'University',
+                            allLabel: 'All universities',
+                            isAllSelected: filter.universityId == null,
+                            onAll: () => notifier.setUniversity(null),
+                            chips: [
+                              for (final id in options.universityIds)
+                                _ChipData(
+                                  label: universityCodes[id] ?? 'University',
+                                  selected: filter.universityId == id,
+                                  onSelected: () => notifier.setUniversity(id),
+                                ),
+                            ],
+                          ),
+                        if (options.years.isNotEmpty)
+                          _ChipGroup(
+                            title: 'Year',
+                            allLabel: 'All years',
+                            isAllSelected: filter.year == null,
+                            onAll: () => notifier.setYear(null),
+                            chips: [
+                              for (final year in options.years)
+                                _ChipData(
+                                  label: '$year',
+                                  selected: filter.year == year,
+                                  onSelected: () => notifier.setYear(year),
+                                ),
+                            ],
+                          ),
+                        if (options.examTypes.isNotEmpty)
+                          _ChipGroup(
+                            title: 'Exam type',
+                            allLabel: 'All types',
+                            isAllSelected: filter.examType == null,
+                            onAll: () => notifier.setExamType(null),
+                            chips: [
+                              for (final type in options.examTypes)
+                                _ChipData(
+                                  label: type.label,
+                                  selected: filter.examType == type,
+                                  onSelected: () => notifier.setExamType(type),
+                                ),
+                            ],
+                          ),
+                        if (options.paperNames.isNotEmpty)
+                          _ChipGroup(
+                            title: 'Paper',
+                            allLabel: 'All papers',
+                            isAllSelected: filter.paperName == null,
+                            onAll: () => notifier.setPaperName(null),
+                            chips: [
+                              for (final name in options.paperNames)
+                                _ChipData(
+                                  label: name,
+                                  selected: filter.paperName == name,
+                                  onSelected: () => notifier.setPaperName(name),
+                                ),
+                            ],
+                          ),
+                        _ChipGroup(
+                          title: 'Question type',
+                          allLabel: 'MCQ + Theory',
+                          isAllSelected: filter.isMcq == null,
+                          onAll: () => notifier.setFormat(),
+                          chips: [
+                            _ChipData(
+                              label: 'MCQ',
+                              selected: filter.isMcq == true,
+                              onSelected: () => notifier.setFormat(isMcq: true),
+                            ),
+                            _ChipData(
+                              label: 'Theory',
+                              selected: filter.isMcq == false,
+                              onSelected: () =>
+                                  notifier.setFormat(isMcq: false),
+                            ),
+                          ],
                         ),
-                    ],
-                  ),
-                if (options.examTypes.isNotEmpty)
-                  _ChipGroup(
-                    title: 'Exam type',
-                    allLabel: 'All types',
-                    isAllSelected: filter.examType == null,
-                    onAll: () => notifier.setExamType(null),
-                    chips: [
-                      for (final type in options.examTypes)
-                        _ChipData(
-                          label: type.label,
-                          selected: filter.examType == type,
-                          onSelected: () => notifier.setExamType(type),
+                        if (chapters.isNotEmpty)
+                          _ChipGroup(
+                            title: 'Chapters',
+                            allLabel: 'All chapters',
+                            isAllSelected: filter.topicId == null,
+                            onAll: () => notifier.setTopicId(null),
+                            chips: [
+                              for (final chapter in chapters)
+                                _ChipData(
+                                  label: chapter.name,
+                                  selected: filter.topicId == chapter.id,
+                                  onSelected: () =>
+                                      notifier.setTopicId(chapter.id),
+                                ),
+                            ],
+                          ),
+                        const SizedBox(height: Spacing.md),
+                        Text(
+                          'Revision priority',
+                          style: Theme.of(context).textTheme.titleSmall,
                         ),
-                    ],
-                  ),
-                if (options.paperNames.isNotEmpty)
-                  _ChipGroup(
-                    title: 'Paper',
-                    allLabel: 'All papers',
-                    isAllSelected: filter.paperName == null,
-                    onAll: () => notifier.setPaperName(null),
-                    chips: [
-                      for (final name in options.paperNames)
-                        _ChipData(
-                          label: name,
-                          selected: filter.paperName == name,
-                          onSelected: () => notifier.setPaperName(name),
+                        const SizedBox(height: Spacing.xs),
+                        Text(
+                          filter.priorities.isEmpty
+                              ? 'None chosen — all questions. Untagged questions count as Should.'
+                              : 'Untagged questions count as Should.',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
                         ),
-                    ],
-                  ),
-                _ChipGroup(
-                  title: 'Question type',
-                  allLabel: 'MCQ + Theory',
-                  isAllSelected: filter.isMcq == null,
-                  onAll: () => notifier.setFormat(),
-                  chips: [
-                    _ChipData(
-                      label: 'MCQ',
-                      selected: filter.isMcq == true,
-                      onSelected: () => notifier.setFormat(isMcq: true),
+                        const SizedBox(height: Spacing.sm),
+                        Wrap(
+                          spacing: Spacing.sm,
+                          runSpacing: Spacing.sm,
+                          children: [
+                            for (final priority in QuestionPriority.values)
+                              FilterChip(
+                                label: Text(priority.label),
+                                selected: filter.priorities.contains(priority),
+                                onSelected: (_) =>
+                                    notifier.togglePriority(priority),
+                              ),
+                          ],
+                        ),
+                      ],
                     ),
-                    _ChipData(
-                      label: 'Theory',
-                      selected: filter.isMcq == false,
-                      onSelected: () => notifier.setFormat(isMcq: false),
-                    ),
-                  ],
-                ),
-                if (chapters.isNotEmpty)
-                  _ChipGroup(
-                    title: 'Chapters',
-                    allLabel: 'All chapters',
-                    isAllSelected: filter.topicId == null,
-                    onAll: () => notifier.setTopicId(null),
-                    chips: [
-                      for (final chapter in chapters)
-                        _ChipData(
-                          label: chapter.name,
-                          selected: filter.topicId == chapter.id,
-                          onSelected: () => notifier.setTopicId(chapter.id),
-                        ),
-                    ],
                   ),
-                const SizedBox(height: Spacing.md),
-                Text(
-                  'Revision priority',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: Spacing.xs),
-                Text(
-                  filter.priorities.isEmpty
-                      ? 'None chosen — all questions. Untagged questions count as Should.'
-                      : 'Untagged questions count as Should.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: Spacing.sm),
-                Wrap(
-                  spacing: Spacing.sm,
-                  runSpacing: Spacing.sm,
-                  children: [
-                    for (final priority in QuestionPriority.values)
-                      FilterChip(
-                        label: Text(priority.label),
-                        selected: filter.priorities.contains(priority),
-                        onSelected: (_) => notifier.togglePriority(priority),
-                      ),
-                  ],
                 ),
                 const SizedBox(height: Spacing.lg),
                 Row(

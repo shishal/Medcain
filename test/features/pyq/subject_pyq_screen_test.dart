@@ -336,6 +336,16 @@ void main() {
     expect(find.text('Outline 2025 u1 ownCollege'), findsOneWidget);
   });
 
+  /// Chips live in a scrollable sheet; scroll into view before tapping so a
+  /// short phone viewport (as in CI) does not miss lower rows like Chapters.
+  Future<void> tapFilterChip(WidgetTester tester, String label) async {
+    final chip = find.widgetWithText(FilterChip, label);
+    await tester.ensureVisible(chip);
+    await tester.pumpAndSettle();
+    await tester.tap(chip);
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('Filters sheet narrows the sections and can be cleared', (
     tester,
   ) async {
@@ -344,8 +354,7 @@ void main() {
     await tester.tap(find.text('Filters'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(FilterChip, 'Pre-prof'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilterChip, 'KUHS'));
-    await tester.pumpAndSettle();
+    await tapFilterChip(tester, 'KUHS');
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
@@ -370,8 +379,7 @@ void main() {
 
     await tester.tap(find.text('Filters'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilterChip, 'Paper II'));
-    await tester.pumpAndSettle();
+    await tapFilterChip(tester, 'Paper II');
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
@@ -386,8 +394,7 @@ void main() {
     expect(find.text('Chapters'), findsOneWidget);
     await tester.tap(find.text('Clear all'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilterChip, 'Upper limb'));
-    await tester.pumpAndSettle();
+    await tapFilterChip(tester, 'Upper limb');
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
     expect(find.text('2023'), findsOneWidget);
