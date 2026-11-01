@@ -14,8 +14,9 @@ import '../../domain/pyq_sections.dart';
 import '../providers/pyq_providers.dart';
 import '../widgets/subject_pyq_filter_sheet.dart';
 
-/// Subject → papers in three sections (own university, own college, other
-/// universities), newest year first. Filters carry into the year outline.
+/// Subject → papers in three sections (own university, campus papers of that
+/// university with the student's college first, then other universities).
+/// Newest year first. Filters carry into the year outline.
 class SubjectPyqScreen extends ConsumerWidget {
   const SubjectPyqScreen({
     super.key,
@@ -38,10 +39,13 @@ class SubjectPyqScreen extends ConsumerWidget {
         : (ref.watch(collegesProvider(userUniversityId)).value ?? const []);
 
     final universityCodes = {for (final u in universities) u.id: u.code};
+    final collegeLabels = {
+      for (final c in colleges)
+        c.id: c.shortForm.isEmpty ? c.name : c.shortForm,
+    };
     String codeOf(String id) => universityCodes[id] ?? 'University';
-    final ownCollege = colleges
-        .where((c) => c.id == profile?.collegeId)
-        .firstOrNull;
+    String collegeLabelOf(String? id) =>
+        id == null ? 'Campus papers' : (collegeLabels[id] ?? 'College');
 
     return Scaffold(
       appBar: AppBar(
@@ -141,6 +145,11 @@ class SubjectPyqScreen extends ConsumerWidget {
               title,
               universityId: group.universityId,
               section: group.section.name,
+              // Empty string means "no college on the paper" so the outline
+              // does not mix in another campus of the same year.
+              collegeId: group.section == PyqSection.ownCollege
+                  ? (group.collegeId ?? '')
+                  : null,
             ),
           );
 
@@ -178,12 +187,23 @@ class SubjectPyqScreen extends ConsumerWidget {
                 ],
                 if (sections.ownCollege.isNotEmpty) ...[
                   _SectionHeader(
-                    ownCollege == null || ownCollege.shortForm.isEmpty
-                        ? 'Your college internal / pre-prof'
-                        : '${ownCollege.shortForm} internal / pre-prof',
+                    userUniversityId == null
+                        ? 'Internal / pre-prof'
+                        : '${codeOf(userUniversityId)} internal / pre-prof',
                   ),
-                  for (final group in sections.ownCollege)
-                    _YearCard(group: group, onTap: () => open(group)),
+                  for (var i = 0; i < sections.ownCollege.length; i++) ...[
+                    // Own college first, then other campuses — one heading each.
+                    if (i == 0 ||
+                        sections.ownCollege[i].collegeId !=
+                            sections.ownCollege[i - 1].collegeId)
+                      _UniversityHeading(
+                        collegeLabelOf(sections.ownCollege[i].collegeId),
+                      ),
+                    _YearCard(
+                      group: sections.ownCollege[i],
+                      onTap: () => open(sections.ownCollege[i]),
+                    ),
+                  ],
                 ],
                 if (sections.other.isNotEmpty) ...[
                   const _SectionHeader('Other universities'),

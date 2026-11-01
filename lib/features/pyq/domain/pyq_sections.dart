@@ -6,36 +6,36 @@ enum PyqSection {
   /// The student's university: prof and supply papers.
   ownUniversity,
 
-  /// The student's own college: pre-prof and internal papers.
+  /// The student's university campus papers (pre-prof / internal),
+  /// with the student's college listed first.
   ownCollege,
 
-  /// Everything else: other universities, and other colleges' campus papers.
+  /// Everything else: other universities.
   other,
 }
 
 /// Which block a sitting belongs to for this student.
+///
+/// College only changes order inside section two (see [buildPyqSections]);
+/// every campus paper of the student's university is section two.
 PyqSection classifySitting(
   PaperSitting sitting, {
   required String? userUniversityId,
-  required String? userCollegeId,
 }) {
   if (userUniversityId == null || sitting.universityId != userUniversityId) {
     return PyqSection.other;
   }
-  if (!sitting.examType.isCampusLevel) return PyqSection.ownUniversity;
-  // A campus paper with no college on it cannot be tied to a campus, so it
-  // reads as the university's own paper.
-  if (sitting.collegeId == null) return PyqSection.ownUniversity;
-  if (sitting.collegeId == userCollegeId) return PyqSection.ownCollege;
-  return PyqSection.other;
+  if (sitting.examType.isCampusLevel) return PyqSection.ownCollege;
+  return PyqSection.ownUniversity;
 }
 
 /// One row on the subject screen: a university's papers in one year,
-/// within one section.
+/// within one section (and one college, for campus papers).
 class PyqSittingGroup {
   const PyqSittingGroup({
     required this.section,
     required this.universityId,
+    this.collegeId,
     required this.year,
     required this.examTypes,
     required this.paperNames,
@@ -44,6 +44,9 @@ class PyqSittingGroup {
 
   final PyqSection section;
   final String universityId;
+
+  /// Set for campus-paper rows so the outline can open just that college.
+  final String? collegeId;
   final int year;
   final List<PaperExamType> examTypes;
 
@@ -73,9 +76,9 @@ class _GroupBuilder {
   final paperNames = <String>{};
 }
 
-/// Splits the filtered feed into the three sections. Years run newest first;
-/// "other" is grouped by university first, using [universityCodes] for the
-/// order so the screen can put a heading over each university.
+/// Splits the filtered feed into the three sections. Years run newest first.
+/// Section 2 lists the student's college first, then other colleges of the
+/// same university. "Other" is grouped by university using [universityCodes].
 PyqSections buildPyqSections({
   required List<PyqTeaser> teasers,
   required SubjectPyqFilter filter,
@@ -83,17 +86,21 @@ PyqSections buildPyqSections({
   required String? userCollegeId,
   Map<String, String> universityCodes = const {},
 }) {
-  final builders = <(PyqSection, String, int), _GroupBuilder>{};
+  // Key: section, university, college (campus rows only), year.
+  final builders = <(PyqSection, String, String, int), _GroupBuilder>{};
   for (final teaser in applySubjectPyqFilter(teasers, filter)) {
     for (final sitting in teaser.sittings) {
       if (!sittingMatches(sitting, filter)) continue;
       final section = classifySitting(
         sitting,
         userUniversityId: userUniversityId,
-        userCollegeId: userCollegeId,
       );
+      // Keep campus papers of the same uni/year as separate rows per college;
+      // prof/supply and other-university rows stay one per uni/year.
+      final collegeKey =
+          section == PyqSection.ownCollege ? (sitting.collegeId ?? '') : '';
       final group = builders.putIfAbsent(
-        (section, sitting.universityId, sitting.year),
+        (section, sitting.universityId, collegeKey, sitting.year),
         _GroupBuilder.new,
       );
       group.questionIds.add(teaser.id);
@@ -109,7 +116,8 @@ PyqSections buildPyqSections({
       PyqSittingGroup(
         section: entry.key.$1,
         universityId: entry.key.$2,
-        year: entry.key.$3,
+        collegeId: entry.key.$3.isEmpty ? null : entry.key.$3,
+        year: entry.key.$4,
         examTypes: [
           for (final type in PaperExamType.values)
             if (entry.value.examTypes.contains(type)) type,
@@ -122,12 +130,24 @@ PyqSections buildPyqSections({
   String codeOf(PyqSittingGroup g) =>
       universityCodes[g.universityId] ?? g.universityId;
 
+  int collegeRank(PyqSittingGroup g) {
+    if (userCollegeId != null && g.collegeId == userCollegeId) return 0;
+    if (g.collegeId == null) return 1;
+    return 2;
+  }
+
   List<PyqSittingGroup> pick(PyqSection section) {
     final list = [
       for (final g in groups)
         if (g.section == section) g,
     ];
     list.sort((a, b) {
+      if (section == PyqSection.ownCollege) {
+        final byRank = collegeRank(a).compareTo(collegeRank(b));
+        if (byRank != 0) return byRank;
+        final byCollege = (a.collegeId ?? '').compareTo(b.collegeId ?? '');
+        if (byCollege != 0) return byCollege;
+      }
       if (section == PyqSection.other) {
         final byUni = codeOf(a).compareTo(codeOf(b));
         if (byUni != 0) return byUni;

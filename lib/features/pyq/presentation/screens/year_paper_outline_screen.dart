@@ -22,6 +22,7 @@ class YearPaperOutlineScreen extends ConsumerWidget {
     required this.title,
     this.universityId,
     this.section,
+    this.collegeId,
   });
 
   final String subjectId;
@@ -35,6 +36,9 @@ class YearPaperOutlineScreen extends ConsumerWidget {
   /// A [PyqSection] name.
   final String? section;
 
+  /// Campus-paper rows also pass the college so another campus's stems stay out.
+  final String? collegeId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(subjectPyqsProvider(subjectId));
@@ -42,19 +46,26 @@ class YearPaperOutlineScreen extends ConsumerWidget {
     final profile = ref.watch(userProfileProvider).value;
     final scopeSection = PyqSection.values.asNameMap()[section];
     final scopeUniversityId = universityId;
+    // Null = no college filter. Empty string = papers with no college set.
+    final scopeCollegeId = collegeId;
     // Narrow to the tapped row so a KUHS 2024 row does not also list the
-    // 2024 stems of another university.
+    // 2024 stems of another university (or another campus).
     final bool Function(PaperSitting)? scope =
         scopeSection == null || scopeUniversityId == null
         ? null
-        : (sitting) =>
-              sitting.universityId == scopeUniversityId &&
-              classifySitting(
-                    sitting,
-                    userUniversityId: profile?.universityId,
-                    userCollegeId: profile?.collegeId,
-                  ) ==
-                  scopeSection;
+        : (sitting) {
+            if (sitting.universityId != scopeUniversityId) return false;
+            if (classifySitting(
+                  sitting,
+                  userUniversityId: profile?.universityId,
+                ) !=
+                scopeSection) {
+              return false;
+            }
+            if (scopeCollegeId == null) return true;
+            if (scopeCollegeId.isEmpty) return sitting.collegeId == null;
+            return sitting.collegeId == scopeCollegeId;
+          };
     return Scaffold(
       appBar: AppBar(title: Text('$title · $year')),
       body: async.when(

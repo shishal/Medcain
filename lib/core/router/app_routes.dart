@@ -41,20 +41,23 @@ abstract final class AppRoutes {
         queryParameters: {'title': title},
       ).toString();
 
-  /// [universityId] and [section] (a `PyqSection` name) scope the outline to
-  /// the row that was tapped. Without them the year shows every sitting.
+  /// [universityId], [section] (a `PyqSection` name), and optional [collegeId]
+  /// scope the outline to the row that was tapped. Without them the year shows
+  /// every sitting.
   static String subjectYearPath(
     String id,
     int year,
     String title, {
     String? universityId,
     String? section,
+    String? collegeId,
   }) => Uri(
     path: '/subjects/$id/years/$year',
     queryParameters: {
       'title': title,
       'uni': ?universityId,
       'section': ?section,
+      'college': ?collegeId,
     },
   ).toString();
 

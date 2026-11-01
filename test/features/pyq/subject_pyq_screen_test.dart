@@ -284,6 +284,12 @@ void main() {
                 name: 'Maulana Azad Medical College',
                 shortForm: 'MAMC',
               ),
+              College(
+                id: 'c2',
+                universityId: 'u1',
+                name: 'Dr Baba Saheb Ambedkar Medical College',
+                shortForm: 'BSAMC',
+              ),
             ],
           ),
         ],
@@ -294,13 +300,13 @@ void main() {
     return router;
   }
 
-  testWidgets('subject screen shows own university, own college, then others', (
+  testWidgets('subject screen shows own university, campus papers, then others', (
     tester,
   ) async {
     await pumpScreen(tester);
 
     final own = find.text('GGSIPU previous year questions');
-    final college = find.text('MAMC internal / pre-prof');
+    final college = find.text('GGSIPU internal / pre-prof');
     final other = find.text('Other universities');
     expect(own, findsOneWidget);
     expect(college, findsOneWidget);
@@ -320,9 +326,20 @@ void main() {
     expect(find.text('Chapters'), findsNothing);
     expect(find.text('Brachial plexus'), findsNothing);
 
-    // The other campus (2022) and the other university (2024) are both in
-    // "Other universities", so 2024 shows twice.
+    // Own college (MAMC) before the other campus (BSAMC); other university
+    // alone in section three, so 2024 appears once there plus once under
+    // GGSIPU prof.
+    expect(find.text('MAMC'), findsOneWidget);
+    expect(find.text('BSAMC'), findsOneWidget);
     expect(find.text('2022'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('MAMC')).dy,
+      lessThan(tester.getTopLeft(find.text('BSAMC')).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('2025')).dy,
+      lessThan(tester.getTopLeft(find.text('2022')).dy),
+    );
     expect(find.text('2024'), findsNWidgets(2));
   });
 
@@ -359,7 +376,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('GGSIPU previous year questions'), findsNothing);
-    expect(find.text('MAMC internal / pre-prof'), findsNothing);
+    expect(find.text('GGSIPU internal / pre-prof'), findsNothing);
     expect(find.text('Other universities'), findsOneWidget);
     expect(find.byIcon(Icons.filter_alt_rounded), findsOneWidget);
 

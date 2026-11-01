@@ -51,7 +51,6 @@ void main() {
     PyqSection classify(PaperSitting s) => classifySitting(
       s,
       userUniversityId: 'u1',
-      userCollegeId: 'c1',
     );
 
     test('own university prof and supply are section one', () {
@@ -62,7 +61,7 @@ void main() {
       );
     });
 
-    test('own college pre-prof and internal are section two', () {
+    test('own-university pre-prof and internal are section two', () {
       expect(
         classify(
           _sitting(year: 2025, college: 'c1', type: PaperExamType.preProf),
@@ -75,22 +74,21 @@ void main() {
         ),
         PyqSection.ownCollege,
       );
-    });
-
-    test('campus papers with no college read as the university paper', () {
-      expect(
-        classify(_sitting(year: 2025, type: PaperExamType.preProf)),
-        PyqSection.ownUniversity,
-      );
-    });
-
-    test('other colleges and other universities are section three', () {
+      // Other campuses of the same university stay in section two.
       expect(
         classify(
           _sitting(year: 2025, college: 'c2', type: PaperExamType.preProf),
         ),
-        PyqSection.other,
+        PyqSection.ownCollege,
       );
+      // Campus papers with no college still sit with pre-prof / internal.
+      expect(
+        classify(_sitting(year: 2025, type: PaperExamType.preProf)),
+        PyqSection.ownCollege,
+      );
+    });
+
+    test('other universities are section three', () {
       expect(
         classify(_sitting(year: 2025, university: 'u2')),
         PyqSection.other,
@@ -102,7 +100,6 @@ void main() {
         classifySitting(
           _sitting(year: 2024),
           userUniversityId: null,
-          userCollegeId: null,
         ),
         PyqSection.other,
       );
@@ -120,6 +117,12 @@ void main() {
       _teaser('d', [
         _sitting(year: 2026, college: 'c1', type: PaperExamType.preProf),
       ]),
+      _teaser('d2', [
+        _sitting(year: 2024, college: 'c2', type: PaperExamType.internal),
+      ]),
+      _teaser('d3', [
+        _sitting(year: 2025, college: 'c1', type: PaperExamType.internal),
+      ]),
       _teaser('e', [_sitting(year: 2023, university: 'u3')]),
       _teaser('f', [_sitting(year: 2021, university: 'u2')]),
       _teaser('g', [_sitting(year: 2025, university: 'u2')]),
@@ -129,7 +132,11 @@ void main() {
       final sections = _build(teasers);
 
       expect(sections.ownUniversity.map((g) => g.year), [2024, 2022]);
-      expect(sections.ownCollege.map((g) => g.year), [2026]);
+      // Own college first (newest first), then other campuses.
+      expect(
+        sections.ownCollege.map((g) => (g.collegeId, g.year)),
+        [('c1', 2026), ('c1', 2025), ('c2', 2024)],
+      );
       // "Other" is grouped by university code (KUHS before RGUHS).
       expect(
         sections.other.map((g) => (g.universityId, g.year)),
