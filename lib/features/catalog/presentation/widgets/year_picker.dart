@@ -24,25 +24,30 @@ class YearPickerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 108,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: padding,
-        itemCount: phases.length,
-        separatorBuilder: (_, _) => const SizedBox(width: Spacing.sm),
-        itemBuilder: (context, i) {
-          final phase = phases[i];
-          return StaggeredFade(
-            index: i,
-            child: _YearChip(
-              phase: phase,
-              selected: phase.id == selectedId,
-              fill: ComicColors.of(context).sticker,
-              onTap: () => onSelect(phase.id),
-            ),
-          );
-        },
+    // Equal-width chips in one row — no horizontal scroll from 1st → final.
+    return Padding(
+      padding: padding,
+      child: SizedBox(
+        height: 92,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < phases.length; i++) ...[
+              if (i > 0) const SizedBox(width: Spacing.sm),
+              Expanded(
+                child: StaggeredFade(
+                  index: i,
+                  child: _YearChip(
+                    phase: phases[i],
+                    selected: phases[i].id == selectedId,
+                    fill: ComicColors.of(context).sticker,
+                    onTap: () => onSelect(phases[i].id),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -65,58 +70,55 @@ class _YearChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return SizedBox(
-      width: 96,
-      child: ComicCard(
-        key: ValueKey('year-chip-${phase.id}'),
-        color: fill,
-        highlighted: selected,
-        padding: const EdgeInsets.all(Spacing.xs),
-        semanticLabel: phase.name,
-        onTap: onTap,
-        child: Column(
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.asset(
-                      BrandAssets.yearArt(
-                        code: phase.code,
-                        name: phase.name,
-                        displayOrder: phase.displayOrder,
-                      ),
-                      fit: BoxFit.cover,
+    return ComicCard(
+      key: ValueKey('year-chip-${phase.id}'),
+      color: fill,
+      highlighted: selected,
+      padding: const EdgeInsets.all(Spacing.xs),
+      semanticLabel: phase.name,
+      onTap: onTap,
+      child: Column(
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    BrandAssets.yearArt(
+                      code: phase.code,
+                      name: phase.name,
+                      displayOrder: phase.displayOrder,
                     ),
-                    if (selected)
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Icon(
-                            Icons.check_circle_rounded,
-                            size: 18,
-                            color: scheme.primary,
-                          ),
+                    fit: BoxFit.cover,
+                  ),
+                  if (selected)
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.check_circle_rounded,
+                          size: 16,
+                          color: scheme.primary,
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
-            const SizedBox(height: Spacing.xs),
-            Text(
-              phase.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelMedium
-                  ?.copyWith(fontWeight: FontWeight.w800),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: Spacing.xs),
+          Text(
+            phase.name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(fontWeight: FontWeight.w800, height: 1.1),
+          ),
+        ],
       ),
     );
   }

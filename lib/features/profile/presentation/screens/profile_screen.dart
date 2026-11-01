@@ -82,15 +82,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const Center(
               child: ComicMascot(
                 asset: BrandAssets.mascotAvatar,
-                size: 96,
+                size: 64,
                 bounce: false,
               ),
             ),
-            const SizedBox(height: Spacing.md),
+            const SizedBox(height: Spacing.sm),
             Text(
               (name == null || name.isEmpty) ? 'MEDCAIN student' : name,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge
+              style: Theme.of(context).textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w700),
             ),
             profileAsync.when(
@@ -175,7 +175,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 onRetry: () => ref.read(userProfileProvider.notifier).refresh(),
               ),
             ),
-            const SizedBox(height: Spacing.lg),
+            const SizedBox(height: Spacing.md),
             profileAsync.when(
               data: (profile) {
                 if (profile == null) return const SizedBox.shrink();
