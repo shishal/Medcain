@@ -871,7 +871,7 @@ Google Sheet / CSV tab.
 
 | RPC | Returns |
 |---|---|
-| `get_study_progress()` | streak, 7/30-day counts, subject coverage (`total_lessons` + `total_pyqs`) |
+| `get_study_progress()` | streak, 7/30-day counts, subject coverage (`total_lessons` university-scoped; `total_pyqs` all universities for the subject) |
 | `search_catalog(p_query)` | subjects, lessons, PYQ teasers |
 | `create_practice_session(..., p_lesson_ids uuid[] default null)` | MCQ-only + optional lesson filter |
 | `mark_lesson_learnt(p_lesson_id)` / `mark_question_learnt(p_question_id)` | progress + study_event |

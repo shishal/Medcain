@@ -26,7 +26,8 @@ class SubjectCoverage {
   final int learntLessons;
   final int totalLessons;
 
-  /// Distinct active questions on this subject's papers for the student university.
+  /// Distinct active questions on this subject's papers across every university.
+  /// Matches the subject PYQ list (own uni, campus, and other universities).
   final int totalPyqs;
 
   factory SubjectCoverage.fromJson(Map<String, dynamic> json) {

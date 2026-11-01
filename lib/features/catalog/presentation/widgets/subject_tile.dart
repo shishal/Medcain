@@ -86,7 +86,8 @@ class SubjectSticker extends StatelessWidget {
     final comic = ComicColors.of(context);
     final accent = StickerFills.subjectAccent(subject.name);
     // PYQ count comes from get_study_progress — not a client-computed score.
-    // Hide it when this university has no papers; those totals are another bank.
+    // It is every university for the subject (same stems the subject list shows).
+    // Hide the badge when Home has no papers for the selected university yet.
     final pyqs = showLessonProgress ? (coverage?.totalPyqs ?? 0) : 0;
 
     return ComicCard(
@@ -161,7 +162,7 @@ class SubjectSticker extends StatelessWidget {
   }
 }
 
-/// Home sticker subtitle: this university's PYQ count for the subject.
+/// Home sticker subtitle: PYQ count for the subject (all universities).
 String subjectTileCaption({
   required bool showLessonProgress,
   int totalPyqs = 0,
