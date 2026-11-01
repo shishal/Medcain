@@ -375,9 +375,11 @@ void main() {
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
-    expect(find.text('GGSIPU previous year questions'), findsNothing);
-    expect(find.text('GGSIPU internal / pre-prof'), findsNothing);
+    // Empty sections stay visible so the three-block layout never collapses.
+    expect(find.text('GGSIPU previous year questions'), findsOneWidget);
+    expect(find.text('GGSIPU internal / pre-prof'), findsOneWidget);
     expect(find.text('Other universities'), findsOneWidget);
+    expect(find.text('No papers match these filters.'), findsNWidgets(2));
     expect(find.byIcon(Icons.filter_alt_rounded), findsOneWidget);
 
     await tester.tap(find.text('Filters'));

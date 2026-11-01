@@ -104,40 +104,6 @@ class SubjectPyqScreen extends ConsumerWidget {
                 ].whereType<String>().join(' · ')
               : null;
 
-          if (sections.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: () async =>
-                  ref.invalidate(subjectPyqsProvider(subjectId)),
-              child: ListView(
-                // A scrollable is required for pull-to-refresh to have
-                // somewhere to hang, even when the list itself is empty.
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  SizedBox(
-                    height: MediaQuery.sizeOf(context).height * 0.6,
-                    child: filter.isActive
-                        ? AsyncEmptyView(
-                            icon: Icons.filter_alt_off_outlined,
-                            message: 'No papers match these filters.',
-                            actionLabel: 'Clear filters',
-                            onAction: ref
-                                .read(
-                                  subjectPyqFiltersProvider(subjectId).notifier,
-                                )
-                                .clear,
-                          )
-                        : AsyncEmptyView(
-                            icon: Icons.history_edu_outlined,
-                            message:
-                                'No previous year papers for $title yet.\n'
-                                'They arrive as your university is tagged.',
-                          ),
-                  ),
-                ],
-              ),
-            );
-          }
-
           void open(PyqSittingGroup group) => context.push(
             AppRoutes.subjectYearPath(
               subjectId,
@@ -153,10 +119,17 @@ class SubjectPyqScreen extends ConsumerWidget {
             ),
           );
 
+          final emptyCopy = filter.isActive
+              ? 'No papers match these filters.'
+              : 'No papers yet.';
+
           return RefreshIndicator(
             onRefresh: () async =>
                 ref.invalidate(subjectPyqsProvider(subjectId)),
             child: ListView(
+              // AlwaysScrollable so pull-to-refresh works when every
+              // section is empty.
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(Spacing.md),
               children: [
                 Text(
@@ -175,22 +148,34 @@ class SubjectPyqScreen extends ConsumerWidget {
                     activeSummary,
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
+                  if (filter.isActive && sections.isEmpty)
+                    TextButton(
+                      onPressed: ref
+                          .read(subjectPyqFiltersProvider(subjectId).notifier)
+                          .clear,
+                      child: const Text('Clear filters'),
+                    ),
                 ],
-                if (sections.ownUniversity.isNotEmpty) ...[
-                  _SectionHeader(
-                    userUniversityId == null
-                        ? 'Your university previous year questions'
-                        : '${codeOf(userUniversityId)} previous year questions',
-                  ),
+                // Keep all three section headings visible even when empty so
+                // students always see the layout (prof/supply, campus, other).
+                _SectionHeader(
+                  userUniversityId == null
+                      ? 'Your university previous year questions'
+                      : '${codeOf(userUniversityId)} previous year questions',
+                ),
+                if (sections.ownUniversity.isEmpty)
+                  _EmptySection(emptyCopy)
+                else
                   for (final group in sections.ownUniversity)
                     _YearCard(group: group, onTap: () => open(group)),
-                ],
-                if (sections.ownCollege.isNotEmpty) ...[
-                  _SectionHeader(
-                    userUniversityId == null
-                        ? 'Internal / pre-prof'
-                        : '${codeOf(userUniversityId)} internal / pre-prof',
-                  ),
+                _SectionHeader(
+                  userUniversityId == null
+                      ? 'Internal / pre-prof'
+                      : '${codeOf(userUniversityId)} internal / pre-prof',
+                ),
+                if (sections.ownCollege.isEmpty)
+                  _EmptySection(emptyCopy)
+                else
                   for (var i = 0; i < sections.ownCollege.length; i++) ...[
                     // Own college first, then other campuses — one heading each.
                     if (i == 0 ||
@@ -204,9 +189,10 @@ class SubjectPyqScreen extends ConsumerWidget {
                       onTap: () => open(sections.ownCollege[i]),
                     ),
                   ],
-                ],
-                if (sections.other.isNotEmpty) ...[
-                  const _SectionHeader('Other universities'),
+                const _SectionHeader('Other universities'),
+                if (sections.other.isEmpty)
+                  _EmptySection(emptyCopy)
+                else
                   for (var i = 0; i < sections.other.length; i++) ...[
                     // One small heading per university; the list is already
                     // grouped by university.
@@ -221,7 +207,6 @@ class SubjectPyqScreen extends ConsumerWidget {
                       onTap: () => open(sections.other[i]),
                     ),
                   ],
-                ],
               ],
             ),
           );
@@ -245,6 +230,25 @@ class _SectionHeader extends StatelessWidget {
         style: Theme.of(
           context,
         ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+class _EmptySection extends StatelessWidget {
+  const _EmptySection(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.sm),
+      child: Text(
+        message,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
