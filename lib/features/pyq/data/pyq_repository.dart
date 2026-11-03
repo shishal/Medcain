@@ -222,7 +222,8 @@ class PyqRepository {
           '${QuestionColumns.id},${QuestionColumns.lessonId},'
           '${QuestionColumns.topicId},${QuestionColumns.questionText},'
           '${QuestionColumns.marks},${QuestionColumns.requiredPlan},'
-          '${QuestionColumns.kind},${QuestionColumns.difficulty}';
+          '${QuestionColumns.kind},${QuestionColumns.difficulty},'
+          '${QuestionColumns.hasDirectAnswer},${QuestionColumns.hasExplanation}';
       final questionById = <String, Map<String, dynamic>>{};
       // Nested function: visible only in this method, so topic + paper
       // lookups share one map without a file-level helper.

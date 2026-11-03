@@ -13,6 +13,8 @@ PyqTeaser _teaser({
   String text = 'Describe the femoral triangle.',
   int appearanceCount = 1,
   num? marks = 10,
+  bool hasDirectAnswer = false,
+  bool hasExplanation = false,
 }) {
   return PyqTeaser(
     id: 'q1',
@@ -24,6 +26,8 @@ PyqTeaser _teaser({
     priority: priority,
     appearanceYears: const [2024],
     paperNames: const ['Paper I'],
+    hasDirectAnswer: hasDirectAnswer,
+    hasExplanation: hasExplanation,
   );
 }
 
@@ -46,6 +50,20 @@ void main() {
     expect(find.text('Should'), findsNothing);
     expect(find.text('Essay'), findsOneWidget);
     expect(find.text('10 marks'), findsOneWidget);
+    expect(find.text('Answer available'), findsNothing);
+    expect(find.text('Solution available'), findsNothing);
+  });
+
+  testWidgets('shows answer and solution chips only when content exists', (
+    tester,
+  ) async {
+    await _pump(tester, _teaser(hasDirectAnswer: true));
+    expect(find.text('Answer available'), findsOneWidget);
+    expect(find.text('Solution available'), findsNothing);
+
+    await _pump(tester, _teaser(hasExplanation: true));
+    expect(find.text('Answer available'), findsNothing);
+    expect(find.text('Solution available'), findsOneWidget);
   });
 
   testWidgets('shows a chip for a deliberate Must or Could', (tester) async {

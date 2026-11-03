@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/comic_colors.dart';
+import '../../../../core/theme/player_colors.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../core/widgets/comic_card.dart';
 import '../../../bookmarks/presentation/widgets/bookmark_icon_button.dart';
@@ -74,6 +75,16 @@ class PyqTeaserCard extends StatelessWidget {
                       _MetaChip(label: teaser.format.label),
                     if (teaser.marks != null)
                       _MetaChip(label: '${teaser.marks} marks'),
+                    if (teaser.hasDirectAnswer)
+                      const _MetaChip(
+                        label: 'Answer available',
+                        color: PlayerColors.correct,
+                      ),
+                    if (teaser.hasExplanation)
+                      const _MetaChip(
+                        label: 'Solution available',
+                        color: PlayerColors.correct,
+                      ),
                     // `should` is what a blank CSV cell imports as, so a chip
                     // there would sit on every card and mean nothing.
                     if (teaser.priority.isNoteworthy)

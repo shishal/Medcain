@@ -110,6 +110,8 @@ abstract final class QuestionColumns {
   static const kind = 'kind';
   static const lessonId = 'lesson_id';
   static const marks = 'marks';
+  static const hasDirectAnswer = 'has_direct_answer';
+  static const hasExplanation = 'has_explanation';
 
   /// PostgREST embed alias: `topic:topics(...)`.
   static const topicEmbed = 'topic';
@@ -352,6 +354,8 @@ abstract final class PyqTeaserColumns {
   static const appearanceCount = 'appearance_count';
   static const kind = 'kind';
   static const difficulty = 'difficulty';
+  static const hasDirectAnswer = 'has_direct_answer';
+  static const hasExplanation = 'has_explanation';
 }
 
 abstract final class ResourceColumns {

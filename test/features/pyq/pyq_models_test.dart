@@ -33,6 +33,22 @@ void main() {
     // A blank difficulty cell imports as `should`, which carries no signal.
     expect(teaser.priority.label, 'Should');
     expect(teaser.priority.isNoteworthy, isFalse);
+    expect(teaser.hasDirectAnswer, isFalse);
+    expect(teaser.hasExplanation, isFalse);
+  });
+
+  test('PyqTeaser reads content flags without the answer text', () {
+    final teaser = PyqTeaser.fromJson({
+      PyqTeaserColumns.id: 'q-flags',
+      PyqTeaserColumns.questionText: 'Write a note on diabetes mellitus.',
+      PyqTeaserColumns.requiredPlan: 'free',
+      PyqTeaserColumns.appearanceCount: 1,
+      PyqTeaserColumns.hasDirectAnswer: true,
+      PyqTeaserColumns.hasExplanation: true,
+    });
+    expect(teaser.hasDirectAnswer, isTrue);
+    expect(teaser.hasExplanation, isTrue);
+    expect(teaser.copyWith(appearanceCount: 2).hasDirectAnswer, isTrue);
   });
 
   test('PyqTeaser reads an explicit must priority', () {

@@ -693,6 +693,13 @@ Both sit on the question row, so they follow that row's plan gate.
 PYQ would leak the model answer. The sheet column `answers` is stored in
 `question_sample_answers` with RLS `plan_rank(current_plan()) >= plan_rank('pro')`.
 
+`questions.has_direct_answer` is a boolean kept in sync by a trigger on
+`question_sample_answers` (non-blank `body` only). `questions.has_explanation`
+is a generated boolean, true when `explanation_text` or `explanation_deep`
+is non-blank. Listing chips read those flags and never the text. A free
+student can see that a Pro answer exists; the body stays behind the sample-answer
+policy.
+
 Also: `question_appearances` (frequency = count), `question_textbook_refs`
 (citation only — never PDF bytes).
 
@@ -709,8 +716,9 @@ create index idx_questions_lesson on questions(lesson_id) where lesson_id is not
 ```
 
 View `pyq_teasers` (security_invoker = true so questions RLS still applies):
-stem, marks, kind, difficulty, lesson_id, required_plan, appearance_count —
-no sample answer, no MCQ keys. `difficulty` holds `must` / `should` / `could`
+stem, marks, kind, difficulty, lesson_id, required_plan, appearance_count,
+`has_direct_answer`, `has_explanation` — no sample-answer text, no explanation
+text, no MCQ keys. `difficulty` holds `must` / `should` / `could`
 and is optional on import (blank ⇒ `should`); the app renders a chip only for
 `must` and `could`, since `should` is just the default. Includes both
 `pyq_theory` and `mcq` rows. University filter is applied in the client/RPC

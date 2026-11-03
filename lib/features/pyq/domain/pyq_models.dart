@@ -72,6 +72,8 @@ class PyqTeaser {
     this.topicName,
     this.lessonName,
     this.sittings = const [],
+    this.hasDirectAnswer = false,
+    this.hasExplanation = false,
   });
 
   final String id;
@@ -96,6 +98,13 @@ class PyqTeaser {
   /// stay scoped to the student's own university.
   final List<PaperSitting> sittings;
 
+  /// A non-blank row in `question_sample_answers`. The listing never
+  /// receives the answer text; Pro still gates reading it.
+  final bool hasDirectAnswer;
+
+  /// `explanation_text` or `explanation_deep` has non-blank text.
+  final bool hasExplanation;
+
   QuestionFormat get format =>
       QuestionFormat.fromKindAndMarks(kind: kind, marks: marks);
 
@@ -118,6 +127,8 @@ class PyqTeaser {
             json[QuestionColumns.difficulty] as String? ??
             QuestionPriority.should.dbValue,
       ),
+      hasDirectAnswer: json[PyqTeaserColumns.hasDirectAnswer] as bool? ?? false,
+      hasExplanation: json[PyqTeaserColumns.hasExplanation] as bool? ?? false,
     );
   }
 
@@ -148,6 +159,8 @@ class PyqTeaser {
       topicName: topicName ?? this.topicName,
       lessonName: lessonName ?? this.lessonName,
       sittings: sittings ?? this.sittings,
+      hasDirectAnswer: hasDirectAnswer,
+      hasExplanation: hasExplanation,
     );
   }
 }
