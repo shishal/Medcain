@@ -77,6 +77,8 @@ question on one sitting.
 
 See [`apps_script/README.md`](apps_script/README.md).
 
+In-app admin edits are queued in Postgres. **Pull app edits** (or **Sync to App**, which pulls first) writes them back into this tab. Run that pull before `scripts/sync_content_csv.py --apply`, or a question that exists only in the app can be deleted as missing from the sheet. `required_plan = free` is the free tier; the pull fills that column so a later sync does not treat a blank cell as free again when you had set Pro or Elite.
+
 ```bash
 python3 scripts/sync_content_csv.py             # preview
 python3 scripts/sync_content_csv.py --apply     # type APPLY to write

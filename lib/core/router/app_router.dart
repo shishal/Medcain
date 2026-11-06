@@ -1,6 +1,13 @@
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../features/admin/presentation/screens/admin_announcement_screen.dart';
+import '../../features/admin/presentation/screens/admin_announcements_screen.dart';
+import '../../features/admin/presentation/screens/admin_home_screen.dart';
+import '../../features/admin/presentation/screens/admin_question_screen.dart';
+import '../../features/admin/presentation/screens/admin_questions_screen.dart';
+import '../../features/admin/presentation/screens/admin_user_screen.dart';
+import '../../features/admin/presentation/screens/admin_users_screen.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/auth/presentation/providers/auth_session_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
@@ -48,9 +55,12 @@ GoRouter goRouter(Ref ref) {
     refreshListenable: refreshListenable,
     redirect: (context, state) {
       final location = state.matchedLocation;
+      final path = state.uri.path;
       final onSplash = location == AppRoutes.splash;
       final onAuth =
           location == AppRoutes.login || location == AppRoutes.signup;
+      final onAdmin =
+          path == AppRoutes.admin || path.startsWith('${AppRoutes.admin}/');
 
       // Splash handles its own navigation after a brief display.
       if (onSplash) return null;
@@ -59,11 +69,21 @@ GoRouter goRouter(Ref ref) {
         return AppRoutes.login;
       }
       if (isAuthenticated && onAuth) {
+        if (profileAsync.isLoading) return null;
+        if (profileAsync.value?.isAdmin == true) return AppRoutes.admin;
         return AppRoutes.home;
       }
       if (isAuthenticated && !onAuth) {
         if (profileAsync.isLoading) return null;
-        final needsOnboarding = profileAsync.value?.needsOnboarding ?? false;
+        final profile = profileAsync.value;
+        // is_admin is read-only for the client. Non-admins cannot stay on
+        // /admin, and admins skip the student shell and onboarding.
+        if (profile?.isAdmin == true) {
+          if (!onAdmin) return AppRoutes.admin;
+          return null;
+        }
+        if (onAdmin) return AppRoutes.home;
+        final needsOnboarding = profile?.needsOnboarding ?? false;
         final onOnboarding = location == AppRoutes.onboarding;
         if (needsOnboarding && !onOnboarding) {
           return AppRoutes.onboarding;
@@ -90,6 +110,51 @@ GoRouter goRouter(Ref ref) {
       comicGoRoute(
         path: AppRoutes.onboarding,
         builder: (context, state) => const OnboardingScreen(),
+      ),
+      comicGoRoute(
+        path: AppRoutes.admin,
+        builder: (context, state) => const AdminHomeScreen(),
+      ),
+      comicGoRoute(
+        path: AppRoutes.adminUsers,
+        builder: (context, state) => const AdminUsersScreen(),
+      ),
+      comicGoRoute(
+        path: AppRoutes.adminUser,
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return AdminUserScreen(userId: userId);
+        },
+      ),
+      comicGoRoute(
+        path: AppRoutes.adminQuestions,
+        builder: (context, state) => const AdminQuestionsScreen(),
+      ),
+      comicGoRoute(
+        path: AppRoutes.adminQuestionNew,
+        builder: (context, state) => const AdminQuestionScreen(),
+      ),
+      comicGoRoute(
+        path: AppRoutes.adminQuestion,
+        builder: (context, state) {
+          final questionId = state.pathParameters['questionId']!;
+          return AdminQuestionScreen(questionId: questionId);
+        },
+      ),
+      comicGoRoute(
+        path: AppRoutes.adminAnnouncements,
+        builder: (context, state) => const AdminAnnouncementsScreen(),
+      ),
+      comicGoRoute(
+        path: AppRoutes.adminAnnouncementNew,
+        builder: (context, state) => const AdminAnnouncementScreen(),
+      ),
+      comicGoRoute(
+        path: AppRoutes.adminAnnouncement,
+        builder: (context, state) {
+          final announcementId = state.pathParameters['announcementId']!;
+          return AdminAnnouncementScreen(announcementId: announcementId);
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

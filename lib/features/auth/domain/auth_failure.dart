@@ -11,6 +11,10 @@ abstract final class AuthFailure {
 
     final message = exception.message.toLowerCase();
 
+    if (message.contains('banned') || message.contains('user is not allowed')) {
+      return 'This account is blocked.';
+    }
+
     if (message.contains('invalid login credentials') ||
         message.contains('invalid credentials')) {
       return 'Incorrect email or password.';

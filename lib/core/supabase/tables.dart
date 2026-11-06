@@ -53,6 +53,9 @@ abstract final class ProfileColumns {
   static const batchYear = 'batch_year';
   static const mbbsPhaseId = 'mbbs_phase_id';
   static const onboardingCompletedAt = 'onboarding_completed_at';
+  static const isAdmin = 'is_admin';
+  static const blockedAt = 'blocked_at';
+  static const blockedReason = 'blocked_reason';
 }
 
 abstract final class DeviceClaimColumns {
@@ -239,6 +242,44 @@ abstract final class RpcFunctions {
   static const recordStudyEvent = 'record_study_event';
   static const getStudyProgress = 'get_study_progress';
   static const searchCatalog = 'search_catalog';
+  static const assertAdmin = 'assert_admin';
+  static const adminSearchUsers = 'admin_search_users';
+  static const adminGetUser = 'admin_get_user';
+  static const adminUpdateProfile = 'admin_update_profile';
+  static const adminSetPlan = 'admin_set_plan';
+  static const adminClearDeviceSuspension = 'admin_clear_device_suspension';
+  static const adminSetBlocked = 'admin_set_blocked';
+  static const adminListAnnouncements = 'admin_list_announcements';
+  static const adminUpsertAnnouncement = 'admin_upsert_announcement';
+  static const adminSearchQuestions = 'admin_search_questions';
+  static const adminGetQuestion = 'admin_get_question';
+  static const adminSaveQuestion = 'admin_save_question';
+  static const adminSaveAppearance = 'admin_save_appearance';
+  static const adminDeleteAppearance = 'admin_delete_appearance';
+  static const adminLogAction = 'admin_log_action';
+  static const adminUserAuth = 'admin-user-auth';
+}
+
+/// Named parameters for the admin RPCs. The Edge Function uses the same names.
+abstract final class AdminRpcParams {
+  static const query = 'p_query';
+  static const userId = 'p_user_id';
+  static const fullName = 'p_full_name';
+  static const phone = 'p_phone';
+  static const universityId = 'p_university_id';
+  static const collegeId = 'p_college_id';
+  static const batchYear = 'p_batch_year';
+  static const mbbsPhaseId = 'p_mbbs_phase_id';
+  static const plan = 'p_plan';
+  static const expiresAt = 'p_expires_at';
+  static const blocked = 'p_blocked';
+  static const reason = 'p_reason';
+  static const body = 'p_body';
+  static const questionId = 'p_question_id';
+  static const examPaperId = 'p_exam_paper_id';
+  static const action = 'p_action';
+  static const targetId = 'p_target_id';
+  static const detail = 'p_detail';
 }
 
 /// Named parameters for [RpcFunctions.claimActiveDevice] /

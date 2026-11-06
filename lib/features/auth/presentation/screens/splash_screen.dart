@@ -10,6 +10,7 @@ import '../../../../core/theme/comic_colors.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/widgets/brand_mark.dart';
+import '../../../profile/presentation/providers/user_profile_provider.dart';
 import '../../../../core/widgets/brand_pulse_loader.dart';
 import '../../../../core/widgets/comic_mascot.dart';
 import '../../data/auth_repository.dart';
@@ -101,7 +102,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
 
     if (!mounted) return;
-    context.go(isAuthenticated ? AppRoutes.home : AppRoutes.login);
+    if (!isAuthenticated) {
+      context.go(AppRoutes.login);
+      return;
+    }
+
+    // Admins skip the student home. The profile row is usually ready after
+    // the splash delay; if it fails we still open Home and the router corrects.
+    var isAdmin = false;
+    try {
+      isAdmin =
+          (await ref.read(userProfileProvider.future))?.isAdmin ?? false;
+    } catch (_) {
+      isAdmin = false;
+    }
+    if (!mounted) return;
+    context.go(isAdmin ? AppRoutes.admin : AppRoutes.home);
   }
 
   @override

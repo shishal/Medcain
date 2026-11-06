@@ -5,10 +5,7 @@ import 'package:medico/features/profile/domain/plan_tier.dart';
 import 'package:medico/features/profile/domain/user_profile.dart';
 
 void main() {
-  UserProfile profile({
-    required PlanTier plan,
-    DateTime? planExpiresAt,
-  }) {
+  UserProfile profile({required PlanTier plan, DateTime? planExpiresAt}) {
     return UserProfile(
       id: 'user-1',
       plan: plan,
@@ -78,5 +75,20 @@ void main() {
     expect(p.needsOnboarding, isFalse);
     expect(p.batchYear, 2024);
     expect(p.universityId, 'uni-1');
+    expect(p.isAdmin, isFalse);
+  });
+
+  test('fromJson reads the admin flag and a block', () {
+    final p = UserProfile.fromJson({
+      ProfileColumns.id: 'user-1',
+      ProfileColumns.plan: 'pro',
+      ProfileColumns.createdAt: '2026-01-01T00:00:00Z',
+      ProfileColumns.isAdmin: true,
+      ProfileColumns.blockedAt: '2026-11-01T00:00:00Z',
+      ProfileColumns.blockedReason: 'spam',
+    });
+    expect(p.isAdmin, isTrue);
+    expect(p.blockedAt, isNotNull);
+    expect(p.blockedReason, 'spam');
   });
 }

@@ -8,7 +8,7 @@ function checkConfiguration() {
       'SUPABASE_URL is set (' + cfg.url + ').\n' +
         'SUPABASE_SERVICE_ROLE_KEY is set (value hidden).\n\n' +
         'Editor tab: Questions.\n' +
-        'Required migrations through 20260915200000_content_admin_seed_and_cleanup.sql.',
+        'Required migrations through 20261103180000_admin_console.sql.',
       ui.ButtonSet.OK
     );
   } catch (e) {
@@ -20,6 +20,9 @@ function syncToApp() {
   var ui = SpreadsheetApp.getUi();
   try {
     getSupabaseConfig_();
+    // App edits land on the sheet before this snapshot is imported, so they
+    // are not deleted as rows missing from the sheet.
+    var pulled = pullAppEdits_({ silent: true });
     var rows = readQuestionsRows_();
     var preview = supabaseRpc_('sync_content_csv', {
       p_rows: rows,
@@ -39,7 +42,8 @@ function syncToApp() {
     var counts = preview.counts || {};
     var confirm = ui.prompt(
       'Preview content sync',
-      'Questions to insert: ' + (counts.insert || 0) +
+      'App edits written to the sheet first: ' + pulled +
+        '\nQuestions to insert: ' + (counts.insert || 0) +
         '\nQuestions to update: ' + (counts.update || 0) +
         '\nQuestions to DELETE: ' + (counts.delete || 0) +
         '\nComplete attempts to DELETE: ' + (counts.attempt_delete || 0) +

@@ -864,6 +864,7 @@ where user_id = '<user-uuid>'
 - Device C (3rd unique) → `plan_suspended_at` set; `current_plan` = `free`
 - Clear `plan_suspended_at` → Pro returns if `plan_expires_at` is still future
 - Authenticated role cannot `UPDATE` `active_device_id` / `plan_suspended_at`
+- `profiles.is_admin` accounts skip the device cap (`claim_active_device` returns immediately and `assert_active_device` stays true)
 
 ### 9.4 Progress
 
@@ -937,10 +938,42 @@ grant select, insert on table announcement_reads to authenticated;
 -- no INSERT/UPDATE/DELETE on announcements for authenticated — Table Editor / service_role only
 ```
 
-**Ops (Table Editor):**
+**Ops:** an admin publishes from the app (`/admin` → Notifications), or you can still insert in the Table Editor.
 
-1. Draft: insert with `is_active = false` (hidden from the app).
-2. Publish: set `is_active = true` (optional `expires_at`).
+1. Draft: `is_active = false` (hidden from students).
+2. Publish: `is_active = true` (optional `expires_at`).
 3. Next Home open / refresh shows the row as unread until the student opens or dismisses it.
 
 See also `docs/11_ANNOUNCEMENTS_OPS.md`.
+
+---
+
+## 12. In-app admin
+
+Migration: `supabase/migrations/20261103180000_admin_console.sql`.
+Edge Function: `supabase/functions/admin-user-auth` (deploy this; the service role stays on the server).
+
+`profiles.is_admin` is not in the authenticated `UPDATE` grant. Promote the first operator in the SQL editor (replace the email):
+
+```sql
+update public.profiles
+set is_admin = true
+where id = (
+  select id from auth.users where email = 'you@example.com'
+);
+```
+
+That account uses the same email/password login and lands on `/admin`. A student JWT that calls an admin RPC gets `Admin only.`
+
+| Action | Where it runs |
+|---|---|
+| Profile, plan, expiry, clear device suspension | `admin_update_profile`, `admin_set_plan`, `admin_clear_device_suspension` |
+| Password, email, block / unblock | Edge Function `admin-user-auth` (GoTrue ban + `profiles.blocked_at` + session revoke) |
+| Questions, papers, free tier (`required_plan`) | `admin_save_question`, `admin_save_appearance`, `admin_delete_appearance` |
+| In-app notification | `admin_upsert_announcement` |
+
+Every admin RPC calls `assert_admin()` and writes `admin_audit_log`. Password values are stripped if a client puts them in the audit detail.
+
+Question saves also insert `sheet_outbox`. Apps Script **Pull app edits** (and the start of **Sync to App**) writes those rows into the Questions tab, then the existing `sync_content_csv` import runs. Pull before a direct `scripts/sync_content_csv.py --apply`, or app-created rows that are not on the sheet yet can be deleted as missing from the snapshot. App edits of a row win over unsaved sheet edits of that same stem.
+
+`blocked_at` is not the 3-device `plan_suspended_at`. Blocking bans the auth user. Unblocking clears the ban.

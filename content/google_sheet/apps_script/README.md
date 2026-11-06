@@ -18,13 +18,20 @@ Paste these files into Apps Script:
 - `SheetReader.gs`
 - `SupabaseClient.gs`
 - `Sync.gs`
+- `Pull.gs`
 
-## What Sync does
+## What the menu does
+
+**Pull app edits** writes rows queued by the in-app admin (question text, marks, answer, plan / free tier, papers) into `Questions`. It adds `required_plan` and `is_active` headers if the tab does not have them. A matching subject + type + stem + sitting is updated; a new question is appended; a removed paper deletes that sheet row.
+
+**Sync to App** pulls those edits first, then:
 
 1. Reads `Questions` rows.
 2. Calls `sync_content_csv(..., false)` for validation + counts.
 3. Asks you to type `APPLY`.
 4. Calls `sync_content_csv(..., true)` in one DB transaction.
+
+App edits of a row win over unsaved sheet edits of that same stem. Other sheet-only edits still import. If you run `scripts/sync_content_csv.py --apply` without pulling, questions created in the app and not yet on the sheet can be deleted.
 
 Subjects must already exist. Unknown subject names fail validation.
 

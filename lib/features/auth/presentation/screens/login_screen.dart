@@ -10,6 +10,7 @@ import '../../../../core/utils/result.dart';
 import '../../../../core/utils/soft_keyboard.dart';
 import '../../../../core/widgets/brand_wordmark.dart';
 import '../../../../core/widgets/comic_mascot.dart';
+import '../../../profile/presentation/providers/user_profile_provider.dart';
 import '../../data/auth_repository.dart';
 import '../../domain/device_session.dart';
 import '../providers/auth_session_provider.dart';
@@ -103,7 +104,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SnackBar(content: Text(DeviceSessionMessages.planSuspended)),
           );
         }
-        context.go(AppRoutes.home);
+        var isAdmin = false;
+        try {
+          isAdmin =
+              (await ref.read(userProfileProvider.future))?.isAdmin ?? false;
+        } catch (_) {
+          isAdmin = false;
+        }
+        if (!mounted) return;
+        context.go(isAdmin ? AppRoutes.admin : AppRoutes.home);
       case Failure(:final message):
         setState(() => _errorMessage = message);
     }

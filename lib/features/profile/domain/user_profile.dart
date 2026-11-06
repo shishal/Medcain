@@ -18,6 +18,9 @@ class UserProfile {
     this.batchYear,
     this.mbbsPhaseId,
     this.onboardingCompletedAt,
+    this.isAdmin = false,
+    this.blockedAt,
+    this.blockedReason,
   });
 
   final String id;
@@ -38,6 +41,13 @@ class UserProfile {
   final int? batchYear;
   final String? mbbsPhaseId;
   final DateTime? onboardingCompletedAt;
+
+  /// Operator flag. Only the SQL editor can set this; the app only reads it.
+  final bool isAdmin;
+
+  /// Set when an admin blocks the account. Distinct from a device suspension.
+  final DateTime? blockedAt;
+  final String? blockedReason;
 
   bool get needsOnboarding => onboardingCompletedAt == null;
 
@@ -74,6 +84,9 @@ class UserProfile {
       onboardingCompletedAt: _parseDate(
         json[ProfileColumns.onboardingCompletedAt],
       ),
+      isAdmin: json[ProfileColumns.isAdmin] == true,
+      blockedAt: _parseDate(json[ProfileColumns.blockedAt]),
+      blockedReason: json[ProfileColumns.blockedReason] as String?,
     );
   }
 

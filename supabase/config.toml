@@ -392,6 +392,10 @@ verify_jwt = false
 [functions.create-razorpay-order]
 verify_jwt = true
 
+# Caller JWT is checked, then assert_admin(). Service role stays on the server.
+[functions.admin-user-auth]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327

@@ -21,6 +21,7 @@ function trimStr_(value) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Medico')
+    .addItem('Pull app edits', 'pullAppEdits')
     .addItem('Sync to App', 'syncToApp')
     .addItem('Check configuration', 'checkConfiguration')
     .addToUi();

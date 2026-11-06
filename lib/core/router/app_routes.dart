@@ -24,6 +24,23 @@ abstract final class AppRoutes {
   static const notifications = '/notifications';
   static const profile = '/profile';
   static const upgrade = '/upgrade';
+  static const admin = '/admin';
+  static const adminUsers = '/admin/users';
+  static const adminUser = '/admin/users/:userId';
+  static const adminQuestions = '/admin/questions';
+  static const adminQuestionNew = '/admin/question/new';
+  static const adminQuestion = '/admin/questions/:questionId';
+  static const adminAnnouncements = '/admin/announcements';
+  static const adminAnnouncementNew = '/admin/announcement/new';
+  static const adminAnnouncement = '/admin/announcements/:announcementId';
+
+  static String adminUserPath(String userId) => '/admin/users/$userId';
+
+  static String adminQuestionPath(String questionId) =>
+      '/admin/questions/$questionId';
+
+  static String adminAnnouncementPath(String announcementId) =>
+      '/admin/announcements/$announcementId';
 
   /// Login with a one-shot reason banner (e.g. kicked by another device).
   static String loginWithReason(String reason) =>
@@ -35,11 +52,10 @@ abstract final class AppRoutes {
   static String subjectPath(String id, String title) =>
       Uri(path: '/subjects/$id', queryParameters: {'title': title}).toString();
 
-  static String subjectTopicsPath(String id, String title) =>
-      Uri(
-        path: '/subjects/$id/topics',
-        queryParameters: {'title': title},
-      ).toString();
+  static String subjectTopicsPath(String id, String title) => Uri(
+    path: '/subjects/$id/topics',
+    queryParameters: {'title': title},
+  ).toString();
 
   /// [universityId], [section] (a `PyqSection` name), and optional [collegeId]
   /// scope the outline to the row that was tapped. Without them the year shows
