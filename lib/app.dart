@@ -6,6 +6,7 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_provider.dart';
 import 'features/auth/presentation/widgets/device_session_guard.dart';
 import 'features/security/presentation/widgets/app_screenshot_lock.dart';
+import 'features/security/presentation/widgets/developer_mode_lock.dart';
 
 class MedicoApp extends ConsumerWidget {
   const MedicoApp({super.key});
@@ -15,15 +16,19 @@ class MedicoApp extends ConsumerWidget {
     final router = ref.watch(goRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
 
+    // Screenshot blocking stays outside the developer-mode lock so
+    // FLAG_SECURE remains on while the lock screen is showing.
     return DeviceSessionGuard(
       child: AppScreenshotLock(
-        child: MaterialApp.router(
-          title: 'MEDCAIN',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: themeMode,
-          routerConfig: router,
+        child: DeveloperModeLock(
+          child: MaterialApp.router(
+            title: 'MEDCAIN',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: themeMode,
+            routerConfig: router,
+          ),
         ),
       ),
     );

@@ -29,6 +29,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    buildFeatures {
+        // DeveloperModeGate reads BuildConfig.BUILD_TYPE. AGP 8+ does not
+        // generate BuildConfig unless this is on. The profile build type
+        // copies debug, so it is also debuggable — FLAG_DEBUGGABLE cannot
+        // tell a debug install from a profile one.
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.shishal.medico"
         minSdk = flutter.minSdkVersion
