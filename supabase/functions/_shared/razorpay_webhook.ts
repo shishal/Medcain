@@ -3,7 +3,7 @@
 /// Signature check uses the *raw* POST body (not re-serialized JSON). Razorpay
 /// signs with HMAC-SHA256; the hex digest is `X-Razorpay-Signature`.
 
-import { getPaidPlan, type PaidPlanId } from './paid_plans.ts';
+import { getPaidPlan, type BillingPeriodId, type PaidPlanId } from './paid_plans.ts';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -15,6 +15,8 @@ export type CapturedPayment = {
   plan: PaidPlanId;
   amountPaise: number;
   currency: string;
+  /** Null when the order was created before periods were stored on notes. */
+  period: BillingPeriodId | null;
   /** Null when the student paid the list price. */
   discountCode: string | null;
 };
@@ -155,6 +157,15 @@ export function parseWebhookEvent(body: unknown): ParseResult {
     }
   }
 
+  const rawPeriod = asString(notes.period)?.trim().toLowerCase() ?? null;
+  let period: BillingPeriodId | null = null;
+  if (rawPeriod != null) {
+    if (rawPeriod !== 'y1' && rawPeriod !== 'y2' && rawPeriod !== 'y3' && rawPeriod !== 'y4') {
+      return { kind: 'invalid', reason: 'notes.period is not a billing period' };
+    }
+    period = rawPeriod;
+  }
+
   return {
     kind: 'captured',
     payment: {
@@ -164,6 +175,7 @@ export function parseWebhookEvent(body: unknown): ParseResult {
       plan: planName as PaidPlanId,
       amountPaise,
       currency,
+      period,
       discountCode,
     },
   };

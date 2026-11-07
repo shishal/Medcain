@@ -126,14 +126,19 @@ npx deno test supabase/functions/_shared/razorpay_webhook_test.ts
 
 ## Prices
 
-| Plan | Amount | Access window |
+| Plan | 1 year | Access window |
 |---|---|---|
-| Pro | ₹1,499 | 180 days |
-| Elite | ₹2,999 | 365 days |
+| Pro | ₹1,499 | 12 months, 1 registered device |
+| Elite | ₹2,999 | 12 months, 2 registered devices |
+
+Checkout also sells 2 years + 1 month (25 months), 3 years + 2 months
+(38 months), and 4 years + 3 months (51 months). Those cost the 1-year
+price times the number of years. The extra months are free.
 
 Those are the seed prices. A live price is `paid_plan_catalog.amount_paise`
-(rupees × 100). Change it in the SQL editor — see
+for that plan and `period`. Change it in the SQL editor — see
 `docs/06_PAYMENTS_PRODUCTION.md`. The checkout page reads that row.
 
-A discount code does not change those list prices. Issue one with
+A discount code does not change those list prices. The student enters it in
+the app (it is passed through) and applies it on this page. Issue one with
 `issue_discount_code()` — see `docs/06_PAYMENTS_PRODUCTION.md`.

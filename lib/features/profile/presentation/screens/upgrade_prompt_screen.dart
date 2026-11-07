@@ -9,11 +9,13 @@ import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
 import '../../data/checkout_env.dart';
 import '../../data/checkout_launcher.dart';
+import '../../domain/billing_period.dart';
 import '../../domain/plan_offering.dart';
 import '../../domain/plan_tier.dart';
 import '../providers/current_plan_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../widgets/plan_comparison_card.dart';
+import '../widgets/plan_purchase_sheet.dart';
 
 /// Plan comparison + a link out to web checkout (Phase 7.1).
 ///
@@ -32,22 +34,47 @@ class UpgradePromptScreen extends ConsumerStatefulWidget {
 class _UpgradePromptScreenState extends ConsumerState<UpgradePromptScreen> {
   PlanTier? _openingPlan;
 
-  Future<void> _openCheckout(PlanTier plan) async {
+  Future<void> _openPurchase(PlanTier plan) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return PlanPurchaseSheet(
+          plan: plan,
+          onPay: (period, coupon) => _openCheckout(
+            plan: plan,
+            period: period,
+            coupon: coupon,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<bool> _openCheckout({
+    required PlanTier plan,
+    required BillingPeriod period,
+    required String coupon,
+  }) async {
     setState(() => _openingPlan = plan);
 
-    final result = await ref
-        .read(checkoutLauncherProvider)
-        .openCheckout(plan: plan);
+    final result = await ref.read(checkoutLauncherProvider).openCheckout(
+          plan: plan,
+          period: period,
+          coupon: coupon,
+        );
 
-    if (!mounted) return;
+    if (!mounted) return false;
     setState(() => _openingPlan = null);
 
     switch (result) {
       case Success():
-        break;
+        return true;
       case Failure(:final message):
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(message)));
+        return false;
     }
   }
 
@@ -114,7 +141,7 @@ class _UpgradePromptScreenState extends ConsumerState<UpgradePromptScreen> {
                       offering.tier == PlanTier.free ||
                       currentPlan == offering.tier
                   ? null
-                  : () => _openCheckout(offering.tier),
+                  : () => _openPurchase(offering.tier),
             ),
             const SizedBox(height: Spacing.md),
           ],

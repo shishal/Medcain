@@ -46,9 +46,11 @@ SQL = (
     ROOT
     / "supabase"
     / "migrations"
-    / "20261003120000_paid_plan_catalog.sql"
+    / "20261107160000_plan_periods_and_devices.sql"
 )
-FIELDS = ("amountPaise", "durationDays")
+FIELDS = ("yearAmountPaise",)
+YEARS = {"y1": 1, "y2": 2, "y3": 3, "y4": 4}
+MONTHS = {"y1": "12", "y2": "25", "y3": "38", "y4": "51"}
 
 
 def load_env() -> None:
@@ -98,35 +100,49 @@ def ts_js_fields(text: str, plan: str) -> dict[str, str]:
     return out
 
 
-def sql_fields(sql: str, plan: str) -> dict[str, str]:
-    pattern = rf"\('{plan}',\s*(\d+),\s*(\d+)\)"
-    match = re.search(pattern, sql)
-    if not match:
-        sys.exit(f"Could not find `{plan}` seed in {SQL.name}")
+def sql_rows(sql: str) -> dict[tuple[str, str], dict[str, str]]:
+    found = re.findall(
+        r"\('(pro|elite)',\s*'(y[1-4])',\s*(\d+),\s*(\d+)\)",
+        sql,
+    )
     if "paid_plan_catalog" not in sql:
-        sys.exit(f"{SQL.name} does not read paid_plan_catalog")
-    return {"amountPaise": match.group(1), "durationDays": match.group(2)}
+        sys.exit(f"{SQL.name} does not mention paid_plan_catalog")
+    rows: dict[tuple[str, str], dict[str, str]] = {}
+    for plan, period, paise, months in found:
+        rows[(plan, period)] = {
+            "amountPaise": paise,
+            "durationMonths": months,
+        }
+    if len(rows) != 8:
+        sys.exit(f"expected 8 catalog rows in {SQL.name}, found {len(rows)}")
+    return rows
 
 
-def check_catalog() -> dict[str, dict[str, str]]:
+def check_catalog() -> dict[tuple[str, str], dict[str, str]]:
     ts = TS.read_text()
     js = JS.read_text()
     sql = SQL.read_text()
-    catalog: dict[str, dict[str, str]] = {}
+    year_price: dict[str, str] = {}
     for plan in ("pro", "elite"):
         left = ts_js_fields(ts, plan)
         page = ts_js_fields(js, plan)
-        db = sql_fields(sql, plan)
-        if left != page or left != db:
-            sys.exit(
-                f"{plan} mismatch:\n  function {left}\n  page     {page}\n  sql      {db}"
-            )
-        catalog[plan] = left
-        print(
-            f"  seed {plan}: amountPaise={left['amountPaise']} "
-            f"durationDays={left['durationDays']}"
-        )
-    return catalog
+        if left != page:
+            sys.exit(f"{plan} mismatch:\n  function {left}\n  page     {page}")
+        year_price[plan] = left["yearAmountPaise"]
+        print(f"  seed {plan} 1 year: {left['yearAmountPaise']} paise")
+
+    db = sql_rows(sql)
+    expected: dict[tuple[str, str], dict[str, str]] = {}
+    for plan, paise in year_price.items():
+        for period, years in YEARS.items():
+            expected[(plan, period)] = {
+                "amountPaise": str(int(paise) * years),
+                "durationMonths": MONTHS[period],
+            }
+    if db != expected:
+        sys.exit(f"SQL seed does not match year price × years:\n  sql {db}\n  expected {expected}")
+    print("  seed periods: y1–y4 for pro and elite")
+    return expected
 
 
 def insert_auth_user(conn, user_id: str, email: str) -> None:
@@ -332,31 +348,32 @@ def main() -> int:
 
         rows = conn.execute(
             """
-            select plan::text, amount_paise, duration_days
+            select plan::text, period, amount_paise, duration_months
             from public.paid_plan_catalog
             """
         ).fetchall()
         live = {
-            plan: {"amountPaise": str(paise), "durationDays": str(days)}
-            for plan, paise, days in rows
+            (plan, period): {
+                "amountPaise": str(paise),
+                "durationMonths": str(months),
+            }
+            for plan, period, paise, months in rows
         }
-        for plan in ("pro", "elite"):
-            if plan not in live:
-                print(f"FAIL: paid_plan_catalog missing {plan}")
+        if ("pro", "y1") not in live:
+            print("FAIL: paid_plan_catalog missing pro y1")
+            return 1
+        for key, seed_row in catalog.items():
+            if key not in live:
+                print(f"FAIL: paid_plan_catalog missing {key}")
                 return 1
-            seed_row = catalog[plan]
-            if live[plan] != seed_row:
+            if live[key] != seed_row:
                 print(
-                    f"  live {plan}: amountPaise={live[plan]['amountPaise']} "
-                    f"durationDays={live[plan]['durationDays']} "
-                    f"(seed {seed_row['amountPaise']}/{seed_row['durationDays']})"
+                    f"  live {key[0]} {key[1]}: {live[key]} "
+                    f"(seed {seed_row})"
                 )
             else:
-                print(
-                    f"  live {plan}: amountPaise={live[plan]['amountPaise']} "
-                    f"durationDays={live[plan]['durationDays']}"
-                )
-        catalog = live
+                print(f"  live {key[0]} {key[1]}: {live[key]['amountPaise']} paise")
+        pro_year_paise = int(live[("pro", "y1")]["amountPaise"])
 
         try:
             insert_auth_user(conn, user_id, email)
@@ -388,7 +405,7 @@ def main() -> int:
                       %s, 'order_ok', %s::uuid, 'pro', %s, 'INR'
                     )
                     """,
-                    (payment_id, user_id, int(catalog["pro"]["amountPaise"])),
+                    (payment_id, user_id, pro_year_paise),
                 ).fetchone()[0]
             )
             conn.commit()
@@ -423,7 +440,7 @@ def main() -> int:
                       %s, 'order_ok', %s::uuid, 'pro', %s, 'INR'
                     )
                     """,
-                    (payment_id, user_id, int(catalog["pro"]["amountPaise"])),
+                    (payment_id, user_id, pro_year_paise),
                 ).fetchone()[0]
             )
             conn.commit()
@@ -498,13 +515,14 @@ def main() -> int:
                     "entity": {
                         "id": http_pay,
                         "entity": "payment",
-                        "amount": int(catalog["pro"]["amountPaise"]),
+                        "amount": pro_year_paise,
                         "currency": "INR",
                         "status": "captured",
                         "order_id": f"order_wh_{http_user[:8]}",
                         "notes": {
                             "user_id": http_user,
                             "plan": "pro",
+                            "period": "y1",
                             "email": http_email,
                         },
                     }

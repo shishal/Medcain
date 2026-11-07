@@ -27,49 +27,31 @@ class PlanOffering {
 
   static const free = PlanOffering(
     tier: PlanTier.free,
-    tagline: 'Try the QBank',
+    tagline: 'A sample after the trial',
     features: [
-      PlanFeatureLine('Free catalog tests', included: true),
-      PlanFeatureLine('Pro catalog tests', included: false),
-      PlanFeatureLine('Elite catalog tests', included: false),
-      PlanFeatureLine('Practice sessions up to 10 questions', included: true),
-      PlanFeatureLine('20 practice questions per day', included: true),
-      PlanFeatureLine('Full explanations', included: false),
-      PlanFeatureLine('Tag filters', included: false),
-      PlanFeatureLine('Timer on/off control', included: false),
-      PlanFeatureLine('Negative-marking toggle', included: false),
+      PlanFeatureLine('Sample questions', included: true),
+      PlanFeatureLine('All years and subjects', included: false),
+      PlanFeatureLine('Answers on every question', included: false),
     ],
   );
 
   static const pro = PlanOffering(
     tier: PlanTier.pro,
-    tagline: 'Serious daily practice',
+    tagline: 'The full bank on one phone',
     features: [
-      PlanFeatureLine('Free catalog tests', included: true),
-      PlanFeatureLine('Pro catalog tests', included: true),
-      PlanFeatureLine('Elite catalog tests', included: false),
-      PlanFeatureLine('Practice sessions up to 50 questions', included: true),
-      PlanFeatureLine('Unlimited daily practice', included: true),
-      PlanFeatureLine('Full explanations', included: true),
-      PlanFeatureLine('Tag filters', included: true),
-      PlanFeatureLine('Timer on/off control', included: true),
-      PlanFeatureLine('Negative-marking toggle', included: true),
+      PlanFeatureLine('All questions, all years, all subjects', included: true),
+      PlanFeatureLine('Answers included', included: true),
+      PlanFeatureLine('1 registered device', included: true),
     ],
   );
 
   static const elite = PlanOffering(
     tier: PlanTier.elite,
-    tagline: 'Everything unlocked',
+    tagline: 'The same bank on two phones',
     features: [
-      PlanFeatureLine('Free catalog tests', included: true),
-      PlanFeatureLine('Pro catalog tests', included: true),
-      PlanFeatureLine('Elite catalog tests', included: true),
-      PlanFeatureLine('Practice sessions up to 100 questions', included: true),
-      PlanFeatureLine('Unlimited daily practice', included: true),
-      PlanFeatureLine('Full explanations', included: true),
-      PlanFeatureLine('Tag filters', included: true),
-      PlanFeatureLine('Timer on/off control', included: true),
-      PlanFeatureLine('Negative-marking toggle', included: true),
+      PlanFeatureLine('All questions, all years, all subjects', included: true),
+      PlanFeatureLine('Answers included', included: true),
+      PlanFeatureLine('2 registered devices', included: true),
     ],
   );
 }

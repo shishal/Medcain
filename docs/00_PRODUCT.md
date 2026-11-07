@@ -67,10 +67,37 @@ Topic → lesson is for grouping, not the first tap.
 
 ## Monetization
 
-Signup grants **Pro for 4 days**, then effective plan falls back to `free`
-via existing `current_plan()`. Free users keep a teaser slice
-(`required_plan = 'free'`). Paid plans stay on the **website Razorpay
-checkout**, not Play/App Store IAP.
+Signup grants **Pro for 4 days**, then the effective plan falls back to `free`
+via `current_plan()`. Free keeps a teaser slice (`required_plan = 'free'`).
+
+**Pro** and **Elite** both include every question, every year, and every
+subject, with answers. The only difference is registered devices:
+
+| Plan | Library | Registered devices |
+|---|---|---|
+| Free | Teaser slice | 1 |
+| Pro | All questions, years, subjects, and answers | 1 |
+| Elite | Same as Pro | 2 |
+
+A phone that is not registered is refused. It does not suspend the plan.
+Moving a registration is a support action (clear the old `device_claims` row).
+
+Purchase, in the app, asks for a prepaid period and an optional percent-off
+coupon, then opens the **website** to pay. The app does not charge a card.
+
+| Period | Access |
+|---|---|
+| 1 year | 12 months |
+| 2 years + 1 month extra | 25 months |
+| 3 years + 2 months extra | 38 months |
+| 4 years + 3 months extra | 51 months |
+
+The 1-year list price is charged once per year. The extra months are free.
+Seed prices are Pro ₹1,499 / year and Elite ₹2,999 / year (longer periods
+are that price × the number of years). Change a live price in
+`paid_plan_catalog` — see `docs/06_PAYMENTS_PRODUCTION.md`. The coupon
+percent is applied on the website from `discount_codes`, never from a number
+the app sends.
 
 ## Out of v1
 

@@ -295,6 +295,8 @@ abstract final class ClaimActiveDeviceJson {
   static const suspended = 'suspended';
   static const justSuspended = 'just_suspended';
   static const distinctDeviceCount = 'distinct_device_count';
+  static const deviceLimit = 'device_limit';
+  static const maxDevices = 'max_devices';
 }
 
 /// Named parameters for [RpcFunctions.currentPlan].

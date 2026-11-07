@@ -31,7 +31,7 @@ compliance boundary: the app only **links out**.
 
 ```
 Student in MEDCAIN
-  → browser opens CHECKOUT_URL?plan=pro&email=…
+  → browser opens CHECKOUT_URL?plan=pro&period=y1&code=CAMPUS20&email=…
   → signs in (same Supabase Auth as the app)
   → Pay → create-razorpay-order (Live key) → Razorpay Checkout
   → student pays
@@ -131,7 +131,7 @@ CHECKOUT_URL=https://medico.shishal.com/checkout
 Rules:
 
 - Must be `https://` (Android already allows the app to query `https` browsers).
-- No trailing path required; the app adds `?plan=pro|elite` and `email=`.
+- No trailing path required. The app adds `plan=pro|elite`, `period=y1|y2|y3|y4`, optional `code=`, and `email=`.
 - `.env` is bundled as a Flutter **asset**. Changing it requires a **new app
   build**. Editing Supabase or Razorpay after that does **not** require a
   rebuild; editing `CHECKOUT_URL` does.
@@ -293,20 +293,23 @@ In the SQL editor (rupees × 100):
 
 ```sql
 update public.paid_plan_catalog
-set amount_paise = 99900  -- ₹999
-where plan = 'pro';
+set amount_paise = 199900  -- ₹1,999 for 1 year of Pro
+where plan = 'pro' and period = 'y1';
 ```
 
 Do this when nobody is mid-checkout. An order already created keeps the old
 paise, and the webhook rejects that payment if the row changed before capture.
 
-`duration_days` on the same row is how long the plan lasts. The "6 months" /
-"12 months" subtitle on the checkout page is still the copy in
-`checkout/paid_plans.js` (and the identical file under `website/public/checkout/`).
-Change those files only when that subtitle should change.
+`period` is `y1` (12 months), `y2` (25 months), `y3` (38 months), or `y4`
+(51 months). `duration_months` on that row is how long the purchase lasts.
+The checkout page reads the same table after the student signs in. The
+1-year labels in `checkout/paid_plans.js` are only the period names; the
+rupee amount comes from the table.
 
-The numbers in `paid_plans.ts` and `paid_plans.js` are the seed for a fresh
-database. They are not what a live student is charged.
+The seed is the 1-year price times the number of years (extra months are
+free): Pro ₹1,499 and Elite ₹2,999 for `y1`. Those numbers in `paid_plans.ts`
+and `paid_plans.js` are the seed for a fresh database. They are not what a
+live student is charged after you `UPDATE` the table.
 
 One-time, after this migration is in the repo: `npx supabase db push`,
 redeploy `razorpay-webhook`, and rebuild the hosted checkout page

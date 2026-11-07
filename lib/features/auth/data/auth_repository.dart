@@ -37,6 +37,10 @@ class AuthRepository {
       final claim = await claimActiveDevice();
       switch (claim) {
         case Success(:final value):
+          if (!value.ok || value.deviceLimit) {
+            await _client.auth.signOut(scope: SignOutScope.local);
+            return const Failure(DeviceSessionMessages.deviceLimit);
+          }
           return Success(value);
         case Failure(:final message):
           await _client.auth.signOut(scope: SignOutScope.local);
@@ -63,6 +67,10 @@ class AuthRepository {
       final claim = await claimActiveDevice();
       switch (claim) {
         case Success(:final value):
+          if (!value.ok || value.deviceLimit) {
+            await _client.auth.signOut(scope: SignOutScope.local);
+            return const Failure(DeviceSessionMessages.deviceLimit);
+          }
           return Success(value);
         case Failure(:final message):
           await _client.auth.signOut(scope: SignOutScope.local);
@@ -97,7 +105,7 @@ class AuthRepository {
     }
   }
 
-  /// Registers this install as the sole active device (kicks others server-side).
+  /// Registers this install when the plan has a free device slot.
   Future<Result<ClaimActiveDeviceResult>> claimActiveDevice() async {
     if (_client.auth.currentSession == null) {
       return const Failure('Not signed in.');

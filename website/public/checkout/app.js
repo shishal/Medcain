@@ -3,6 +3,8 @@
   const params = new URLSearchParams(window.location.search);
   const prefilledEmail = params.get('email') || '';
   const requestedPlan = (params.get('plan') || 'pro').toLowerCase();
+  const requestedPeriod = (params.get('period') || 'y1').toLowerCase();
+  const requestedCode = params.get('code') || '';
 
   const config = window.CHECKOUT_CONFIG;
   if (
@@ -25,39 +27,54 @@
     config.supabaseAnonKey,
   );
 
+  const periods = window.BILLING_PERIODS || {};
   let selectedPlan =
     requestedPlan === 'elite' || requestedPlan === 'pro' ? requestedPlan : 'pro';
+  let selectedPeriod = Object.prototype.hasOwnProperty.call(periods, requestedPeriod)
+    ? requestedPeriod
+    : 'y1';
   let busy = false;
-  // List prices from paid_plan_catalog. Null until the first successful load.
+  // List prices from paid_plan_catalog, keyed plan → period → paise.
   let catalogByPlan = null;
   // The server prices the order. These only remember what the student typed
   // and the last quote checkout_quote() returned.
-  let draftCode = '';
+  let draftCode = requestedCode;
   let discountError = '';
   let appliedQuote = null;
   let quoteSeq = 0;
+  let autoApplied = false;
 
   async function loadCatalog() {
     const { data, error } = await supabase
       .from('paid_plan_catalog')
-      .select('plan, amount_paise');
+      .select('plan, period, amount_paise');
     if (error || !Array.isArray(data)) return null;
-    const byPlan = {};
+    const byPlan = { pro: {}, elite: {} };
     for (const row of data) {
       const paise = row && row.amount_paise;
+      const period = row && row.period;
       if (
         row &&
         (row.plan === 'pro' || row.plan === 'elite') &&
+        Object.prototype.hasOwnProperty.call(periods, period) &&
         Number.isInteger(paise) &&
         paise >= 100
       ) {
-        byPlan[row.plan] = paise;
+        byPlan[row.plan][period] = paise;
       }
     }
-    if (!Number.isInteger(byPlan.pro) || !Number.isInteger(byPlan.elite)) {
-      return null;
+    for (const plan of ['pro', 'elite']) {
+      for (const period of Object.keys(periods)) {
+        if (!Number.isInteger(byPlan[plan][period])) return null;
+      }
     }
     return byPlan;
+  }
+
+  function listPaise(plan, period) {
+    if (!catalogByPlan || !catalogByPlan[plan]) return null;
+    const paise = catalogByPlan[plan][period];
+    return Number.isInteger(paise) ? paise : null;
   }
 
   function formatInr(paise) {
@@ -77,6 +94,7 @@
       'Referral codes cannot be used on your own payment.',
       'You already used this code.',
       'That discount is too large for this plan.',
+      'Choose 1, 2, 3, or 4 years.',
       'Sign in to continue.',
     ].find((item) => raw.includes(item));
     if (known) return known;
@@ -142,19 +160,35 @@
         '<p class="error">Prices are unavailable right now. Reload the page and try again.</p>';
       return;
     }
-    const cards = Object.entries(plans)
+
+    const planCards = Object.entries(plans)
       .map(([id, plan]) => {
-        const paise = catalogByPlan[id];
-        if (!Number.isInteger(paise)) return '';
         const selected = id === selectedPlan ? ' selected' : '';
         return `
           <div class="card${selected}">
             <button class="plan-pick" type="button" data-plan="${id}">
               <div class="row">
                 <strong>${escapeHtml(plan.label)}</strong>
+              </div>
+              <p class="muted">${escapeHtml(plan.tagline)}</p>
+            </button>
+          </div>
+        `;
+      })
+      .join('');
+
+    const periodCards = Object.entries(periods)
+      .map(([id, period]) => {
+        const paise = listPaise(selectedPlan, id);
+        if (!Number.isInteger(paise)) return '';
+        const selected = id === selectedPeriod ? ' selected' : '';
+        return `
+          <div class="card${selected}">
+            <button class="plan-pick" type="button" data-period="${id}">
+              <div class="row">
+                <strong>${escapeHtml(period.label)}</strong>
                 <span class="price">${formatInr(paise)}</span>
               </div>
-              <p class="muted">${escapeHtml(plan.tagline)} · ${escapeHtml(plan.periodLabel)}</p>
             </button>
           </div>
         `;
@@ -172,7 +206,10 @@
 
     panel.innerHTML = `
       <p class="muted">Signed in as ${escapeHtml(user.email)}</p>
-      ${cards}
+      <p class="muted">Pro and Elite include the same questions and answers. Pro is 1 registered device. Elite is 2.</p>
+      ${planCards}
+      <p class="muted">How long</p>
+      ${periodCards}
       <label for="code">Discount or referral code</label>
       <input id="code" name="code" type="text" maxlength="20" autocomplete="off" spellcheck="false" />
       <button class="ghost" id="apply-code" type="button">Apply code</button>
@@ -186,6 +223,17 @@
       button.addEventListener('click', () => {
         draftCode = panel.querySelector('#code').value.trim();
         selectedPlan = button.getAttribute('data-plan');
+        appliedQuote = null;
+        discountError = '';
+        renderPlans(user);
+        if (draftCode) applyCode(user);
+      });
+    });
+
+    panel.querySelectorAll('[data-period]').forEach((button) => {
+      button.addEventListener('click', () => {
+        draftCode = panel.querySelector('#code').value.trim();
+        selectedPeriod = button.getAttribute('data-period');
         appliedQuote = null;
         discountError = '';
         renderPlans(user);
@@ -227,6 +275,7 @@
     const { data, error } = await supabase.rpc('checkout_quote', {
       p_plan: selectedPlan,
       p_code: draftCode,
+      p_period: selectedPeriod,
     });
     if (seq !== quoteSeq) return;
 
@@ -256,6 +305,7 @@
       {
         body: {
           plan: selectedPlan,
+          period: selectedPeriod,
           code: draftCode || null,
         },
       },
@@ -324,6 +374,10 @@
     }
     catalogByPlan = await loadCatalog();
     renderPlans(user);
+    if (!autoApplied && draftCode && catalogByPlan) {
+      autoApplied = true;
+      await applyCode(user);
+    }
   }
 
   renderApp();

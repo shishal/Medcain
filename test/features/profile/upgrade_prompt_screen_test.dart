@@ -47,7 +47,9 @@ void main() {
     expect(find.text('Free'), findsOneWidget);
     expect(find.text('Pro'), findsWidgets);
     expect(find.text('Elite'), findsWidgets);
-    expect(find.text('Full explanations'), findsNWidgets(3));
+    expect(find.text('All questions, all years, all subjects'), findsNWidgets(2));
+    expect(find.text('1 registered device'), findsOneWidget);
+    expect(find.text('2 registered devices'), findsOneWidget);
 
     expect(find.textContaining('Buy'), findsNothing);
     expect(find.textContaining('Purchase'), findsNothing);

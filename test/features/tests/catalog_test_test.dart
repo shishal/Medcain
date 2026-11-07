@@ -27,7 +27,7 @@ void main() {
       expect(PlanTier.free.covers(PlanTier.free), isTrue);
       expect(PlanTier.free.covers(PlanTier.pro), isFalse);
       expect(PlanTier.pro.covers(PlanTier.free), isTrue);
-      expect(PlanTier.pro.covers(PlanTier.elite), isFalse);
+      expect(PlanTier.pro.covers(PlanTier.elite), isTrue);
       expect(PlanTier.elite.covers(PlanTier.pro), isTrue);
     });
   });

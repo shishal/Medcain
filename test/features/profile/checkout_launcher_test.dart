@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:medico/core/utils/result.dart';
 import 'package:medico/features/profile/data/checkout_launcher.dart';
+import 'package:medico/features/profile/domain/billing_period.dart';
 import 'package:medico/features/profile/domain/plan_tier.dart';
 
 void main() {
@@ -21,6 +22,7 @@ void main() {
     expect(launched.scheme, 'https');
     expect(launched.host, 'checkout.test');
     expect(launched.queryParameters['plan'], 'elite');
+    expect(launched.queryParameters['period'], 'y1');
   });
 
   test('openCheckout keeps existing query params', () async {
@@ -55,6 +57,28 @@ void main() {
 
     expect(launched.queryParameters['plan'], 'pro');
     expect(launched.queryParameters['email'], 'a@b.com');
+    expect(launched.queryParameters['period'], 'y1');
+  });
+
+  test('openCheckout passes the period and coupon', () async {
+    late Uri launched;
+    final launcher = CheckoutLauncher(
+      checkoutUri: Uri.parse('https://checkout.test/pay'),
+      launch: (uri) async {
+        launched = uri;
+        return true;
+      },
+    );
+
+    await launcher.openCheckout(
+      plan: PlanTier.pro,
+      period: BillingPeriod.y3,
+      coupon: '  campus20  ',
+    );
+
+    expect(launched.queryParameters['plan'], 'pro');
+    expect(launched.queryParameters['period'], 'y3');
+    expect(launched.queryParameters['code'], 'campus20');
   });
 
   test('openCheckout refuses the free plan', () async {

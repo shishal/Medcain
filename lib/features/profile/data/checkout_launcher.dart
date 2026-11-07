@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/utils/result.dart';
 import '../../../core/utils/user_facing_error.dart';
 import '../../auth/data/auth_repository.dart';
+import '../domain/billing_period.dart';
 import '../domain/plan_tier.dart';
 import 'checkout_env.dart';
 
@@ -27,8 +28,14 @@ class CheckoutLauncher {
   /// and, when it returns a non-empty string, append `?email=`.
   final String? Function()? resolveEmail;
 
-  /// [plan] is passed as a query param so the web page can pre-select it.
-  Future<Result<void>> openCheckout({required PlanTier plan}) async {
+  /// Opens the website with the plan, period, and optional coupon prefilled.
+  ///
+  /// The page prices the order. This method does not send an amount.
+  Future<Result<void>> openCheckout({
+    required PlanTier plan,
+    BillingPeriod period = BillingPeriod.y1,
+    String? coupon,
+  }) async {
     if (plan == PlanTier.free) {
       return const Failure('The Free plan does not need checkout.');
     }
@@ -40,7 +47,15 @@ class CheckoutLauncher {
       );
     }
 
-    final query = {...base.queryParameters, 'plan': plan.name};
+    final query = {
+      ...base.queryParameters,
+      'plan': plan.name,
+      'period': period.code,
+    };
+    final code = coupon?.trim();
+    if (code != null && code.isNotEmpty) {
+      query['code'] = code;
+    }
     final email = resolveEmail?.call()?.trim();
     if (email != null && email.isNotEmpty) {
       query['email'] = email;

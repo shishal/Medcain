@@ -14,6 +14,7 @@ import '../../../profile/presentation/providers/user_profile_provider.dart';
 import '../../../../core/widgets/brand_pulse_loader.dart';
 import '../../../../core/widgets/comic_mascot.dart';
 import '../../data/auth_repository.dart';
+import '../../domain/device_session.dart';
 import '../providers/auth_session_provider.dart';
 
 /// Brief branded splash; navigates to login or home based on auth session.
@@ -76,6 +77,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       if (!mounted) return;
 
       if (claim case Success(:final value)) {
+        if (!value.ok || value.deviceLimit) {
+          ref.read(deviceSessionNoticeProvider.notifier).setMessage(
+            DeviceSessionMessages.deviceLimit,
+          );
+          await ref.read(authSessionProvider.notifier).signOut();
+          if (!mounted) return;
+          context.go(
+            AppRoutes.loginWithReason(AppRoutes.loginReasonDeviceLimit),
+          );
+          return;
+        }
         ref.read(deviceSessionNoticeProvider.notifier).setFromClaim(value);
       }
 

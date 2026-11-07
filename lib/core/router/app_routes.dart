@@ -48,6 +48,7 @@ abstract final class AppRoutes {
 
   static const loginReasonOtherDevice = 'other_device';
   static const loginReasonPlanSuspended = 'plan_suspended';
+  static const loginReasonDeviceLimit = 'device_limit';
 
   static String subjectPath(String id, String title) =>
       Uri(path: '/subjects/$id', queryParameters: {'title': title}).toString();

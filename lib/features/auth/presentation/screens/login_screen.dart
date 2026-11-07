@@ -59,6 +59,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         DeviceSessionMessages.signedInElsewhere,
       AppRoutes.loginReasonPlanSuspended =>
         DeviceSessionMessages.planSuspended,
+      AppRoutes.loginReasonDeviceLimit => DeviceSessionMessages.deviceLimit,
       _ => null,
     };
 

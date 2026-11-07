@@ -7,14 +7,20 @@ class ClaimActiveDeviceResult {
     required this.suspended,
     required this.justSuspended,
     required this.distinctDeviceCount,
+    this.deviceLimit = false,
+    this.maxDevices = 1,
   });
 
   final bool ok;
   final bool suspended;
 
-  /// True when this claim was the 3rd unique device that set suspension.
+  /// True when an older server suspended the plan on this claim.
   final bool justSuspended;
   final int distinctDeviceCount;
+
+  /// True when this phone did not get a slot (Pro 1, Elite 2).
+  final bool deviceLimit;
+  final int maxDevices;
 
   factory ClaimActiveDeviceResult.fromJson(Map<String, dynamic> json) {
     return ClaimActiveDeviceResult(
@@ -25,6 +31,9 @@ class ClaimActiveDeviceResult {
       distinctDeviceCount:
           (json[ClaimActiveDeviceJson.distinctDeviceCount] as num?)?.toInt() ??
           0,
+      deviceLimit: json[ClaimActiveDeviceJson.deviceLimit] as bool? ?? false,
+      maxDevices:
+          (json[ClaimActiveDeviceJson.maxDevices] as num?)?.toInt() ?? 1,
     );
   }
 }
@@ -37,4 +46,8 @@ abstract final class DeviceSessionMessages {
   static const planSuspended =
       'Your Pro access was paused because this account was used on too many '
       'devices. Contact support to restore it.';
+
+  static const deviceLimit =
+      'This phone is not registered on the account. Pro works on 1 device. '
+      'Elite works on 2. Contact support to move a registration.';
 }

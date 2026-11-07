@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/utils/result.dart';
 import '../../data/auth_repository.dart';
 import '../../domain/device_session.dart';
 
@@ -21,7 +22,17 @@ class AuthSession extends _$AuthSession {
       if (event.event == AuthChangeEvent.initialSession &&
           event.session != null) {
         // ignore: unawaited_futures
-        repository.claimActiveDevice();
+        repository.claimActiveDevice().then((claim) {
+          if (claim case Success(:final value)
+              when !value.ok || value.deviceLimit) {
+            ref.read(deviceSessionNoticeProvider.notifier).setMessage(
+              DeviceSessionMessages.deviceLimit,
+            );
+            repository.signOut();
+          } else if (claim case Success(:final value)) {
+            ref.read(deviceSessionNoticeProvider.notifier).setFromClaim(value);
+          }
+        });
       }
 
       // Refresh failed after another device revoked this session.

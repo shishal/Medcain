@@ -4,7 +4,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { getPaidPlan } from '../_shared/paid_plans.ts';
+import { getBillingPeriod, getPaidPlan } from '../_shared/paid_plans.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -40,10 +40,14 @@ Deno.serve(async (req) => {
   }
 
   let planName = '';
+  let periodName = 'y1';
   let requestedCode: string | null = null;
   try {
     const body = await req.json();
     planName = typeof body?.plan === 'string' ? body.plan.trim().toLowerCase() : '';
+    if (typeof body?.period === 'string' && body.period.trim().length > 0) {
+      periodName = body.period.trim().toLowerCase();
+    }
     if (typeof body?.code === 'string' && body.code.trim().length > 0) {
       requestedCode = body.code.trim();
     }
@@ -52,14 +56,15 @@ Deno.serve(async (req) => {
   }
 
   const plan = getPaidPlan(planName);
-  if (plan == null) {
-    return jsonResponse({ error: 'Choose Pro or Elite.' }, 400);
+  const period = getBillingPeriod(periodName);
+  if (plan == null || period == null) {
+    return jsonResponse({ error: 'Choose Pro or Elite and a period.' }, 400);
   }
 
   // Amount comes from checkout_quote(), never from this request.
   const { data: quote, error: quoteError } = await supabase.rpc(
     'checkout_quote',
-    { p_plan: planName, p_code: requestedCode },
+    { p_plan: planName, p_code: requestedCode, p_period: periodName },
   );
 
   if (quoteError) {
@@ -70,6 +75,7 @@ Deno.serve(async (req) => {
       'Referral codes cannot be used on your own payment.',
       'You already used this code.',
       'That discount is too large for this plan.',
+      'Choose 1, 2, 3, or 4 years.',
       'Choose Pro or Elite.',
       'Sign in to continue.',
     ];
@@ -113,6 +119,7 @@ Deno.serve(async (req) => {
   const notes: Record<string, string> = {
     user_id: user.id,
     plan: planName,
+    period: periodName,
     email: user.email,
   };
   if (discountCode) notes.discount_code = discountCode;
@@ -151,8 +158,8 @@ Deno.serve(async (req) => {
     plan: planName,
     label: plan.label,
     description: percentOff
-      ? `${plan.description} · ${percentOff}% off`
-      : plan.description,
+      ? `${plan.label} · ${period.label} · ${percentOff}% off`
+      : `${plan.label} · ${period.label}`,
     name: 'Medico',
     prefillEmail: user.email,
   });

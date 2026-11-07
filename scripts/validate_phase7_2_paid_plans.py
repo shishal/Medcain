@@ -21,7 +21,7 @@ SITE_COPIES = (
         ROOT / "website" / "public" / "checkout" / "app.js",
     ),
 )
-FIELDS = ("amountPaise", "durationDays", "periodLabel")
+FIELDS = ("yearAmountPaise",)
 
 
 def block(text: str, plan: str) -> str:
@@ -50,7 +50,12 @@ def main() -> int:
         right = fields(js, plan)
         if left != right:
             sys.exit(f"{plan} mismatch:\n  function {left}\n  page     {right}")
-        print(f"ok {plan} amountPaise={left['amountPaise']} {left['periodLabel']}")
+        print(f"ok {plan} yearAmountPaise={left['yearAmountPaise']}")
+    for label, text in (("function", ts), ("page", js)):
+        months = re.findall(r"months:\s*(\d+)", text)
+        if months != ["12", "25", "38", "51"]:
+            sys.exit(f"{label} billing periods drifted: {months}")
+        print(f"ok {label} periods {', '.join(months)} months")
     for source, copy in SITE_COPIES:
         if source.read_text() != copy.read_text():
             sys.exit(f"{copy.relative_to(ROOT)} drifted from {source.relative_to(ROOT)}")

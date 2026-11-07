@@ -103,7 +103,7 @@ class PlanComparisonCard extends StatelessWidget {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text('Continue in browser — ${offering.tier.label}'),
+                    : Text('Purchase ${offering.tier.label}'),
               ),
             ],
           ],

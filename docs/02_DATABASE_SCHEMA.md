@@ -168,7 +168,7 @@ create trigger on_auth_user_created
 ```sql
 create function plan_rank(p plan_tier) returns int
 language sql immutable as $$
-  select case p when 'free' then 0 when 'pro' then 1 when 'elite' then 2 end;
+  select case p when 'free' then 0 when 'pro' then 1 when 'elite' then 1 end;
 $$;
 
 -- Returns the user's *effective* plan, falling back to 'free' if their paid
@@ -576,7 +576,7 @@ $$;
 
 Razorpay's webhook hits a Supabase Edge Function (`razorpay-webhook`). That function's only job is to verify `X-Razorpay-Signature` (HMAC-SHA256 of the **raw** body with `RAZORPAY_WEBHOOK_SECRET`). After a valid `payment.captured` event, it calls `apply_razorpay_payment()` — it does **not** write `profiles.plan` itself.
 
-Amount and duration live in `paid_plan_catalog` (Pro and Elite rows). `paid_plan_terms()` reads that table. Change a live price with `UPDATE` in the SQL editor — see `docs/06_PAYMENTS_PRODUCTION.md`. Students can `SELECT` the catalog and cannot write it. A signed webhook that claims Elite but paid the Pro amount is rejected against the current row. A `discount_code` on the order is priced from `discount_codes.percent_off` inside `apply_razorpay_payment` — the client never sends an amount. Issue codes with `issue_discount_code()` (service role / SQL editor only). The code's owner can `SELECT` their own row; they cannot redeem it.
+Amount, period, and duration live in `paid_plan_catalog` (one row per Pro/Elite and `y1`–`y4`). `paid_plan_terms(plan, period)` reads that table. A signed webhook that claims a period the captured paise do not match is rejected. A `discount_code` on the order is priced from `discount_codes.percent_off` inside `apply_razorpay_payment` — the client never sends an amount. Change a live price with `UPDATE` — see `docs/06_PAYMENTS_PRODUCTION.md`.
 
 ```sql
 create table payments (
@@ -599,7 +599,8 @@ create function apply_razorpay_payment(
 ) returns jsonb
 language plpgsql security definer
 set search_path = public as $$
--- reject unknown plan / amount / currency (catalog: pro 149900/180d, elite 299900/365d)
+-- reject unknown plan / period / amount / currency
+-- duration is duration_months on the matching catalog row (12, 25, 38, or 51)
 -- insert payments; on unique payment id, return {applied:false, duplicate:true}
 -- else set profiles.plan, plan_started_at,
 --   plan_expires_at = greatest(now(), coalesce(plan_expires_at, now())) + duration
@@ -822,16 +823,41 @@ normalized tables above. Editors do not invent UUIDs. See
 name/phone/academic fields — never `plan` / `plan_expires_at` /
 `plan_suspended_at` / `active_device_id`.
 
-### 9.3b Single-device login + 3rd-device plan suspension
+### 9.3b Registered devices
 
-Migration: `supabase/migrations/20260919140000_single_device_login.sql`.
+Migration: `supabase/migrations/20260919140000_single_device_login.sql`,
+updated by `20261107160000_plan_periods_and_devices.sql`.
 
-**Policy:** one active install at a time (new claim kicks the old Auth
-session). Lifetime unique `device_id`s are stored in `device_claims`. The
-**3rd distinct** install sets `plan_suspended_at` / `plan_suspend_reason =
-'multi_device'`. `current_plan()` then returns `free` until support clears
-suspension. `plan` / `plan_expires_at` are left intact so unsuspend restores
-paid access if still unexpired.
+**Policy:** a plan has a slot count (`plan_limits.max_registered_devices`):
+Free 1, Pro 1, Elite 2. `claim_active_device` registers this install when a
+slot is free. A full plan refuses the new phone and leaves the registered
+ones signed in. It does **not** set `plan_suspended_at`. Pro still ends
+other Auth sessions, because only one phone may stay signed in. Elite does
+not. `assert_active_device` is true only for a row with `registered_at` set.
+
+`device_claims.registered_at` is the slot. `registered_at` null means the
+install was seen and does not occupy a slot. Admins skip the cap.
+
+Existing `plan_suspended_at` rows stay suspended until support clears them.
+New logins do not create that pause.
+
+**Support: move a registration** (SQL editor / service role only):
+
+```sql
+-- Free one slot so the student can register the new phone.
+update public.device_claims
+set registered_at = null, session_id = null
+where user_id = '<user-uuid>'
+  and device_id = '<old-device-id>';
+```
+
+**Validation**
+
+- Pro: device A registers. Device B is refused; A still has the plan.
+- Elite: A and B both register and both pass `assert_active_device`. Device C is refused.
+- Buying Pro while two Elite slots are filled clears the older slot.
+- Authenticated role cannot `UPDATE` `active_device_id` / `plan_suspended_at` / `registered_at`.
+- `profiles.is_admin` accounts skip the device cap.
 
 ```sql
 create table device_claims (
@@ -839,39 +865,25 @@ create table device_claims (
   device_id text not null,
   first_seen_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now(),
+  registered_at timestamptz,   -- set while this install holds a slot
+  session_id uuid,
   primary key (user_id, device_id)
 );
 -- No authenticated write policies — only claim_active_device() touches rows.
 
--- claim_active_device(p_device_id text) → jsonb { ok, suspended, just_suspended, distinct_device_count }
--- assert_active_device(p_device_id text) → boolean
+-- claim_active_device(p_device_id) → jsonb { ok, device_limit, max_devices, suspended, just_suspended, distinct_device_count }
+-- assert_active_device(p_device_id) → boolean
 ```
 
-**Support unsuspend** (SQL editor / service role only — no Flutter UI):
+**Support unsuspend** for an account already paused under the old 3-device rule
+(SQL editor / service role only — no Flutter UI):
 
 ```sql
--- Restore plan access (and optionally drop stale installs so the student
--- can use a new phone without immediately re-hitting the cap).
 update public.profiles
 set plan_suspended_at = null,
     plan_suspend_reason = null
 where id = '<user-uuid>';
-
--- Optional: keep only the current active install in history
-delete from public.device_claims
-where user_id = '<user-uuid>'
-  and device_id is distinct from (
-    select active_device_id from public.profiles where id = '<user-uuid>'
-  );
 ```
-
-**Validation**
-
-- Device A then B → A kicked on resume/assert; `device_claims` count = 2; plan still paid
-- Device C (3rd unique) → `plan_suspended_at` set; `current_plan` = `free`
-- Clear `plan_suspended_at` → Pro returns if `plan_expires_at` is still future
-- Authenticated role cannot `UPDATE` `active_device_id` / `plan_suspended_at`
-- `profiles.is_admin` accounts skip the device cap (`claim_active_device` returns immediately and `assert_active_device` stays true)
 
 ### 9.4 Progress
 
@@ -891,8 +903,8 @@ Google Sheet / CSV tab.
 | `search_catalog(p_query)` | subjects, lessons, PYQ teasers |
 | `create_practice_session(..., p_lesson_ids uuid[] default null)` | MCQ-only + optional lesson filter |
 | `mark_lesson_learnt(p_lesson_id)` / `mark_question_learnt(p_question_id)` | progress + study_event |
-| `claim_active_device(p_device_id)` | jsonb — sole active device + maybe suspend on 3rd install |
-| `assert_active_device(p_device_id)` | boolean — this install still owns the account |
+| `claim_active_device(p_device_id)` | jsonb — register this install if a slot is free (Pro 1, Elite 2) |
+| `assert_active_device(p_device_id)` | boolean — this install holds a registered slot |
 
 Lesson resources: visible if `is_free` OR the user's plan covers the parent
 lesson's `required_plan`.

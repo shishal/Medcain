@@ -75,6 +75,9 @@ Deno.test('parses payment.captured and forwards the amount', () => {
   if (parsed.payment.discountCode !== null) {
     throw new Error('list-price payment must not carry a discount code');
   }
+  if (parsed.payment.period !== null) {
+    throw new Error('a missing period is forwarded for the database to match');
+  }
 });
 
 Deno.test('forwards an amount with no code for the database to check', () => {
@@ -130,5 +133,23 @@ Deno.test('rejects a non-uuid user_id', () => {
   const parsed = parseWebhookEvent(body);
   if (parsed.kind !== 'invalid') {
     throw new Error('non-uuid user_id must be invalid');
+  }
+});
+
+Deno.test('forwards a known billing period', () => {
+  const body = JSON.parse(capturedBody);
+  body.payload.payment.entity.notes.period = 'y3';
+  const parsed = parseWebhookEvent(body);
+  if (parsed.kind !== 'captured' || parsed.payment.period !== 'y3') {
+    throw new Error(`expected period y3, got ${JSON.stringify(parsed)}`);
+  }
+});
+
+Deno.test('rejects an unknown billing period', () => {
+  const body = JSON.parse(capturedBody);
+  body.payload.payment.entity.notes.period = 'lifetime';
+  const parsed = parseWebhookEvent(body);
+  if (parsed.kind !== 'invalid') {
+    throw new Error('unknown period must be invalid');
   }
 });
