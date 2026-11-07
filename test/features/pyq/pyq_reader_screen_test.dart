@@ -202,6 +202,47 @@ void main() {
     expect(find.text('Sympathetic compensation.'), findsNothing);
     expect(find.textContaining('included with Pro'), findsOneWidget);
   });
+
+  testWidgets('floating text size enlarges the question and the answer', (
+    tester,
+  ) async {
+    await _pumpReader(
+      tester,
+      detail: _detail(
+        teaser: _teaser(
+          id: 'm1',
+          text: 'Which organelle produces ATP?',
+          kind: 'mcq',
+          marks: 1,
+        ),
+        sample: 'Mitochondria make ATP.',
+        correctOption: 'A',
+        optionA: 'Mitochondria',
+        optionB: 'Ribosome',
+      ),
+    );
+
+    double px(String text) {
+      final rich = tester.widget<RichText>(
+        find.text(text, findRichText: true),
+      );
+      return rich.textScaler.scale(14);
+    }
+
+    final questionBefore = px('Which organelle produces ATP?');
+    final optionBefore = px('A. Mitochondria');
+    final answerBefore = px('Mitochondria make ATP.');
+
+    // One control for the page — not a second pair inside the answer card.
+    expect(find.byIcon(Icons.text_increase), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.text_increase));
+    await tester.pump();
+
+    expect(px('Which organelle produces ATP?'), greaterThan(questionBefore));
+    expect(px('A. Mitochondria'), greaterThan(optionBefore));
+    expect(px('Mitochondria make ATP.'), greaterThan(answerBefore));
+  });
 }
 
 class _StubBookmarkedIds extends BookmarkedIds {

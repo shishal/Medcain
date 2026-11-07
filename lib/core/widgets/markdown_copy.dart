@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'reading_text_zoom.dart';
+
 /// Renders stored markdown (sample answers, explanations) using the
 /// surrounding theme. Plain text still looks like a normal paragraph.
 ///
@@ -25,9 +27,7 @@ class MarkdownCopy extends StatelessWidget {
       strong: base?.copyWith(fontWeight: FontWeight.w700),
       em: base?.copyWith(fontStyle: FontStyle.italic),
       listBullet: base,
-      blockquote: base?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-      ),
+      blockquote: base?.copyWith(color: theme.colorScheme.onSurfaceVariant),
       a: base?.copyWith(
         color: theme.colorScheme.primary,
         decoration: TextDecoration.underline,
@@ -48,90 +48,67 @@ class MarkdownCopy extends StatelessWidget {
   }
 }
 
-/// Answer body with local font zoom (pinch with two fingers, or A− / A+).
+/// Answer body that follows [zoom] (pinch, or the screen's A− / A+).
 ///
-/// Uses [MediaQuery] text scaling so markdown stays sharp (not a transform
-/// zoom). One-finger scrolls still go to the parent [ListView]; only a
-/// two-finger pinch changes the scale.
+/// Pass the reader's [ReadingTextZoom] so the stem and the answer stay in
+/// sync and the buttons can float over the page. With [zoom] omitted, this
+/// owns a private scale and draws the buttons inline — handy for a widget
+/// that is not inside a reader.
 class ZoomableMarkdownCopy extends StatefulWidget {
-  const ZoomableMarkdownCopy({super.key, required this.data});
+  const ZoomableMarkdownCopy({super.key, required this.data, this.zoom});
 
   final String data;
-
-  static const double minScale = 0.85;
-  static const double maxScale = 2.0;
-  static const double step = 0.15;
+  final ReadingTextZoom? zoom;
 
   @override
   State<ZoomableMarkdownCopy> createState() => _ZoomableMarkdownCopyState();
 }
 
 class _ZoomableMarkdownCopyState extends State<ZoomableMarkdownCopy> {
-  double _scale = 1.0;
-  // Captured at pinch start so each update is `start * gesture.scale`, not
-  // compounded frame-by-frame (which would explode the font size).
-  double _pinchStartScale = 1.0;
+  ReadingTextZoom? _owned;
 
-  void _setScale(double next) {
-    final clamped = next.clamp(
-      ZoomableMarkdownCopy.minScale,
-      ZoomableMarkdownCopy.maxScale,
-    );
-    if (clamped == _scale) return;
-    setState(() => _scale = clamped);
+  ReadingTextZoom get _zoom => widget.zoom ?? _owned!;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.zoom == null) _owned = ReadingTextZoom();
+  }
+
+  @override
+  void didUpdateWidget(ZoomableMarkdownCopy oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.zoom != null) {
+      _owned?.dispose();
+      _owned = null;
+    } else {
+      _owned ??= ReadingTextZoom();
+    }
+  }
+
+  @override
+  void dispose() {
+    _owned?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
-    // scale(1) is the ambient factor (system accessibility text size).
-    final ambient = media.textScaler.scale(1);
-    final zoomed = media.copyWith(
-      textScaler: TextScaler.linear(ambient * _scale),
+    final body = ReadingZoom(
+      zoom: _zoom,
+      child: MarkdownCopy(data: widget.data),
     );
-
+    // The reader floats one control for the whole page. Inline buttons only
+    // appear when this widget owns the scale itself.
+    if (widget.zoom != null) return body;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Align(
           alignment: Alignment.centerRight,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                tooltip: 'Smaller text',
-                onPressed: _scale <= ZoomableMarkdownCopy.minScale
-                    ? null
-                    : () => _setScale(_scale - ZoomableMarkdownCopy.step),
-                icon: const Icon(Icons.text_decrease, size: 20),
-              ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                tooltip: 'Larger text',
-                onPressed: _scale >= ZoomableMarkdownCopy.maxScale
-                    ? null
-                    : () => _setScale(_scale + ZoomableMarkdownCopy.step),
-                icon: const Icon(Icons.text_increase, size: 20),
-              ),
-            ],
-          ),
+          child: ReadingZoomControls(zoom: _zoom),
         ),
-        // Two-finger pinch only — bail out on one pointer so the parent
-        // ListView keeps vertical scroll.
-        GestureDetector(
-          onScaleStart: (_) {
-            _pinchStartScale = _scale;
-          },
-          onScaleUpdate: (details) {
-            if (details.pointerCount < 2) return;
-            _setScale(_pinchStartScale * details.scale);
-          },
-          child: MediaQuery(
-            data: zoomed,
-            child: MarkdownCopy(data: widget.data),
-          ),
-        ),
+        body,
       ],
     );
   }

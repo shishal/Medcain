@@ -12,6 +12,7 @@ import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
 import '../../../../core/widgets/comic_card.dart';
 import '../../../../core/widgets/markdown_copy.dart';
+import '../../../../core/widgets/reading_text_zoom.dart';
 import '../../../profile/domain/plan_tier.dart';
 import '../../../profile/presentation/providers/current_plan_provider.dart';
 import '../../../bookmarks/presentation/widgets/bookmark_icon_button.dart';
@@ -69,10 +70,19 @@ class _PyqBodyState extends ConsumerState<_PyqBody> {
   _ReaderPanel _panel = _ReaderPanel.directAnswer;
   late bool _learnt;
 
+  /// One scale for the stem, the options, and every answer block.
+  final _zoom = ReadingTextZoom();
+
   @override
   void initState() {
     super.initState();
     _learnt = widget.detail.questionLearnt;
+  }
+
+  @override
+  void dispose() {
+    _zoom.dispose();
+    super.dispose();
   }
 
   void _toggle(_ReaderPanel next) {
@@ -131,93 +141,118 @@ class _PyqBodyState extends ConsumerState<_PyqBody> {
       if (d.teaser.appearanceCount > 1) 'asked ${d.teaser.appearanceCount}×',
     ].join(' · ');
 
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
       appBar: AppBar(
         title: const Text('PYQ'),
         actions: [BookmarkIconButton(questionId: widget.questionId)],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(Spacing.lg),
+      // The A− / A+ pill floats over the scroll view so it stays put while
+      // the stem and the answer move. Extra bottom padding keeps the last
+      // button from sitting underneath it.
+      body: Stack(
         children: [
-          // DA first: it is the panel that opens by default, so the selected
-          // control should be the leading one.
-          Row(
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+              Spacing.lg,
+              Spacing.lg,
+              Spacing.lg,
+              Spacing.lg + 64 + bottomInset,
+            ),
             children: [
-              _PanelButton(
-                label: 'DA',
-                tooltip: 'Direct answer',
-                selected: _panel == _ReaderPanel.directAnswer,
-                onPressed: () => _toggle(_ReaderPanel.directAnswer),
+              // DA first: it is the panel that opens by default, so the selected
+              // control should be the leading one.
+              Row(
+                children: [
+                  _PanelButton(
+                    label: 'DA',
+                    tooltip: 'Direct answer',
+                    selected: _panel == _ReaderPanel.directAnswer,
+                    onPressed: () => _toggle(_ReaderPanel.directAnswer),
+                  ),
+                  const SizedBox(width: Spacing.sm),
+                  _PanelButton(
+                    label: 'EX',
+                    tooltip: 'Explanation, textbook pages and links',
+                    selected: _panel == _ReaderPanel.explanation,
+                    onPressed: () => _toggle(_ReaderPanel.explanation),
+                  ),
+                ],
               ),
-              const SizedBox(width: Spacing.sm),
-              _PanelButton(
-                label: 'EX',
-                tooltip: 'Explanation, textbook pages and links',
-                selected: _panel == _ReaderPanel.explanation,
-                onPressed: () => _toggle(_ReaderPanel.explanation),
+              const SizedBox(height: Spacing.md),
+              ComicCard(
+                color: Color.alphaBlend(
+                  StickerFills.peach.withValues(alpha: 0.35),
+                  ComicColors.of(context).sticker,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (meta.isNotEmpty) ...[
+                      Text(meta, style: Theme.of(context).textTheme.labelLarge),
+                      const SizedBox(height: Spacing.sm),
+                    ],
+                    ReadingZoom(
+                      zoom: _zoom,
+                      child: Text(
+                        d.teaser.questionText,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    if (years.isNotEmpty) ...[
+                      const SizedBox(height: Spacing.sm),
+                      Text(years, style: Theme.of(context).textTheme.bodySmall),
+                    ],
+                  ],
+                ),
+              ),
+              if (d.isMcq) ...[
+                const SizedBox(height: Spacing.lg),
+                ReadingZoom(
+                  zoom: _zoom,
+                  child: _McqOptions(
+                    detail: d,
+                    revealed: _panel == _ReaderPanel.directAnswer,
+                  ),
+                ),
+              ],
+              if (_panel == _ReaderPanel.directAnswer) ...[
+                const SizedBox(height: Spacing.lg),
+                _DirectAnswerPanel(detail: d, zoom: _zoom),
+              ],
+              if (_panel == _ReaderPanel.explanation) ...[
+                const SizedBox(height: Spacing.lg),
+                _ExplanationPanel(
+                  detail: d,
+                  zoom: _zoom,
+                  onOpenLink: (link) => _openLink(link, plan),
+                ),
+              ],
+              const SizedBox(height: Spacing.lg),
+              FilledButton.tonal(
+                onPressed: _learnt
+                    ? null
+                    : () async {
+                        final result = await ref
+                            .read(pyqRepositoryProvider)
+                            .markLearnt(widget.questionId);
+                        if (!mounted) return;
+                        switch (result) {
+                          case Success():
+                            setState(() => _learnt = true);
+                          case Failure(:final message):
+                            ScaffoldMessenger.of(this.context)
+                                .showSnackBar(SnackBar(content: Text(message)));
+                        }
+                      },
+                child: Text(_learnt ? 'Marked as learnt' : 'Mark as learnt'),
               ),
             ],
           ),
-          const SizedBox(height: Spacing.md),
-          ComicCard(
-            color: Color.alphaBlend(
-              StickerFills.peach.withValues(alpha: 0.35),
-              ComicColors.of(context).sticker,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (meta.isNotEmpty) ...[
-                  Text(meta, style: Theme.of(context).textTheme.labelLarge),
-                  const SizedBox(height: Spacing.sm),
-                ],
-                Text(
-                  d.teaser.questionText,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                if (years.isNotEmpty) ...[
-                  const SizedBox(height: Spacing.sm),
-                  Text(years, style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ],
-            ),
-          ),
-          if (d.isMcq) ...[
-            const SizedBox(height: Spacing.lg),
-            _McqOptions(
-              detail: d,
-              revealed: _panel == _ReaderPanel.directAnswer,
-            ),
-          ],
-          if (_panel == _ReaderPanel.directAnswer) ...[
-            const SizedBox(height: Spacing.lg),
-            _DirectAnswerPanel(detail: d),
-          ],
-          if (_panel == _ReaderPanel.explanation) ...[
-            const SizedBox(height: Spacing.lg),
-            _ExplanationPanel(
-              detail: d,
-              onOpenLink: (link) => _openLink(link, plan),
-            ),
-          ],
-          const SizedBox(height: Spacing.lg),
-          FilledButton.tonal(
-            onPressed: _learnt
-                ? null
-                : () async {
-                    final result = await ref
-                        .read(pyqRepositoryProvider)
-                        .markLearnt(widget.questionId);
-                    if (!mounted) return;
-                    switch (result) {
-                      case Success():
-                        setState(() => _learnt = true);
-                      case Failure(:final message):
-                        ScaffoldMessenger.of(this.context)
-                            .showSnackBar(SnackBar(content: Text(message)));
-                    }
-                  },
-            child: Text(_learnt ? 'Marked as learnt' : 'Mark as learnt'),
+          Positioned(
+            right: Spacing.md,
+            bottom: Spacing.md + bottomInset,
+            child: ReadingZoomControls(zoom: _zoom),
           ),
         ],
       ),
@@ -252,9 +287,10 @@ class _PanelButton extends StatelessWidget {
 }
 
 class _DirectAnswerPanel extends StatelessWidget {
-  const _DirectAnswerPanel({required this.detail});
+  const _DirectAnswerPanel({required this.detail, required this.zoom});
 
   final PyqDetail detail;
+  final ReadingTextZoom zoom;
 
   /// Just the letter, in the same green + check mark as the highlighted option
   /// above. Spelling the option text out here would print it twice on one
@@ -305,7 +341,7 @@ class _DirectAnswerPanel extends StatelessWidget {
           if (hasKey) _answerLine(context),
           if (detail.sampleAnswer != null) ...[
             if (hasKey) const Divider(height: Spacing.lg),
-            ZoomableMarkdownCopy(data: detail.sampleAnswer!),
+            ZoomableMarkdownCopy(data: detail.sampleAnswer!, zoom: zoom),
           ],
         ],
       ),
@@ -314,9 +350,14 @@ class _DirectAnswerPanel extends StatelessWidget {
 }
 
 class _ExplanationPanel extends ConsumerWidget {
-  const _ExplanationPanel({required this.detail, required this.onOpenLink});
+  const _ExplanationPanel({
+    required this.detail,
+    required this.zoom,
+    required this.onOpenLink,
+  });
 
   final PyqDetail detail;
+  final ReadingTextZoom zoom;
   final ValueChanged<ResourceLink> onOpenLink;
 
   @override
@@ -347,7 +388,9 @@ class _ExplanationPanel extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (hasExplanation)
-          ComicCard(child: ZoomableMarkdownCopy(data: explanation)),
+          ComicCard(
+            child: ZoomableMarkdownCopy(data: explanation, zoom: zoom),
+          ),
         if (hasDeep) ...[
           if (hasExplanation) ...[
             const SizedBox(height: Spacing.md),
@@ -357,7 +400,9 @@ class _ExplanationPanel extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: Spacing.sm),
-          ComicCard(child: ZoomableMarkdownCopy(data: deep)),
+          ComicCard(
+            child: ZoomableMarkdownCopy(data: deep, zoom: zoom),
+          ),
         ],
         if (citations.isNotEmpty) ...[
           const SizedBox(height: Spacing.lg),
