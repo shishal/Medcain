@@ -51,22 +51,19 @@ void main() {
     expect(find.text('1 registered device'), findsOneWidget);
     expect(find.text('2 registered devices'), findsOneWidget);
 
+    expect(find.text('Purchase Pro'), findsOneWidget);
+    expect(find.text('Purchase Elite'), findsOneWidget);
     expect(find.textContaining('Buy'), findsNothing);
-    expect(find.textContaining('Purchase'), findsNothing);
     expect(find.textContaining('₹'), findsNothing);
     expect(find.textContaining(r'$'), findsNothing);
     expect(find.byType(TextField), findsNothing);
     expect(find.byType(TextFormField), findsNothing);
   });
 
-  testWidgets('Continue in browser is hidden while store checkout is paused', (
+  testWidgets('Purchase is shown and does not open the browser by itself', (
     tester,
   ) async {
-    expect(
-      CheckoutEnv.webCheckoutEnabled,
-      isFalse,
-      reason: 'Flip this test when restoring CheckoutEnv.webCheckoutEnabled',
-    );
+    expect(CheckoutEnv.webCheckoutEnabled, isTrue);
 
     final opened = <Uri>[];
     await _pumpUpgrade(
@@ -81,7 +78,7 @@ void main() {
       ),
     );
 
-    expect(find.textContaining('Continue in browser'), findsNothing);
+    expect(find.text('Purchase Elite'), findsOneWidget);
     expect(opened, isEmpty);
   });
 
@@ -95,7 +92,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Continue in browser — Free'), findsNothing);
+    expect(find.text('Purchase Free'), findsNothing);
   });
 
   testWidgets('current paid plan hides its own checkout button', (
@@ -112,6 +109,7 @@ void main() {
     );
 
     expect(find.text('Current'), findsOneWidget);
-    expect(find.text('Continue in browser — Pro'), findsNothing);
+    expect(find.text('Purchase Pro'), findsNothing);
+    expect(find.text('Purchase Elite'), findsOneWidget);
   });
 }
