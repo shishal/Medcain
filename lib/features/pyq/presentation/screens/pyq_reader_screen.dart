@@ -93,7 +93,33 @@ class _PyqBodyState extends ConsumerState<_PyqBody> {
   @override
   Widget build(BuildContext context) {
     final d = widget.detail;
-    final plan = ref.watch(currentPlanProvider).value ?? PlanTier.free;
+    final planAsync = ref.watch(currentPlanProvider);
+    final plan = planAsync.value ?? PlanTier.free;
+    // Wait for a known plan before painting a stem that might be above it.
+    // Treating "still loading" as Free and then showing the body would flash
+    // a Pro answer at a free account.
+    if (planAsync.isLoading && planAsync.value == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('PYQ')),
+        body: const AsyncLoadingView(),
+      );
+    }
+    if (d.teaser.isLockedFor(plan)) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('PYQ'),
+          actions: [BookmarkIconButton(questionId: widget.questionId)],
+        ),
+        body: AsyncEmptyView(
+          icon: Icons.lock_outline,
+          message:
+              'This question is included with ${d.teaser.requiredPlan.label}.',
+          actionLabel: 'View plans',
+          onAction: () =>
+              context.push(AppRoutes.upgradePath(d.teaser.requiredPlan)),
+        ),
+      );
+    }
     final years = d.appearances
         .map((a) => '${a.year} ${a.paperName}')
         .join(' · ');

@@ -110,12 +110,23 @@ class PyqTeaser {
 
   bool get isHighYield => appearanceCount >= 2;
 
+  /// The stem stays hidden, and the card must not open the reader.
+  ///
+  /// A null [plan] means the profile is still loading. Keep a stem we already
+  /// have so a Pro account does not flash a mask, and hide one the server
+  /// already blanked.
+  bool isLockedFor(PlanTier? plan) {
+    if (plan != null) return !plan.covers(requiredPlan);
+    return questionText.trim().isEmpty && requiredPlan != PlanTier.free;
+  }
+
   factory PyqTeaser.fromJson(Map<String, dynamic> json) {
     return PyqTeaser(
       id: json[PyqTeaserColumns.id] as String,
       lessonId: json[PyqTeaserColumns.lessonId] as String?,
       topicId: json[PyqTeaserColumns.topicId] as String?,
-      questionText: json[PyqTeaserColumns.questionText] as String,
+      // Null when question_listings redacts a stem the plan cannot read.
+      questionText: json[PyqTeaserColumns.questionText] as String? ?? '',
       marks: json[PyqTeaserColumns.marks] as num?,
       requiredPlan: PlanTier.fromString(
         json[PyqTeaserColumns.requiredPlan] as String? ?? 'free',

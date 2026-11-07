@@ -86,11 +86,13 @@ class PyqRepository {
       return const Failure('Not signed in.');
     }
     try {
+      // question_listings includes Pro rows and nulls the stem when the
+      // caller's plan is too low. pyq_teasers stays plan-gated for the reader.
       final rows = await _client
-          .from(Tables.pyqTeasers)
+          .from(Tables.questionListings)
           .select()
           .eq(PyqTeaserColumns.lessonId, lessonId)
-          .order(PyqTeaserColumns.appearanceCount, ascending: false);
+          .order(PyqTeaserColumns.id);
       final all = (rows as List<dynamic>)
           .cast<Map<String, dynamic>>()
           .map(PyqTeaser.fromJson)
@@ -170,6 +172,7 @@ class PyqRepository {
         );
       }
 
+      teasers.sort((a, b) => b.appearanceCount.compareTo(a.appearanceCount));
       return Success(PyqLessonFeed(teasers: teasers));
     } catch (e) {
       return Failure(UserFacingError.from(e, fallback: 'Could not load PYQs.'));
@@ -216,8 +219,8 @@ class PyqRepository {
         if (tid != null) lessonTopicById[id] = tid;
       }
 
-      // Read questions directly. pyq_teasers runs a per-row appearance count
-      // that is fine for one lesson and too slow for a whole subject.
+      // question_listings, not questions: RLS would drop Pro rows entirely,
+      // and this view nulls question_text instead. No explanation or MCQ key.
       const teaserSelect =
           '${QuestionColumns.id},${QuestionColumns.lessonId},'
           '${QuestionColumns.topicId},${QuestionColumns.questionText},'
@@ -236,7 +239,7 @@ class PyqRepository {
 
       addQuestions(
         await _inFilterSelect(
-          table: Tables.questions,
+          table: Tables.questionListings,
           column: QuestionColumns.topicId,
           ids: topicIds,
           select: teaserSelect,
@@ -273,7 +276,7 @@ class PyqRepository {
         }.difference(questionById.keys.toSet());
         addQuestions(
           await _inFilterSelect(
-            table: Tables.questions,
+            table: Tables.questionListings,
             column: QuestionColumns.id,
             ids: missingIds.toList(),
             select: teaserSelect,

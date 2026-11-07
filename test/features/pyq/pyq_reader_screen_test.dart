@@ -22,12 +22,13 @@ PyqTeaser _teaser({
   required String text,
   String kind = 'pyq_theory',
   num marks = 10,
+  PlanTier requiredPlan = PlanTier.free,
 }) {
   return PyqTeaser(
     id: id,
     questionText: text,
     marks: marks,
-    requiredPlan: PlanTier.free,
+    requiredPlan: requiredPlan,
     appearanceCount: 1,
     kind: kind,
     appearanceYears: const [2024],
@@ -176,6 +177,30 @@ void main() {
     expect(find.byIcon(Icons.check_circle), findsNWidgets(2));
     expect(find.text('Mitochondria make ATP.'), findsOneWidget);
     expect(find.text('Oxidative phosphorylation.'), findsNothing);
+  });
+
+  testWidgets('a free plan cannot open a Pro question answer', (tester) async {
+    await _pumpReader(
+      tester,
+      plan: PlanTier.free,
+      detail: _detail(
+        teaser: _teaser(
+          id: 'q-pro',
+          text: 'Describe compensated shock.',
+          requiredPlan: PlanTier.pro,
+        ),
+        sample: 'Tachycardia with a normal blood pressure.',
+        explanation: 'Sympathetic compensation.',
+      ),
+    );
+
+    expect(find.text('Describe compensated shock.'), findsNothing);
+    expect(
+      find.text('Tachycardia with a normal blood pressure.'),
+      findsNothing,
+    );
+    expect(find.text('Sympathetic compensation.'), findsNothing);
+    expect(find.textContaining('included with Pro'), findsOneWidget);
   });
 }
 

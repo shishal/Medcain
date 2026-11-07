@@ -718,11 +718,18 @@ create index idx_questions_lesson on questions(lesson_id) where lesson_id is not
 View `pyq_teasers` (security_invoker = true so questions RLS still applies):
 stem, marks, kind, difficulty, lesson_id, required_plan, appearance_count,
 `has_direct_answer`, `has_explanation` — no sample-answer text, no explanation
-text, no MCQ keys. `difficulty` holds `must` / `should` / `could`
-and is optional on import (blank ⇒ `should`); the app renders a chip only for
-`must` and `could`, since `should` is just the default. Includes both
+text, no MCQ keys. Used by the reader. `difficulty` holds `must` / `should` /
+`could` and is optional on import (blank ⇒ `should`); the app renders a chip
+only for `must` and `could`, since `should` is just the default. Includes both
 `pyq_theory` and `mcq` rows. University filter is applied in the client/RPC
 via appearances → exam_papers.
+
+View `question_listings` (`20261107140000_question_listings.sql`,
+security_invoker = false, security_barrier = true) is the paper and lesson
+list. It returns every active question. `question_text` is the stem only when
+`current_plan()` covers `required_plan`, and null otherwise, so a free student
+sees a Pro card without the words. Explanations, options, and keys are not
+columns. The app masks that card and does not open the reader.
 
 `universities.slug` is `lower(code)` from sheet sync (not a sheet column).
 `universities.code` is the short form (`KUHS`). `colleges.short_form` is the

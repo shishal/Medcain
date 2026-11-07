@@ -63,6 +63,20 @@ void main() {
     expect(teaser.priority.isNoteworthy, isTrue);
   });
 
+  test('a redacted stem stays locked until the plan covers it', () {
+    final teaser = PyqTeaser.fromJson({
+      PyqTeaserColumns.id: 'q-pro',
+      PyqTeaserColumns.questionText: null,
+      PyqTeaserColumns.requiredPlan: 'pro',
+    });
+    expect(teaser.questionText, '');
+    expect(teaser.requiredPlan, PlanTier.pro);
+    expect(teaser.isLockedFor(PlanTier.free), isTrue);
+    expect(teaser.isLockedFor(PlanTier.pro), isFalse);
+    expect(teaser.isLockedFor(PlanTier.elite), isFalse);
+    expect(teaser.isLockedFor(null), isTrue);
+  });
+
   test('PyqTeaser reads kind for MCQ and is not high-yield at 1×', () {
     final teaser = PyqTeaser.fromJson({
       PyqTeaserColumns.id: 'q2',

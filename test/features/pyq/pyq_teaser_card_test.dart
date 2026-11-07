@@ -5,6 +5,7 @@ import 'package:medico/core/utils/result.dart';
 import 'package:medico/features/bookmarks/presentation/providers/bookmarks_provider.dart';
 import 'package:medico/features/practice/domain/practice_enums.dart';
 import 'package:medico/features/profile/domain/plan_tier.dart';
+import 'package:medico/features/profile/presentation/providers/current_plan_provider.dart';
 import 'package:medico/features/pyq/domain/pyq_models.dart';
 import 'package:medico/features/pyq/presentation/widgets/pyq_teaser_card.dart';
 
@@ -15,28 +16,41 @@ PyqTeaser _teaser({
   num? marks = 10,
   bool hasDirectAnswer = false,
   bool hasExplanation = false,
+  PlanTier requiredPlan = PlanTier.free,
+  String? textbookLine,
 }) {
   return PyqTeaser(
     id: 'q1',
     questionText: text,
     marks: marks,
-    requiredPlan: PlanTier.free,
+    requiredPlan: requiredPlan,
     appearanceCount: appearanceCount,
     kind: 'pyq_theory',
     priority: priority,
     appearanceYears: const [2024],
     paperNames: const ['Paper I'],
+    textbookLine: textbookLine,
     hasDirectAnswer: hasDirectAnswer,
     hasExplanation: hasExplanation,
   );
 }
 
-Future<void> _pump(WidgetTester tester, PyqTeaser teaser) async {
+Future<void> _pump(
+  WidgetTester tester,
+  PyqTeaser teaser, {
+  PlanTier plan = PlanTier.free,
+  VoidCallback? onTap,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [bookmarkedIdsProvider.overrideWith(_StubBookmarkedIds.new)],
+      overrides: [
+        bookmarkedIdsProvider.overrideWith(_StubBookmarkedIds.new),
+        currentPlanProvider.overrideWith((ref) async => plan),
+      ],
       child: MaterialApp(
-        home: Scaffold(body: PyqTeaserCard(teaser: teaser, index: 0)),
+        home: Scaffold(
+          body: PyqTeaserCard(teaser: teaser, index: 0, onTap: onTap),
+        ),
       ),
     ),
   );
@@ -100,6 +114,67 @@ void main() {
     final stem = tester.widget<Text>(find.textContaining('gross anatomy'));
     expect(stem.maxLines, 3);
     expect(stem.overflow, TextOverflow.ellipsis);
+  });
+
+  testWidgets('a free question shows a Free tag and opens', (tester) async {
+    var taps = 0;
+    await _pump(tester, _teaser(), onTap: () => taps++);
+
+    expect(find.text('Free'), findsOneWidget);
+    expect(find.text('Describe the femoral triangle.'), findsOneWidget);
+
+    await tester.tap(find.text('Describe the femoral triangle.'));
+    await tester.pumpAndSettle();
+    expect(taps, 1);
+  });
+
+  testWidgets('a free plan masks a Pro stem and does not open it', (
+    tester,
+  ) async {
+    var taps = 0;
+    await _pump(
+      tester,
+      _teaser(
+        text: 'Write an essay on myocardial infarction.',
+        requiredPlan: PlanTier.pro,
+        textbookLine: 'Harrison p. 12',
+        hasDirectAnswer: true,
+      ),
+      onTap: () => taps++,
+    );
+
+    expect(find.text('Pro'), findsOneWidget);
+    expect(find.text('Write an essay on myocardial infarction.'), findsNothing);
+    expect(find.text('Harrison p. 12'), findsNothing);
+    expect(find.bySemanticsLabel('Question text hidden'), findsOneWidget);
+    expect(find.text('Answer available'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Question text hidden'));
+    await tester.pumpAndSettle();
+    expect(taps, 0);
+  });
+
+  testWidgets('Pro can read a Pro stem and open it', (tester) async {
+    var taps = 0;
+    await _pump(
+      tester,
+      _teaser(
+        text: 'Write an essay on myocardial infarction.',
+        requiredPlan: PlanTier.pro,
+      ),
+      plan: PlanTier.pro,
+      onTap: () => taps++,
+    );
+
+    expect(find.text('Pro'), findsOneWidget);
+    expect(
+      find.text('Write an essay on myocardial infarction.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Write an essay on myocardial infarction.'));
+    await tester.pumpAndSettle();
+    expect(taps, 1);
   });
 }
 

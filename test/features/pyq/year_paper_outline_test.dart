@@ -21,13 +21,14 @@ PyqTeaser _teaser({
   num? marks = 10,
   List<String> papers = const ['Paper I'],
   List<int> years = const [2024],
+  PlanTier requiredPlan = PlanTier.free,
 }) {
   return PyqTeaser(
     id: id,
     topicId: 't',
     questionText: text,
     marks: marks,
-    requiredPlan: PlanTier.free,
+    requiredPlan: requiredPlan,
     appearanceCount: 1,
     kind: kind,
     appearanceYears: years,
@@ -182,6 +183,71 @@ void main() {
     await tester.tap(find.text('Which artery?'));
     await tester.pumpAndSettle();
     expect(find.text('Reader mcq'), findsOneWidget);
+  });
+
+  testWidgets('a free plan does not open a Pro question from the outline', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final router = GoRouter(
+      initialLocation: AppRoutes.subjectYearPath('anat', 2024, 'Anatomy'),
+      routes: [
+        GoRoute(
+          path: AppRoutes.subjectYear,
+          builder: (_, state) => YearPaperOutlineScreen(
+            subjectId: state.pathParameters['subjectId']!,
+            year: int.parse(state.pathParameters['year']!),
+            title: state.uri.queryParameters['title'] ?? 'Subject',
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.pyq,
+          builder: (_, state) =>
+              Text('Reader ${state.pathParameters['questionId']}'),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          subjectPyqsProvider.overrideWith(
+            (ref, id) async => PyqSubjectFeed(
+              teasers: [
+                _teaser(id: 'free', text: 'Describe the femoral triangle.'),
+                _teaser(
+                  id: 'pro',
+                  text: 'Write an essay on myocardial infarction.',
+                  requiredPlan: PlanTier.pro,
+                ),
+              ],
+            ),
+          ),
+          bookmarkedIdsProvider.overrideWith(_StubBookmarkedIds.new),
+          userProfileProvider.overrideWith(_StubProfile.new),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Free'), findsOneWidget);
+    expect(find.text('Pro'), findsOneWidget);
+    expect(find.text('Describe the femoral triangle.'), findsOneWidget);
+    expect(find.text('Write an essay on myocardial infarction.'), findsNothing);
+
+    await tester.tap(find.text('Pro'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reader pro'), findsNothing);
+
+    await tester.tap(find.text('Describe the femoral triangle.'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reader free'), findsOneWidget);
   });
 
   testWidgets('a paper route shows only that paper', (tester) async {

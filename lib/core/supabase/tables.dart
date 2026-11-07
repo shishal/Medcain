@@ -27,6 +27,7 @@ abstract final class Tables {
   static const questionAppearances = 'question_appearances';
   static const questionTextbookRefs = 'question_textbook_refs';
   static const pyqTeasers = 'pyq_teasers';
+  static const questionListings = 'question_listings';
   static const lessonProgress = 'lesson_progress';
   static const questionProgress = 'question_progress';
   static const lessonBookmarks = 'lesson_bookmarks';
