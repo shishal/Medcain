@@ -15,8 +15,7 @@ class DeveloperModeBlockedScreen extends ConsumerWidget {
 
   static const body =
       'MEDCAIN stays closed while Developer options or USB debugging '
-      'is enabled. A computer can capture the screen that way, even '
-      'when screenshots are blocked.\n\n'
+      'is enabled.\n\n'
       'Turn Developer options off, then come back. The app unlocks on its own.';
 
   static const openSettingsLabel = 'Open Developer options';
