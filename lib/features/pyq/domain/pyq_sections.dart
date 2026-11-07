@@ -29,8 +29,8 @@ PyqSection classifySitting(
   return PyqSection.ownUniversity;
 }
 
-/// One row on the subject screen: a university's papers in one year,
-/// within one section (and one college, for campus papers).
+/// One row on the subject screen: one printed paper (Paper I, Paper II, …)
+/// in one year, within one section (and one college, for campus papers).
 class PyqSittingGroup {
   const PyqSittingGroup({
     required this.section,
@@ -38,7 +38,7 @@ class PyqSittingGroup {
     this.collegeId,
     required this.year,
     required this.examTypes,
-    required this.paperNames,
+    this.paperName,
     required this.questionCount,
   });
 
@@ -50,9 +50,16 @@ class PyqSittingGroup {
   final int year;
   final List<PaperExamType> examTypes;
 
-  /// Sitting labels such as `October · Paper I`.
-  final List<String> paperNames;
+  /// Printed paper label such as `Paper I`. Null when the sheet left it blank.
+  final String? paperName;
   final int questionCount;
+
+  /// What the paper row shows. Blank sheet values still get a tappable row.
+  String get paperLabel {
+    final name = paperName?.trim();
+    if (name == null || name.isEmpty) return 'Paper';
+    return name;
+  }
 }
 
 class PyqSections {
@@ -73,10 +80,39 @@ class PyqSections {
 class _GroupBuilder {
   final questionIds = <String>{};
   final examTypes = <PaperExamType>{};
-  final paperNames = <String>{};
 }
 
-/// Splits the filtered feed into the three sections. Years run newest first.
+/// Roman and digit suffixes so Paper I sits above Paper II, not by alphabet.
+const _paperRoman = {
+  'i': 1,
+  'ii': 2,
+  'iii': 3,
+  'iv': 4,
+  'v': 5,
+  'vi': 6,
+  'vii': 7,
+  'viii': 8,
+  'ix': 9,
+  'x': 10,
+};
+
+int _paperOrdinal(String? name) {
+  if (name == null || name.trim().isEmpty) return 1000;
+  final tail = name.trim().toLowerCase().split(RegExp(r'\s+')).last;
+  return int.tryParse(tail) ?? _paperRoman[tail] ?? 500;
+}
+
+int _comparePaperNames(String? a, String? b) {
+  final aBlank = a == null || a.trim().isEmpty;
+  final bBlank = b == null || b.trim().isEmpty;
+  if (aBlank != bBlank) return aBlank ? 1 : -1;
+  final byNumber = _paperOrdinal(a).compareTo(_paperOrdinal(b));
+  if (byNumber != 0) return byNumber;
+  return (a ?? '').compareTo(b ?? '');
+}
+
+/// Splits the filtered feed into the three sections. Years run newest first,
+/// and each year is one row per printed paper (Paper I, then Paper II).
 /// Section 2 lists the student's college first, then other colleges of the
 /// same university. "Other" is grouped by university using [universityCodes].
 PyqSections buildPyqSections({
@@ -86,8 +122,8 @@ PyqSections buildPyqSections({
   required String? userCollegeId,
   Map<String, String> universityCodes = const {},
 }) {
-  // Key: section, university, college (campus rows only), year.
-  final builders = <(PyqSection, String, String, int), _GroupBuilder>{};
+  // Key: section, university, college (campus rows only), year, paper name.
+  final builders = <(PyqSection, String, String, int, String), _GroupBuilder>{};
   for (final teaser in applySubjectPyqFilter(teasers, filter)) {
     for (final sitting in teaser.sittings) {
       if (!sittingMatches(sitting, filter)) continue;
@@ -96,18 +132,20 @@ PyqSections buildPyqSections({
         userUniversityId: userUniversityId,
       );
       // Keep campus papers of the same uni/year as separate rows per college;
-      // prof/supply and other-university rows stay one per uni/year.
-      final collegeKey =
-          section == PyqSection.ownCollege ? (sitting.collegeId ?? '') : '';
-      final group = builders.putIfAbsent(
-        (section, sitting.universityId, collegeKey, sitting.year),
-        _GroupBuilder.new,
-      );
+      // prof/supply and other-university rows stay one per uni/year/paper.
+      final collegeKey = section == PyqSection.ownCollege
+          ? (sitting.collegeId ?? '')
+          : '';
+      final paperKey = sitting.paperName?.trim() ?? '';
+      final group = builders.putIfAbsent((
+        section,
+        sitting.universityId,
+        collegeKey,
+        sitting.year,
+        paperKey,
+      ), _GroupBuilder.new);
       group.questionIds.add(teaser.id);
       group.examTypes.add(sitting.examType);
-      if (sitting.paperName != null || sitting.month != null) {
-        group.paperNames.add(sitting.label);
-      }
     }
   }
 
@@ -122,7 +160,7 @@ PyqSections buildPyqSections({
           for (final type in PaperExamType.values)
             if (entry.value.examTypes.contains(type)) type,
         ],
-        paperNames: entry.value.paperNames.toList()..sort(),
+        paperName: entry.key.$5.isEmpty ? null : entry.key.$5,
         questionCount: entry.value.questionIds.length,
       ),
   ];
@@ -152,7 +190,9 @@ PyqSections buildPyqSections({
         final byUni = codeOf(a).compareTo(codeOf(b));
         if (byUni != 0) return byUni;
       }
-      return b.year.compareTo(a.year);
+      final byYear = b.year.compareTo(a.year);
+      if (byYear != 0) return byYear;
+      return _comparePaperNames(a.paperName, b.paperName);
     });
     return list;
   }

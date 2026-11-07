@@ -63,6 +63,7 @@ PyqSubjectFeed _feed() {
         topicName: 'Lower limb',
         papers: const ['Paper II'],
       ),
+      _teaser(id: 'q1b', text: 'Scalp layers', papers: const ['Paper I']),
       _teaser(
         id: 'q2',
         text: 'Brachial plexus',
@@ -222,7 +223,9 @@ void main() {
   });
 
   Future<GoRouter> pumpScreen(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(400, 900);
+    // Tall enough that year headings plus a paper row under each year
+    // still leave the third section on screen.
+    tester.view.physicalSize = const Size(400, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -242,7 +245,8 @@ void main() {
           builder: (_, state) => Text(
             'Outline ${state.pathParameters['year']} '
             '${state.uri.queryParameters['uni']} '
-            '${state.uri.queryParameters['section']}',
+            '${state.uri.queryParameters['section']} '
+            '${state.uri.queryParameters['paper']}',
           ),
         ),
       ],
@@ -300,57 +304,69 @@ void main() {
     return router;
   }
 
-  testWidgets('subject screen shows own university, campus papers, then others', (
-    tester,
-  ) async {
-    await pumpScreen(tester);
+  testWidgets(
+    'subject screen shows own university, campus papers, then others',
+    (tester) async {
+      await pumpScreen(tester);
 
-    final own = find.text('GGSIPU previous year questions');
-    final college = find.text('GGSIPU internal / pre-prof');
-    final other = find.text('Other universities');
-    expect(own, findsOneWidget);
-    expect(college, findsOneWidget);
-    expect(other, findsOneWidget);
+      final own = find.text('GGSIPU previous year questions');
+      final college = find.text('GGSIPU internal / pre-prof');
+      final other = find.text('Other universities');
+      expect(own, findsOneWidget);
+      expect(college, findsOneWidget);
+      expect(other, findsOneWidget);
 
-    final ownY = tester.getTopLeft(own).dy;
-    final collegeY = tester.getTopLeft(college).dy;
-    final otherY = tester.getTopLeft(other).dy;
-    expect(ownY, lessThan(collegeY));
-    expect(collegeY, lessThan(otherY));
+      final ownY = tester.getTopLeft(own).dy;
+      final collegeY = tester.getTopLeft(college).dy;
+      final otherY = tester.getTopLeft(other).dy;
+      expect(ownY, lessThan(collegeY));
+      expect(collegeY, lessThan(otherY));
 
-    // Newest year first inside a section, and no stems in the list itself.
-    expect(
-      tester.getTopLeft(find.text('2024').first).dy,
-      lessThan(tester.getTopLeft(find.text('2023')).dy),
-    );
-    expect(find.text('Chapters'), findsNothing);
-    expect(find.text('Brachial plexus'), findsNothing);
+      // Newest year first, Paper I above Paper II, and no stems in the list.
+      expect(
+        tester.getTopLeft(find.text('2024').first).dy,
+        lessThan(tester.getTopLeft(find.text('Paper I').first).dy),
+      );
+      expect(
+        tester.getTopLeft(find.text('Paper I').first).dy,
+        lessThan(tester.getTopLeft(find.text('Paper II')).dy),
+      );
+      expect(
+        tester.getTopLeft(find.text('Paper II')).dy,
+        lessThan(tester.getTopLeft(find.text('2023')).dy),
+      );
+      expect(find.text('Chapters'), findsNothing);
+      expect(find.text('Brachial plexus'), findsNothing);
 
-    // Own college (MAMC) before the other campus (BSAMC); other university
-    // alone in section three, so 2024 appears once there plus once under
-    // GGSIPU prof.
-    expect(find.text('MAMC'), findsOneWidget);
-    expect(find.text('BSAMC'), findsOneWidget);
-    expect(find.text('2022'), findsOneWidget);
-    expect(
-      tester.getTopLeft(find.text('MAMC')).dy,
-      lessThan(tester.getTopLeft(find.text('BSAMC')).dy),
-    );
-    expect(
-      tester.getTopLeft(find.text('2025')).dy,
-      lessThan(tester.getTopLeft(find.text('2022')).dy),
-    );
-    expect(find.text('2024'), findsNWidgets(2));
-  });
+      // Own college (MAMC) before the other campus (BSAMC); other university
+      // alone in section three, so 2024 appears once there plus once under
+      // GGSIPU prof.
+      expect(find.text('MAMC'), findsOneWidget);
+      expect(find.text('BSAMC'), findsOneWidget);
+      expect(find.text('2022'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('MAMC')).dy,
+        lessThan(tester.getTopLeft(find.text('BSAMC')).dy),
+      );
+      expect(
+        tester.getTopLeft(find.text('2025')).dy,
+        lessThan(tester.getTopLeft(find.text('2022')).dy),
+      );
+      expect(find.text('2024'), findsNWidgets(2));
+    },
+  );
 
   testWidgets('tapping a row opens the outline scoped to that row', (
     tester,
   ) async {
     await pumpScreen(tester);
 
-    await tester.tap(find.text('2025'));
+    final paper = find.byKey(const ValueKey('ownCollege-2025-Paper I-c1'));
+    await tester.ensureVisible(paper);
     await tester.pumpAndSettle();
-    expect(find.text('Outline 2025 u1 ownCollege'), findsOneWidget);
+    await tester.tap(paper);
+    await tester.pumpAndSettle();
+    expect(find.text('Outline 2025 u1 ownCollege Paper I'), findsOneWidget);
   });
 
   /// Chips live in a scrollable sheet; scroll into view before tapping so a
@@ -404,8 +420,9 @@ void main() {
 
     expect(find.text('2024'), findsOneWidget);
     expect(find.text('2023'), findsNothing);
-    // Active filters are named above the list and the icon fills in.
-    expect(find.text('Paper II'), findsOneWidget);
+    // Active filters are named above the list, and the matching paper row
+    // repeats the same label. The icon fills in.
+    expect(find.text('Paper II'), findsNWidgets(2));
     expect(find.byIcon(Icons.filter_alt_rounded), findsOneWidget);
 
     await tester.tap(find.text('Filters'));

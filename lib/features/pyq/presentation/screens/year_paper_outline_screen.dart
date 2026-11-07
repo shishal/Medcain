@@ -13,7 +13,8 @@ import '../../domain/pyq_sections.dart';
 import '../providers/pyq_providers.dart';
 import '../widgets/pyq_teaser_card.dart';
 
-/// One exam year: pinned LAQ / Short notes / MCQ / Other tabs.
+/// One exam year and, when [paperName] is set, one printed paper
+/// (Paper I, Paper II, …): pinned LAQ / Short notes / MCQ / Other tabs.
 class YearPaperOutlineScreen extends ConsumerWidget {
   const YearPaperOutlineScreen({
     super.key,
@@ -23,6 +24,7 @@ class YearPaperOutlineScreen extends ConsumerWidget {
     this.universityId,
     this.section,
     this.collegeId,
+    this.paperName,
   });
 
   final String subjectId;
@@ -39,6 +41,10 @@ class YearPaperOutlineScreen extends ConsumerWidget {
   /// Campus-paper rows also pass the college so another campus's stems stay out.
   final String? collegeId;
 
+  /// Printed paper (`Paper I`). Null keeps every paper in the year. Empty
+  /// string means the sheet left the paper label blank.
+  final String? paperName;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(subjectPyqsProvider(subjectId));
@@ -48,26 +54,41 @@ class YearPaperOutlineScreen extends ConsumerWidget {
     final scopeUniversityId = universityId;
     // Null = no college filter. Empty string = papers with no college set.
     final scopeCollegeId = collegeId;
-    // Narrow to the tapped row so a KUHS 2024 row does not also list the
-    // 2024 stems of another university (or another campus).
+    final paperTitle = _paperTitle(paperName);
+    // Narrow to the tapped row so a KUHS 2024 Paper I row does not also list
+    // Paper II, or the 2024 stems of another university (or another campus).
     final bool Function(PaperSitting)? scope =
-        scopeSection == null || scopeUniversityId == null
+        (scopeSection == null || scopeUniversityId == null) && paperName == null
         ? null
         : (sitting) {
-            if (sitting.universityId != scopeUniversityId) return false;
-            if (classifySitting(
-                  sitting,
-                  userUniversityId: profile?.universityId,
-                ) !=
-                scopeSection) {
-              return false;
+            if (scopeSection != null && scopeUniversityId != null) {
+              if (sitting.universityId != scopeUniversityId) return false;
+              if (classifySitting(
+                    sitting,
+                    userUniversityId: profile?.universityId,
+                  ) !=
+                  scopeSection) {
+                return false;
+              }
+              if (scopeCollegeId != null) {
+                if (scopeCollegeId.isEmpty) {
+                  if (sitting.collegeId != null) return false;
+                } else if (sitting.collegeId != scopeCollegeId) {
+                  return false;
+                }
+              }
             }
-            if (scopeCollegeId == null) return true;
-            if (scopeCollegeId.isEmpty) return sitting.collegeId == null;
-            return sitting.collegeId == scopeCollegeId;
+            if (paperName == null) return true;
+            return (sitting.paperName?.trim() ?? '') == paperName!.trim();
           };
     return Scaffold(
-      appBar: AppBar(title: Text('$title · $year')),
+      appBar: AppBar(
+        title: Text(
+          paperTitle == null
+              ? '$title · $year'
+              : '$title · $year · $paperTitle',
+        ),
+      ),
       body: async.when(
         loading: () => const AsyncLoadingView(),
         error: (e, _) => AsyncErrorView(
@@ -89,6 +110,7 @@ class YearPaperOutlineScreen extends ConsumerWidget {
           );
           return _OutlineBody(
             year: year,
+            paperLabel: paperTitle,
             longAnswer: forTab(PaperOutlineTab.longAnswer),
             shortNotes: forTab(PaperOutlineTab.shortNotes),
             mcq: forTab(PaperOutlineTab.mcq),
@@ -100,9 +122,17 @@ class YearPaperOutlineScreen extends ConsumerWidget {
   }
 }
 
+/// Null when the route did not pick a paper. Empty sheet labels read "Paper".
+String? _paperTitle(String? paperName) {
+  if (paperName == null) return null;
+  final trimmed = paperName.trim();
+  return trimmed.isEmpty ? 'Paper' : trimmed;
+}
+
 class _OutlineBody extends StatefulWidget {
   const _OutlineBody({
     required this.year,
+    this.paperLabel,
     required this.longAnswer,
     required this.shortNotes,
     required this.mcq,
@@ -110,6 +140,7 @@ class _OutlineBody extends StatefulWidget {
   });
 
   final int year;
+  final String? paperLabel;
   final List<PyqTeaser> longAnswer;
   final List<PyqTeaser> shortNotes;
   final List<PyqTeaser> mcq;
@@ -174,6 +205,7 @@ class _OutlineBodyState extends State<_OutlineBody>
               for (final tab in PaperOutlineTab.values)
                 _OutlineQuestionList(
                   year: widget.year,
+                  paperLabel: widget.paperLabel,
                   tab: tab,
                   teasers: _listFor(tab),
                 ),
@@ -188,11 +220,13 @@ class _OutlineBodyState extends State<_OutlineBody>
 class _OutlineQuestionList extends StatelessWidget {
   const _OutlineQuestionList({
     required this.year,
+    this.paperLabel,
     required this.tab,
     required this.teasers,
   });
 
   final int year;
+  final String? paperLabel;
   final PaperOutlineTab tab;
   final List<PyqTeaser> teasers;
 
@@ -201,7 +235,7 @@ class _OutlineQuestionList extends StatelessWidget {
     if (teasers.isEmpty) {
       return AsyncEmptyView(
         icon: Icons.description_outlined,
-        message: tab.emptyMessage(year),
+        message: tab.emptyMessage(year, paperLabel),
       );
     }
     return ListView.builder(

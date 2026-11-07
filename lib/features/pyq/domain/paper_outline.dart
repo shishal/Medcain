@@ -17,12 +17,15 @@ enum PaperOutlineTab {
     PaperOutlineTab.other => 'Other',
   };
 
-  String emptyMessage(int year) => switch (this) {
-    PaperOutlineTab.longAnswer => 'No long answers in $year.',
-    PaperOutlineTab.shortNotes => 'No short notes in $year.',
-    PaperOutlineTab.mcq => 'No MCQs in $year.',
-    PaperOutlineTab.other => 'No other questions in $year.',
-  };
+  String emptyMessage(int year, [String? paper]) {
+    final where = (paper == null || paper.isEmpty) ? '$year' : '$year $paper';
+    return switch (this) {
+      PaperOutlineTab.longAnswer => 'No long answers in $where.',
+      PaperOutlineTab.shortNotes => 'No short notes in $where.',
+      PaperOutlineTab.mcq => 'No MCQs in $where.',
+      PaperOutlineTab.other => 'No other questions in $where.',
+    };
+  }
 }
 
 bool matchesOutlineTab(PyqTeaser teaser, PaperOutlineTab tab) {

@@ -215,6 +215,7 @@ GoRouter goRouter(Ref ref) {
             universityId: state.uri.queryParameters['uni'],
             section: state.uri.queryParameters['section'],
             collegeId: state.uri.queryParameters['college'],
+            paperName: state.uri.queryParameters['paper'],
           );
         },
       ),

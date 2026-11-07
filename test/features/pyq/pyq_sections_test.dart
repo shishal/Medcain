@@ -48,10 +48,8 @@ PyqSections _build(
 
 void main() {
   group('classifySitting', () {
-    PyqSection classify(PaperSitting s) => classifySitting(
-      s,
-      userUniversityId: 'u1',
-    );
+    PyqSection classify(PaperSitting s) =>
+        classifySitting(s, userUniversityId: 'u1');
 
     test('own university prof and supply are section one', () {
       expect(classify(_sitting(year: 2024)), PyqSection.ownUniversity);
@@ -97,10 +95,7 @@ void main() {
 
     test('everything is "other" while the student has no university', () {
       expect(
-        classifySitting(
-          _sitting(year: 2024),
-          userUniversityId: null,
-        ),
+        classifySitting(_sitting(year: 2024), userUniversityId: null),
         PyqSection.other,
       );
     });
@@ -128,27 +123,52 @@ void main() {
       _teaser('g', [_sitting(year: 2025, university: 'u2')]),
     ];
 
-    test('puts each sitting in its section, newest year first', () {
+    test('puts each sitting in its section, newest year then paper', () {
       final sections = _build(teasers);
 
-      expect(sections.ownUniversity.map((g) => g.year), [2024, 2022]);
+      expect(sections.ownUniversity.map((g) => (g.year, g.paperName)), [
+        (2024, 'Paper I'),
+        (2024, 'Paper II'),
+        (2022, 'Paper I'),
+      ]);
       // Own college first (newest first), then other campuses.
       expect(
-        sections.ownCollege.map((g) => (g.collegeId, g.year)),
-        [('c1', 2026), ('c1', 2025), ('c2', 2024)],
+        sections.ownCollege.map((g) => (g.collegeId, g.year, g.paperName)),
+        [
+          ('c1', 2026, 'Paper I'),
+          ('c1', 2025, 'Paper I'),
+          ('c2', 2024, 'Paper I'),
+        ],
       );
       // "Other" is grouped by university code (KUHS before RGUHS).
-      expect(
-        sections.other.map((g) => (g.universityId, g.year)),
-        [('u2', 2025), ('u2', 2021), ('u3', 2023)],
-      );
+      expect(sections.other.map((g) => (g.universityId, g.year)), [
+        ('u2', 2025),
+        ('u2', 2021),
+        ('u3', 2023),
+      ]);
     });
 
-    test('counts each question once per row and lists the papers', () {
-      final row = _build(teasers).ownUniversity.first;
-      expect(row.questionCount, 2);
-      expect(row.paperNames, ['Paper I', 'Paper II']);
-      expect(row.examTypes, [PaperExamType.prof]);
+    test('counts each question once per paper', () {
+      final rows = _build(teasers).ownUniversity;
+      expect(rows.first.paperName, 'Paper I');
+      expect(rows.first.questionCount, 1);
+      expect(rows[1].paperName, 'Paper II');
+      // The stem that sat both papers is counted again on Paper II.
+      expect(rows[1].questionCount, 2);
+      expect(rows.first.examTypes, [PaperExamType.prof]);
+    });
+
+    test('a blank paper name is its own row after named papers', () {
+      final sections = _build([
+        _teaser('named', [_sitting(year: 2024, paper: 'Paper II')]),
+        _teaser('blank', [_sitting(year: 2024, paper: null)]),
+        _teaser('first', [_sitting(year: 2024, paper: 'Paper I')]),
+      ]);
+      expect(sections.ownUniversity.map((g) => g.paperLabel), [
+        'Paper I',
+        'Paper II',
+        'Paper',
+      ]);
     });
 
     test('applies the filter before grouping', () {
@@ -176,11 +196,7 @@ void main() {
 
     test('year and paper must match on one sitting', () {
       expect(
-        filterSubjectPyqs(
-          teasers: teasers,
-          year: 2023,
-          paperName: 'Paper II',
-        ),
+        filterSubjectPyqs(teasers: teasers, year: 2023, paperName: 'Paper II'),
         isEmpty,
       );
       expect(

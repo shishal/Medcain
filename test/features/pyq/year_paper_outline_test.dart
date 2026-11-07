@@ -183,6 +183,71 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Reader mcq'), findsOneWidget);
   });
+
+  testWidgets('a paper route shows only that paper', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final router = GoRouter(
+      initialLocation: AppRoutes.subjectYearPath(
+        'anat',
+        2024,
+        'Anatomy',
+        universityId: 'u1',
+        section: 'ownUniversity',
+        paperName: 'Paper I',
+      ),
+      routes: [
+        GoRoute(
+          path: AppRoutes.subjectYear,
+          builder: (_, state) => YearPaperOutlineScreen(
+            subjectId: state.pathParameters['subjectId']!,
+            year: int.parse(state.pathParameters['year']!),
+            title: state.uri.queryParameters['title'] ?? 'Subject',
+            universityId: state.uri.queryParameters['uni'],
+            section: state.uri.queryParameters['section'],
+            paperName: state.uri.queryParameters['paper'],
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          subjectPyqsProvider.overrideWith(
+            (ref, id) async => PyqSubjectFeed(
+              teasers: [
+                _teaser(id: 'essay-i', text: 'Long essay Paper I'),
+                _teaser(
+                  id: 'essay-ii',
+                  text: 'Long essay Paper II',
+                  papers: const ['Paper II'],
+                ),
+                _teaser(
+                  id: 'other-year',
+                  text: '2023 Paper I',
+                  years: const [2023],
+                ),
+              ],
+            ),
+          ),
+          bookmarkedIdsProvider.overrideWith(_StubBookmarkedIds.new),
+          userProfileProvider.overrideWith(_StubProfile.new),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Anatomy · 2024 · Paper I'), findsOneWidget);
+    expect(find.text('Long essay Paper I'), findsOneWidget);
+    expect(find.text('Long essay Paper II'), findsNothing);
+    expect(find.text('2023 Paper I'), findsNothing);
+  });
 }
 
 class _StubBookmarkedIds extends BookmarkedIds {

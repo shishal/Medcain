@@ -16,7 +16,8 @@ import '../widgets/subject_pyq_filter_sheet.dart';
 
 /// Subject → papers in three sections (own university, campus papers of that
 /// university with the student's college first, then other universities).
-/// Newest year first. Filters carry into the year outline.
+/// Newest year first, then Paper I / Paper II under that year. Opening a
+/// paper shows only that paper's questions.
 class SubjectPyqScreen extends ConsumerWidget {
   const SubjectPyqScreen({
     super.key,
@@ -89,8 +90,7 @@ class SubjectPyqScreen extends ConsumerWidget {
                   if (filter.year != null) '${filter.year}',
                   if (filter.examType != null) filter.examType!.label,
                   if (filter.paperName != null) filter.paperName!,
-                  if (filter.isMcq != null)
-                    filter.isMcq! ? 'MCQ' : 'Theory',
+                  if (filter.isMcq != null) filter.isMcq! ? 'MCQ' : 'Theory',
                   if (filter.topicId != null)
                     feed.chapters
                         .where((c) => c.id == filter.topicId)
@@ -116,8 +116,19 @@ class SubjectPyqScreen extends ConsumerWidget {
               collegeId: group.section == PyqSection.ownCollege
                   ? (group.collegeId ?? '')
                   : null,
+              // Empty string means the sheet left the paper label blank.
+              paperName: group.paperName ?? '',
             ),
           );
+
+          List<Widget> paperRows(List<PyqSittingGroup> groups) {
+            return [
+              for (var i = 0; i < groups.length; i++) ...[
+                if (_startsPaperYear(groups, i)) _YearHeading(groups[i].year),
+                _PaperCard(group: groups[i], onTap: () => open(groups[i])),
+              ],
+            ];
+          }
 
           final emptyCopy = filter.isActive
               ? 'No papers match these filters.'
@@ -139,7 +150,7 @@ class SubjectPyqScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: Spacing.xs),
                 Text(
-                  'Pick a year to see that sitting. A university paper mixes chapters.',
+                  'Pick a paper under a year. A university paper mixes chapters.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 if (activeSummary != null && activeSummary.isNotEmpty) ...[
@@ -166,8 +177,7 @@ class SubjectPyqScreen extends ConsumerWidget {
                 if (sections.ownUniversity.isEmpty)
                   _EmptySection(emptyCopy)
                 else
-                  for (final group in sections.ownUniversity)
-                    _YearCard(group: group, onTap: () => open(group)),
+                  ...paperRows(sections.ownUniversity),
                 _SectionHeader(
                   userUniversityId == null
                       ? 'Internal / pre-prof'
@@ -184,7 +194,9 @@ class SubjectPyqScreen extends ConsumerWidget {
                       _UniversityHeading(
                         collegeLabelOf(sections.ownCollege[i].collegeId),
                       ),
-                    _YearCard(
+                    if (_startsPaperYear(sections.ownCollege, i))
+                      _YearHeading(sections.ownCollege[i].year),
+                    _PaperCard(
                       group: sections.ownCollege[i],
                       onTap: () => open(sections.ownCollege[i]),
                     ),
@@ -202,7 +214,9 @@ class SubjectPyqScreen extends ConsumerWidget {
                       _UniversityHeading(
                         codeOf(sections.other[i].universityId),
                       ),
-                    _YearCard(
+                    if (_startsPaperYear(sections.other, i))
+                      _YearHeading(sections.other[i].year),
+                    _PaperCard(
                       group: sections.other[i],
                       onTap: () => open(sections.other[i]),
                     ),
@@ -227,9 +241,8 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(top: Spacing.lg, bottom: Spacing.sm),
       child: Text(
         text,
-        style: Theme.of(
-          context,
-        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+        style: Theme.of(context).textTheme.titleMedium
+            ?.copyWith(fontWeight: FontWeight.w800),
       ),
     );
   }
@@ -246,9 +259,8 @@ class _EmptySection extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: Spacing.sm),
       child: Text(
         message,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+        style: Theme.of(context).textTheme.bodySmall
+            ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     );
   }
@@ -265,17 +277,44 @@ class _UniversityHeading extends StatelessWidget {
       padding: const EdgeInsets.only(top: Spacing.xs, bottom: Spacing.sm),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+        style: Theme.of(context).textTheme.labelLarge
+            ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     );
   }
 }
 
-/// A year row that says what opening it leads to, rather than just the number.
-class _YearCard extends StatelessWidget {
-  const _YearCard({required this.group, required this.onTap});
+/// True when this row starts a new year block (or a new college / university).
+bool _startsPaperYear(List<PyqSittingGroup> groups, int index) {
+  if (index == 0) return true;
+  final previous = groups[index - 1];
+  final current = groups[index];
+  return previous.year != current.year ||
+      previous.universityId != current.universityId ||
+      previous.collegeId != current.collegeId;
+}
+
+class _YearHeading extends StatelessWidget {
+  const _YearHeading(this.year);
+
+  final int year;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: Spacing.sm, bottom: Spacing.xs),
+      child: Text(
+        '$year',
+        style: Theme.of(context).textTheme.titleLarge
+            ?.copyWith(fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+/// Paper I / Paper II under a year. Opening it lists only that paper.
+class _PaperCard extends StatelessWidget {
+  const _PaperCard({required this.group, required this.onTap});
 
   final PyqSittingGroup group;
   final VoidCallback onTap;
@@ -289,14 +328,17 @@ class _YearCard extends StatelessWidget {
       count == 1 ? '1 question' : '$count questions',
       if (group.examTypes.isNotEmpty)
         group.examTypes.map((t) => t.label).join(' / '),
-      if (group.paperNames.isNotEmpty) group.paperNames.join(' · '),
     ].join(' · ');
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: Spacing.sm),
+      key: ValueKey(
+        '${group.section.name}-${group.year}-${group.paperLabel}-'
+        '${group.collegeId ?? group.universityId}',
+      ),
+      padding: const EdgeInsets.only(left: Spacing.md, bottom: Spacing.sm),
       child: ComicCard(
         onTap: onTap,
-        semanticLabel: '${group.year}, $caption',
+        semanticLabel: '${group.year} ${group.paperLabel}, $caption',
         child: Row(
           children: [
             Expanded(
@@ -304,8 +346,8 @@ class _YearCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${group.year}',
-                    style: textTheme.titleLarge?.copyWith(
+                    group.paperLabel,
+                    style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),

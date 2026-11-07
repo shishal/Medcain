@@ -57,9 +57,11 @@ abstract final class AppRoutes {
     queryParameters: {'title': title},
   ).toString();
 
-  /// [universityId], [section] (a `PyqSection` name), and optional [collegeId]
-  /// scope the outline to the row that was tapped. Without them the year shows
-  /// every sitting.
+  /// [universityId], [section] (a `PyqSection` name), optional [collegeId], and
+  /// [paperName] scope the outline to the row that was tapped. Without the
+  /// university and section the year shows every sitting. A null [paperName]
+  /// keeps every paper in that year; an empty string means the sheet left
+  /// the paper label blank.
   static String subjectYearPath(
     String id,
     int year,
@@ -67,6 +69,7 @@ abstract final class AppRoutes {
     String? universityId,
     String? section,
     String? collegeId,
+    String? paperName,
   }) => Uri(
     path: '/subjects/$id/years/$year',
     queryParameters: {
@@ -74,6 +77,7 @@ abstract final class AppRoutes {
       'uni': ?universityId,
       'section': ?section,
       'college': ?collegeId,
+      'paper': ?paperName,
     },
   ).toString();
 
