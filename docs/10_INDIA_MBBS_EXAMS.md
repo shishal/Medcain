@@ -178,9 +178,10 @@ by year / Paper I / Paper II.
 - University-owned PYQs: `exam_papers` (`university_id`, optional
   `college_id`, `subject_id`, `exam_year`, `exam_month`, `paper_name`,
   `exam_type`) → `question_appearances`
-- One sheet row = one appearance (or extra textbook page). Repeat
-  `external_id` for another paper. Topic/lesson names on that row **tag**
-  the stem; they do not mean the paper is only that lesson.
+- One sheet row = one appearance (or extra textbook page). Copy `question_id`
+  for another paper. A blank `question_id` is a separate question even when
+  the stem matches. Topic/lesson names on that row **tag** the stem; they do
+  not mean the paper is only that lesson.
 
 ### Currently true in the app (browse)
 

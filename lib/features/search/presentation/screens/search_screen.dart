@@ -10,6 +10,7 @@ import '../../../../core/widgets/async_status_views.dart';
 import '../../../../core/widgets/comic_card.dart';
 import '../../../progress/data/progress_repository.dart';
 import '../../../progress/domain/progress_models.dart';
+import '../../../pyq/presentation/open_pyq_reader.dart';
 
 /// Search is server-side (`search_catalog` RPC) and needs at least 2
 /// characters, so the screen has to say so rather than ignoring Enter.
@@ -167,8 +168,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             _ResultTile(
                               icon: Icons.quiz_outlined,
                               title: q.title,
-                              onTap: () =>
-                                  context.push(AppRoutes.pyqPath(q.id)),
+                              onTap: () => openPyqReader(
+                                context,
+                                questionId: q.id,
+                                questionIds: [
+                                  for (final hit in hits.questions) hit.id,
+                                ],
+                              ),
                             ),
                         ],
                       ),

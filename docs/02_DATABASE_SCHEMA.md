@@ -763,6 +763,7 @@ Routine content entry uses only `content/google_sheet/tabs/Questions.csv`
 | `topic_name` | no | Free text → `lessons` under that chapter. Requires `chapter_name`. |
 | `question_type` | yes | `questions.kind`: `pyq_theory` or `mcq`. |
 | `marks` | no | `questions.marks`. |
+| `question_id` | no | `questions.public_code`, six digits (`000123`). Blank on sync allocates the next id and the sheet client writes it back. |
 | `question_text` | yes | Stem. Markdown is stored as text. |
 | `option_a` … `option_d`, `correct_option` | mcq only | Blank on theory. `correct_option` is A–D. |
 | `answers` | no | `question_sample_answers.body` (Pro-gated). |
@@ -770,8 +771,9 @@ Routine content entry uses only `content/google_sheet/tabs/Questions.csv`
 | `exp_2` | no | `questions.explanation_deep`. |
 
 A sitting is one `exam_papers` row: university + college + subject + exam type
-+ year + month + paper label. The same stem on another sitting is another
-appearance, not another question. Older rows with `exam_type = 'university'`
++ year + month + paper label. Rows that share a `question_id` are one question;
+another sitting is another appearance. The same stem with a different
+`question_id` is a different question. Older rows with `exam_type = 'university'`
 are migrated to `prof`. `paper_name` may be null. `exam_month` may be null
 only on papers imported before this sheet.
 
@@ -800,20 +802,24 @@ insert/update/delete counts without writes. Apply (`true`) repeats validation
 and normalizes the complete snapshot in one transaction. The function is
 granted only to `service_role`.
 
-Question identity is generated from normalized subject + kind + stem.
-CSV-managed rows carry `questions.content_sync_source =
-'questions_csv_v2'`. Rows absent from the next snapshot are deleted with
-dependent history after the client shows preview counts and receives explicit
-confirmation. Changing subject, kind, or stem therefore creates a new
-identity; this destructive behavior is intentional for this pipeline.
+Question identity is `questions.public_code`, the six-digit `question_id`
+on the sheet. It is not derived from the stem, so two rows can share a stem
+and still be two questions. CSV-managed rows carry
+`questions.content_sync_source = 'questions_csv_v2'`. Rows absent from the
+next snapshot are deleted with dependent history after the client shows
+preview counts and receives explicit confirmation. Changing `question_id`
+therefore creates a new identity; this destructive behavior is intentional
+for this pipeline. Apply
+`supabase/migrations/20261108120000_question_public_codes.sql` before using
+`question_id`.
 
 ### 9.2b Editor sheet vs database
 
 The Google Sheet is **denormalized** for a non-technical editor: one wide
-`Questions` row per stem (university, college, exam type, year, month, paper,
-subject, chapter, topic, stem, answer, explanations). Sync upserts the
-normalized tables above. Editors do not invent UUIDs. See
-`content/google_sheet/README.md`.
+`Questions` row per appearance (university, college, exam type, year, month,
+paper, subject, chapter, topic, stem, answer, explanations). `question_id`
+ties rows to one question. Sync upserts the normalized tables above. Editors
+do not invent UUIDs. See `content/google_sheet/README.md`.
 
 ### 9.3 Profile academic fields + 4-day trial
 

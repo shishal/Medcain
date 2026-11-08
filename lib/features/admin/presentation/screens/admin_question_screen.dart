@@ -41,6 +41,7 @@ class _AdminQuestionScreenState extends ConsumerState<AdminQuestionScreen> {
   List<University> _universities = const [];
   List<College> _colleges = const [];
   List<AdminAppearance> _appearances = const [];
+  String _publicCode = '';
 
   String? _subjectId;
   String _kind = 'pyq_theory';
@@ -135,6 +136,7 @@ class _AdminQuestionScreenState extends ConsumerState<AdminQuestionScreen> {
     _correct = detail.correctOption ?? 'A';
     _active = detail.isActive;
     _appearances = detail.appearances;
+    _publicCode = detail.publicCode;
   }
 
   Future<void> _reloadAppearances() async {
@@ -294,7 +296,15 @@ class _AdminQuestionScreenState extends ConsumerState<AdminQuestionScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isNew ? 'New question' : 'Edit question')),
+      appBar: AppBar(
+        title: Text(
+          _isNew
+              ? 'New question'
+              : _publicCode.isEmpty
+              ? 'Edit question'
+              : 'Edit question · $_publicCode',
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(Spacing.md),
         children: [

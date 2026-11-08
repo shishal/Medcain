@@ -21,15 +21,104 @@ import '../../../security/presentation/widgets/content_capture_guard.dart';
 import '../../data/pyq_repository.dart';
 import '../../domain/pyq_models.dart';
 import '../../domain/question_format.dart';
+import '../open_pyq_reader.dart';
 import '../providers/preferred_textbook_provider.dart';
 import '../providers/pyq_providers.dart';
 
 enum _ReaderPanel { none, explanation, directAnswer }
 
-class PyqReaderScreen extends ConsumerWidget {
-  const PyqReaderScreen({super.key, required this.questionId});
+class PyqReaderScreen extends StatelessWidget {
+  const PyqReaderScreen({super.key, required this.questionId, this.sequence});
 
   final String questionId;
+
+  /// List order from the screen that opened this question. Swipe is available
+  /// when this holds more than one id and includes [questionId].
+  final PyqReaderSequence? sequence;
+
+  @override
+  Widget build(BuildContext context) {
+    final ids = sequence?.questionIds ?? const <String>[];
+    final index = ids.indexOf(questionId);
+    if (index < 0 || ids.length < 2) {
+      return _PyqReaderPage(questionId: questionId);
+    }
+    return _PyqReaderPager(questionIds: ids, initialIndex: index);
+  }
+}
+
+/// One full-screen page per question, in the order of the list that was opened.
+///
+/// [PageView] slides to the next question when the finger moves left, and back
+/// to the previous question when it moves right. Each page keeps its own
+/// vertical list for reading the answer.
+class _PyqReaderPager extends StatefulWidget {
+  const _PyqReaderPager({
+    required this.questionIds,
+    required this.initialIndex,
+  });
+
+  final List<String> questionIds;
+  final int initialIndex;
+
+  @override
+  State<_PyqReaderPager> createState() => _PyqReaderPagerState();
+}
+
+class _PyqReaderPagerState extends State<_PyqReaderPager> {
+  late final PageController _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = widget.questionIds.length;
+    return PageView.builder(
+      controller: _pages,
+      itemCount: total,
+      // Builds the neighbour so the next answer is ready as the swipe starts.
+      allowImplicitScrolling: true,
+      itemBuilder: (context, index) {
+        final id = widget.questionIds[index];
+        return _PyqReaderPage(
+          key: ValueKey(id),
+          questionId: id,
+          position: index + 1,
+          total: total,
+        );
+      },
+    );
+  }
+}
+
+class _PyqReaderPage extends ConsumerWidget {
+  const _PyqReaderPage({
+    super.key,
+    required this.questionId,
+    this.position,
+    this.total,
+  });
+
+  final String questionId;
+  final int? position;
+  final int? total;
+
+  String get _title {
+    final pos = position;
+    final count = total;
+    if (pos == null || count == null || count < 2) return 'PYQ';
+    return 'PYQ · $pos of $count';
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,27 +128,33 @@ class PyqReaderScreen extends ConsumerWidget {
       watermark: false,
       child: detail.when(
         loading: () => Scaffold(
-          appBar: AppBar(title: const Text('PYQ')),
+          appBar: AppBar(title: Text(_title)),
           body: const AsyncLoadingView(),
         ),
         error: (e, _) => Scaffold(
-          appBar: AppBar(title: const Text('PYQ')),
+          appBar: AppBar(title: Text(_title)),
           body: AsyncErrorView(
             message: UserFacingError.display(e),
             onAction: () => ref.invalidate(pyqDetailProvider(questionId)),
           ),
         ),
-        data: (value) => _PyqBody(detail: value, questionId: questionId),
+        data: (value) =>
+            _PyqBody(detail: value, questionId: questionId, title: _title),
       ),
     );
   }
 }
 
 class _PyqBody extends ConsumerStatefulWidget {
-  const _PyqBody({required this.detail, required this.questionId});
+  const _PyqBody({
+    required this.detail,
+    required this.questionId,
+    required this.title,
+  });
 
   final PyqDetail detail;
   final String questionId;
+  final String title;
 
   @override
   ConsumerState<_PyqBody> createState() => _PyqBodyState();
@@ -110,14 +205,14 @@ class _PyqBodyState extends ConsumerState<_PyqBody> {
     // a Pro answer at a free account.
     if (planAsync.isLoading && planAsync.value == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('PYQ')),
+        appBar: AppBar(title: Text(widget.title)),
         body: const AsyncLoadingView(),
       );
     }
     if (d.teaser.isLockedFor(plan)) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('PYQ'),
+          title: Text(widget.title),
           actions: [BookmarkIconButton(questionId: widget.questionId)],
         ),
         body: AsyncEmptyView(
@@ -134,6 +229,7 @@ class _PyqBodyState extends ConsumerState<_PyqBody> {
         .map((a) => '${a.year} ${a.paperName}')
         .join(' · ');
     final meta = [
+      if (d.teaser.publicCode.isNotEmpty) d.teaser.publicCode,
       if (d.teaser.format != QuestionFormat.unclassified) d.teaser.format.label,
       if (d.teaser.marks != null) '${d.teaser.marks} marks',
       // Skip `should`, which is only what a blank CSV cell imports as.
@@ -144,7 +240,7 @@ class _PyqBodyState extends ConsumerState<_PyqBody> {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PYQ'),
+        title: Text(widget.title),
         actions: [BookmarkIconButton(questionId: widget.questionId)],
       ),
       // The A− / A+ pill floats over the scroll view so it stays put while

@@ -90,7 +90,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     final fromNotice = ref.read(deviceSessionNoticeProvider);
     if (fromNotice != null) {
-      ref.read(deviceSessionNoticeProvider.notifier).clear();
+      // didChangeDependencies runs while the tree is building. Clearing the
+      // notice now would notify listeners mid-frame, which Riverpod rejects.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(deviceSessionNoticeProvider.notifier).clear();
+      });
     }
 
     final message = fromQuery ?? fromNotice;
@@ -116,6 +121,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         .read(authRepositoryProvider)
         .startWhatsAppSignIn(phone: phone);
 
+    if (!mounted) return;
+    // Claim finished (and may have signed out). Publish that result
+    // before navigating so the router does not open the splash screen.
+    ref.read(authSessionProvider.notifier).syncWithClient();
     if (!mounted) return;
 
     switch (result) {
@@ -166,6 +175,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       switch (result) {
         case Success(:final value):
           if (value == null) return;
+          // setSession emits signedIn before the device claim returns.
+          // The router ignores that event, so publish the session that is
+          // actually left before we navigate.
+          ref.read(authSessionProvider.notifier).syncWithClient();
+          if (!mounted) return;
           _finished = true;
           _pollTimer?.cancel();
           await _enterApp(value);

@@ -6,7 +6,7 @@
  * Other sheet-only edits still flow into Postgres on Sync to App.
  */
 
-var PULL_HEADERS = ['required_plan', 'is_active'];
+var PULL_HEADERS = ['question_id', 'required_plan', 'is_active'];
 
 function pullAppEdits() {
   var ui = SpreadsheetApp.getUi();
@@ -86,6 +86,11 @@ function rowMatches_(displayRow, headers, match) {
     if (idx < 0) return '';
     return displayRow[idx];
   }
+  var wantedId = codeKey_(match.question_id);
+  var sheetId = codeKey_(cell('question_id'));
+  // Once both sides have an id, it is the question. A blank sheet cell still
+  // matches on the stem so the first pull can find the row.
+  if (wantedId && sheetId && wantedId !== sheetId) return false;
   if (normKey_(cell('subject_name')) !== normKey_(match.subject_name)) return false;
   if (normKey_(cell('question_type')) !== normKey_(match.question_type)) return false;
   if (normKey_(cell('question_text')) !== normKey_(match.question_text)) return false;
@@ -131,6 +136,14 @@ function appendPayload_(sheet, payload) {
     row.push(value == null ? '' : value);
   }
   sheet.appendRow(row);
+}
+
+function codeKey_(value) {
+  var v = trimStr_(value).replace(/\.0$/, '');
+  if (!/^[0-9]+$/.test(v)) return '';
+  var n = parseInt(v, 10);
+  if (!n) return '';
+  return ('000000' + String(n)).slice(-6);
 }
 
 function normKey_(value) {

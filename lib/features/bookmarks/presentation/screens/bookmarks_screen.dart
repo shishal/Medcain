@@ -8,6 +8,7 @@ import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
 import '../../../../core/widgets/comic_card.dart';
+import '../../../pyq/presentation/open_pyq_reader.dart';
 import '../../domain/bookmarked_lesson.dart';
 import '../../domain/bookmarked_question.dart';
 import '../providers/bookmarks_provider.dart';
@@ -90,7 +91,13 @@ class BookmarksScreen extends ConsumerWidget {
                   for (var i = 0; i < questions.length; i++)
                     Padding(
                       padding: const EdgeInsets.only(bottom: Spacing.sm),
-                      child: _BookmarkTile(item: questions[i], index: i),
+                      child: _BookmarkTile(
+                        item: questions[i],
+                        index: i,
+                        questionIds: [
+                          for (final question in questions) question.questionId,
+                        ],
+                      ),
                     ),
                 ],
                 if (lessons.isNotEmpty) ...[
@@ -133,10 +140,15 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _BookmarkTile extends StatelessWidget {
-  const _BookmarkTile({required this.item, required this.index});
+  const _BookmarkTile({
+    required this.item,
+    required this.index,
+    required this.questionIds,
+  });
 
   final BookmarkedQuestion item;
   final int index;
+  final List<String> questionIds;
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +181,11 @@ class _BookmarkTile extends StatelessWidget {
         trailing: BookmarkIconButton(questionId: item.questionId),
         onTap: item.isPlanLocked
             ? null
-            : () => context.push(AppRoutes.pyqPath(item.questionId)),
+            : () => openPyqReader(
+                context,
+                questionId: item.questionId,
+                questionIds: questionIds,
+              ),
       ),
     );
   }

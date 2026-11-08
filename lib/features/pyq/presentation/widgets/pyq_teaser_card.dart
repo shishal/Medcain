@@ -80,6 +80,8 @@ class PyqTeaserCard extends ConsumerWidget {
                   spacing: Spacing.sm,
                   runSpacing: Spacing.xs,
                   children: [
+                    if (teaser.publicCode.isNotEmpty)
+                      _MetaChip(label: teaser.publicCode),
                     _MetaChip(
                       label: teaser.requiredPlan.label,
                       color: planTint,

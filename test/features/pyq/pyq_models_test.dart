@@ -144,4 +144,27 @@ void main() {
     expect(progress.subjects.single.totalLessons, 4);
     expect(progress.subjects.single.totalPyqs, 12);
   });
+
+  test('StudyProgress keeps subject counts from loosely typed JSON maps', () {
+    final raw = <dynamic, dynamic>{
+      'streak': 2,
+      'days7': <dynamic>[
+        <dynamic, dynamic>{'date': '2026-11-08', 'count': 1},
+      ],
+      'days30': <dynamic>[],
+      'subjects': <dynamic>[
+        <dynamic, dynamic>{
+          'id': 's1',
+          'name': 'Medicine',
+          'learnt_lessons': 0,
+          'total_lessons': 4,
+          'total_pyqs': 549,
+        },
+      ],
+    };
+    final progress = StudyProgress.fromJson(Map<String, dynamic>.from(raw));
+    expect(progress.streak, 2);
+    expect(progress.days7.single.count, 1);
+    expect(progress.subjects.single.totalPyqs, 549);
+  });
 }

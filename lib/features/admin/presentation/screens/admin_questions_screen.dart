@@ -114,6 +114,7 @@ class _AdminQuestionsScreenState extends ConsumerState<AdminQuestionsScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
+                          '${question.publicCode.isEmpty ? '' : '${question.publicCode} · '}'
                           '$subject · ${question.kind} · ${question.requiredPlan}'
                           '${question.isActive ? '' : ' · hidden'}'
                           ' · ${question.appearanceCount} paper'

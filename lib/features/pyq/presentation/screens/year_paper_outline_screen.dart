@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
@@ -10,6 +8,7 @@ import '../../../profile/presentation/providers/user_profile_provider.dart';
 import '../../domain/paper_outline.dart';
 import '../../domain/pyq_models.dart';
 import '../../domain/pyq_sections.dart';
+import '../open_pyq_reader.dart';
 import '../providers/pyq_providers.dart';
 import '../widgets/pyq_teaser_card.dart';
 
@@ -248,7 +247,11 @@ class _OutlineQuestionList extends StatelessWidget {
           child: PyqTeaserCard(
             teaser: teaser,
             index: i,
-            onTap: () => context.push(AppRoutes.pyqPath(teaser.id)),
+            onTap: () => openPyqReader(
+              context,
+              questionId: teaser.id,
+              questionIds: [for (final item in teasers) item.id],
+            ),
           ),
         );
       },

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -21,6 +22,7 @@ import '../../features/profile/presentation/screens/upgrade_prompt_screen.dart';
 import '../../features/practice/presentation/screens/practice_upcoming_screen.dart';
 import '../../features/progress/presentation/screens/progress_screens.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
+import '../../features/pyq/presentation/open_pyq_reader.dart';
 import '../../features/pyq/presentation/screens/pyq_reader_screen.dart';
 import '../../features/pyq/presentation/screens/subject_pyq_screen.dart';
 import '../../features/pyq/presentation/screens/year_paper_outline_screen.dart';
@@ -40,19 +42,24 @@ part 'app_router.g.dart';
 
 @Riverpod(keepAlive: true)
 GoRouter goRouter(Ref ref) {
-  final isAuthenticated = ref.watch(authSessionProvider);
   final authRepository = ref.watch(authRepositoryProvider);
-  final profileAsync = ref.watch(userProfileProvider);
 
-  final refreshListenable = GoRouterRefreshStream(
-    authRepository.authStateChanges,
-  );
-  ref.onDispose(refreshListenable.dispose);
+  // Re-run redirect when auth or profile changes. Watching those providers
+  // here would build a new GoRouter, and a new router always opens on splash.
+  final authRefresh = GoRouterRefreshStream(authRepository.authStateChanges);
+  final profileRefresh = ValueNotifier<int>(0);
+  ref.listen(authSessionProvider, (_, _) => profileRefresh.value++);
+  ref.listen(userProfileProvider, (_, _) => profileRefresh.value++);
+  final refreshListenable = Listenable.merge([authRefresh, profileRefresh]);
+  ref.onDispose(authRefresh.dispose);
+  ref.onDispose(profileRefresh.dispose);
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: refreshListenable,
     redirect: (context, state) {
+      final isAuthenticated = ref.read(authSessionProvider);
+      final profileAsync = ref.read(userProfileProvider);
       final location = state.matchedLocation;
       final path = state.uri.path;
       final onSplash = location == AppRoutes.splash;
@@ -246,7 +253,11 @@ GoRouter goRouter(Ref ref) {
         path: AppRoutes.pyq,
         builder: (context, state) {
           final id = state.pathParameters['questionId']!;
-          return PyqReaderScreen(questionId: id);
+          final extra = state.extra;
+          return PyqReaderScreen(
+            questionId: id,
+            sequence: extra is PyqReaderSequence ? extra : null,
+          );
         },
       ),
       // More specific `/play` route before bare `:testId` so paths match correctly.
