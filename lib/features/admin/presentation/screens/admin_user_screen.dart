@@ -313,7 +313,7 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
         children: [
           if (_error != null) _Banner(text: _error!, isError: true),
           if (_notice != null) _Banner(text: _notice!, isError: false),
-          Text(user.email, style: Theme.of(context).textTheme.titleMedium),
+          Text(user.contactLabel, style: Theme.of(context).textTheme.titleMedium),
           if (user.isAdmin) const Text('This account is an admin.'),
           const SizedBox(height: Spacing.md),
           Text('Profile', style: Theme.of(context).textTheme.titleMedium),
@@ -403,39 +403,48 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
               child: const Text('Clear device suspension'),
             ),
           ],
-          const SizedBox(height: Spacing.lg),
-          Text('Credentials', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: Spacing.sm),
-          TextField(
-            controller: _email,
-            decoration: const InputDecoration(labelText: 'Email'),
-            keyboardType: TextInputType.emailAddress,
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: _busy ? null : _saveEmail,
-              child: const Text('Update email'),
+          if (user.email.isEmpty) ...[
+            const SizedBox(height: Spacing.lg),
+            Text('Sign-in', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: Spacing.sm),
+            const Text(
+              'This account signs in with WhatsApp. There is no password.',
             ),
-          ),
-          TextField(
-            controller: _password,
-            decoration: const InputDecoration(labelText: 'New password'),
-            obscureText: true,
-          ),
-          const SizedBox(height: Spacing.sm),
-          TextField(
-            controller: _passwordAgain,
-            decoration: const InputDecoration(labelText: 'Confirm password'),
-            obscureText: true,
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: _busy ? null : _savePassword,
-              child: const Text('Reset password'),
+          ] else ...[
+            const SizedBox(height: Spacing.lg),
+            Text('Credentials', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: Spacing.sm),
+            TextField(
+              controller: _email,
+              decoration: const InputDecoration(labelText: 'Email'),
+              keyboardType: TextInputType.emailAddress,
             ),
-          ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _busy ? null : _saveEmail,
+                child: const Text('Update email'),
+              ),
+            ),
+            TextField(
+              controller: _password,
+              decoration: const InputDecoration(labelText: 'New password'),
+              obscureText: true,
+            ),
+            const SizedBox(height: Spacing.sm),
+            TextField(
+              controller: _passwordAgain,
+              decoration: const InputDecoration(labelText: 'Confirm password'),
+              obscureText: true,
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _busy ? null : _savePassword,
+                child: const Text('Reset password'),
+              ),
+            ),
+          ],
           const SizedBox(height: Spacing.lg),
           Text('Access', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: Spacing.sm),

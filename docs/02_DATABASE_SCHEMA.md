@@ -972,22 +972,20 @@ See also `docs/11_ANNOUNCEMENTS_OPS.md`.
 Migration: `supabase/migrations/20261103180000_admin_console.sql`.
 Edge Function: `supabase/functions/admin-user-auth` (deploy this; the service role stays on the server).
 
-`profiles.is_admin` is not in the authenticated `UPDATE` grant. Promote the first operator in the SQL editor (replace the email):
+`profiles.is_admin` is not in the authenticated `UPDATE` grant. Promote the first operator in the SQL editor after that person has signed in once with WhatsApp (replace the number):
 
 ```sql
 update public.profiles
 set is_admin = true
-where id = (
-  select id from auth.users where email = 'you@example.com'
-);
+where phone = '+9198XXXXXXXX';
 ```
 
-That account uses the same email/password login and lands on `/admin`. A student JWT that calls an admin RPC gets `Admin only.`
+That account signs in with WhatsApp and lands on `/admin`. A student JWT that calls an admin RPC gets `Admin only.`
 
 | Action | Where it runs |
 |---|---|
 | Profile, plan, expiry, clear device suspension | `admin_update_profile`, `admin_set_plan`, `admin_clear_device_suspension` |
-| Password, email, block / unblock | Edge Function `admin-user-auth` (GoTrue ban + `profiles.blocked_at` + session revoke) |
+| Password, email, block / unblock | Edge Function `admin-user-auth` (GoTrue ban + `profiles.blocked_at` + session revoke). New accounts have no password; email and password actions remain for older accounts that still have a real email. |
 | Questions, papers, free tier (`required_plan`) | `admin_save_question`, `admin_save_appearance`, `admin_delete_appearance` |
 | In-app notification | `admin_upsert_announcement` |
 

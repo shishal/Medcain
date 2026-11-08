@@ -261,6 +261,12 @@ abstract final class RpcFunctions {
   static const adminUserAuth = 'admin-user-auth';
 }
 
+/// Supabase Edge Function names. These are not Postgres RPCs.
+abstract final class EdgeFunctions {
+  static const whatsappAuthStart = 'whatsapp-auth-start';
+  static const whatsappAuthStatus = 'whatsapp-auth-status';
+}
+
 /// Named parameters for the admin RPCs. The Edge Function uses the same names.
 abstract final class AdminRpcParams {
   static const query = 'p_query';

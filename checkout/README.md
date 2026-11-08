@@ -6,7 +6,7 @@ keys, HTTPS hosting, Flutter `CHECKOUT_URL`, Live webhook). Do not put
 `rzp_live_` keys in this local setup.
 
 A small static site (not part of the Flutter app) where a student signs in
-with their MEDCAIN email and pays through **Razorpay Checkout**. The app
+with the same WhatsApp number as the app and pays through **Razorpay Checkout**. The app
 only opens this page in the system browser.
 
 A successful **Test Mode** payment makes Razorpay POST to the
@@ -18,7 +18,7 @@ and `plan_expires_at`.
 
 | Piece | Role |
 |---|---|
-| This folder | HTML/JS page: email login, plan pick, Razorpay modal |
+| This folder | HTML/JS page: WhatsApp sign-in, plan pick, Razorpay modal |
 | `supabase/functions/create-razorpay-order` | Creates the Razorpay **Order** (amount is chosen here, not in the browser) |
 | `supabase/functions/razorpay-webhook` | Verifies `X-Razorpay-Signature`, then grants the plan |
 | `apply_razorpay_payment()` (Postgres) | Amount check + idempotent `profiles` update |
@@ -79,9 +79,11 @@ and `plan_expires_at`.
 python3 checkout/serve.py
 ```
 
-Open http://127.0.0.1:4173 (optional `?plan=elite&email=you@example.com`).
+Open http://127.0.0.1:4173 (optional `?plan=elite&phone=9876543210`).
 
-Sign in with a real MEDCAIN test account, pick Pro or Elite, pay.
+Sign in by sending the WhatsApp message, pick Pro or Elite, pay. The page
+uses the same Edge Functions as the app (`whatsapp-auth-start`,
+`whatsapp-auth-status`), so those secrets have to be set before login works.
 
 ## Test payment (no real money)
 

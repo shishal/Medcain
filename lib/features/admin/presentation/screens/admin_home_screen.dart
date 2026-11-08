@@ -36,7 +36,7 @@ class AdminHomeScreen extends ConsumerWidget {
           _Tile(
             icon: Icons.people_outline,
             title: 'Users',
-            subtitle: 'Profile, plan, password, block',
+            subtitle: 'Profile, plan, block',
             onTap: () => context.push(AppRoutes.adminUsers),
           ),
           _Tile(

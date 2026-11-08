@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -7,6 +9,8 @@ import '../../../core/utils/result.dart';
 import '../../../core/utils/user_facing_error.dart';
 import '../domain/auth_failure.dart';
 import '../domain/device_session.dart';
+import '../domain/whatsapp_challenge.dart';
+import '../domain/whatsapp_phone.dart';
 import 'device_id_store.dart';
 
 part 'auth_repository.g.dart';
@@ -19,72 +23,114 @@ class AuthRepository {
 
   bool get isSignedIn => _client.auth.currentSession != null;
 
-  /// Prefill only — checkout still requires a password on the web page.
-  String? get currentEmail => _client.auth.currentUser?.email;
+  /// Real email only. WhatsApp accounts use an internal mailbox students
+  /// never see; [currentPhone] is their identifier.
+  String? get currentEmail {
+    final email = _client.auth.currentUser?.email;
+    if (email == null || isSyntheticAuthEmail(email)) return null;
+    return email;
+  }
+
+  String? get currentPhone => _client.auth.currentUser?.phone;
 
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
-  /// Null [ClaimActiveDeviceResult] when email confirmation is required (no session yet).
-  Future<Result<ClaimActiveDeviceResult?>> signUp({
-    required String email,
-    required String password,
+  /// Asks the server for a wa.me link. Does not sign in yet.
+  Future<Result<WhatsAppChallenge>> startWhatsAppSignIn({
+    required String phone,
   }) async {
     try {
-      await _client.auth.signUp(email: email, password: password);
-      if (_client.auth.currentSession == null) {
-        return const Success(null);
+      final response = await _client.functions.invoke(
+        EdgeFunctions.whatsappAuthStart,
+        body: {'phone': phone},
+      );
+      final data = _asMap(response.data);
+      final challenge = WhatsAppChallenge.tryParse(data);
+      final uri = challenge == null ? null : Uri.tryParse(challenge.waUrl);
+      if (challenge == null ||
+          uri == null ||
+          uri.scheme != 'https' ||
+          uri.host != 'wa.me') {
+        return const Failure(
+          'Could not start WhatsApp sign-in. Please try again.',
+        );
       }
-      final claim = await claimActiveDevice();
-      switch (claim) {
-        case Success(:final value):
-          if (!value.ok || value.deviceLimit) {
-            await _client.auth.signOut(scope: SignOutScope.local);
-            return const Failure(DeviceSessionMessages.deviceLimit);
-          }
-          return Success(value);
-        case Failure(:final message):
-          await _client.auth.signOut(scope: SignOutScope.local);
-          return Failure(message);
-      }
-    } on AuthException catch (e) {
-      return Failure(AuthFailure.fromException(e));
-    } catch (e) {
+      return Success(challenge);
+    } on FunctionException catch (error) {
+      return Failure(
+        _functionMessage(
+          error,
+          'Could not start WhatsApp sign-in. Please try again.',
+        ),
+      );
+    } catch (error) {
       return Failure(
         UserFacingError.from(
-          e,
-          fallback: 'Something went wrong. Please try again.',
+          error,
+          fallback: 'Could not start WhatsApp sign-in. Please try again.',
         ),
       );
     }
   }
 
-  Future<Result<ClaimActiveDeviceResult>> signIn({
-    required String email,
-    required String password,
+  /// Null while the WhatsApp message has not arrived yet.
+  /// A session is claimed onto this install the moment it is ready.
+  Future<Result<ClaimActiveDeviceResult?>> finishWhatsAppSignIn({
+    required String challengeId,
+    required String secret,
   }) async {
     try {
-      await _client.auth.signInWithPassword(email: email, password: password);
-      final claim = await claimActiveDevice();
-      switch (claim) {
-        case Success(:final value):
-          if (!value.ok || value.deviceLimit) {
-            await _client.auth.signOut(scope: SignOutScope.local);
-            return const Failure(DeviceSessionMessages.deviceLimit);
-          }
-          return Success(value);
-        case Failure(:final message):
-          await _client.auth.signOut(scope: SignOutScope.local);
-          return Failure(message);
+      final response = await _client.functions.invoke(
+        EdgeFunctions.whatsappAuthStatus,
+        body: {'challenge_id': challengeId, 'secret': secret},
+      );
+      final data = _asMap(response.data);
+      final status = data?['status'];
+      if (status == 'pending') return const Success(null);
+      if (status != 'ready') {
+        return Failure(
+          _stringField(data, 'error') ??
+              'Could not finish sign-in. Please try again.',
+        );
       }
-    } on AuthException catch (e) {
-      return Failure(AuthFailure.fromException(e));
-    } catch (e) {
+
+      final refresh = data?['refresh_token'];
+      if (refresh is! String || refresh.isEmpty) {
+        return const Failure('Could not finish sign-in. Please try again.');
+      }
+
+      // setSession exchanges that refresh token for a stored Supabase
+      // session. The WhatsApp secret is not a password.
+      await _client.auth.setSession(refresh);
+      return await _claimOrSignOut();
+    } on FunctionException catch (error) {
+      return Failure(
+        _functionMessage(error, 'Could not finish sign-in. Please try again.'),
+      );
+    } on AuthException catch (error) {
+      return Failure(AuthFailure.fromException(error));
+    } catch (error) {
       return Failure(
         UserFacingError.from(
-          e,
-          fallback: 'Something went wrong. Please try again.',
+          error,
+          fallback: 'Could not finish sign-in. Please try again.',
         ),
       );
+    }
+  }
+
+  Future<Result<ClaimActiveDeviceResult>> _claimOrSignOut() async {
+    final claim = await claimActiveDevice();
+    switch (claim) {
+      case Success(:final value):
+        if (!value.ok || value.deviceLimit) {
+          await _client.auth.signOut(scope: SignOutScope.local);
+          return const Failure(DeviceSessionMessages.deviceLimit);
+        }
+        return Success(value);
+      case Failure(:final message):
+        await _client.auth.signOut(scope: SignOutScope.local);
+        return Failure(message);
     }
   }
 
@@ -161,6 +207,43 @@ class AuthRepository {
         ),
       );
     }
+  }
+
+  Map<String, dynamic>? _asMap(Object? data) {
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) return Map<String, dynamic>.from(data);
+    return null;
+  }
+
+  String? _stringField(Map<String, dynamic>? data, String key) {
+    final value = data?[key];
+    if (value is! String) return null;
+    final trimmed = value.trim();
+    if (trimmed.isEmpty || trimmed.length > 200) return null;
+    return trimmed;
+  }
+
+  String _functionMessage(FunctionException error, String fallback) {
+    if (UserFacingError.looksOffline(error)) {
+      return UserFacingError.offlineMessage;
+    }
+    final details = error.details;
+    if (details is Map) {
+      return _stringField(Map<String, dynamic>.from(details), 'error') ??
+          fallback;
+    }
+    if (details is String) {
+      try {
+        final decoded = jsonDecode(details);
+        if (decoded is Map) {
+          return _stringField(Map<String, dynamic>.from(decoded), 'error') ??
+              fallback;
+        }
+      } on FormatException {
+        return fallback;
+      }
+    }
+    return fallback;
   }
 }
 

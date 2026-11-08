@@ -396,6 +396,17 @@ verify_jwt = true
 [functions.admin-user-auth]
 verify_jwt = true
 
+# Sign-in starts before a session exists. Meta's webhook cannot send a JWT;
+# whatsapp-webhook checks X-Hub-Signature-256 instead.
+[functions.whatsapp-auth-start]
+verify_jwt = false
+
+[functions.whatsapp-auth-status]
+verify_jwt = false
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

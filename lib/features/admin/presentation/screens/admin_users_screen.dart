@@ -70,7 +70,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                   child: TextField(
                     controller: _query,
                     decoration: const InputDecoration(
-                      labelText: 'Name, email, or phone',
+                      labelText: 'Name or phone',
                     ),
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _search(),
@@ -104,7 +104,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                         title: Text(user.displayName),
                         subtitle: Text(
                           [
-                            user.email,
+                            user.contactLabel,
                             user.plan,
                             if (user.isBlocked) 'blocked',
                             if (user.planSuspendedAt != null) 'suspended',

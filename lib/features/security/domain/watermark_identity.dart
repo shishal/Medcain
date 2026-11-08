@@ -1,8 +1,8 @@
 /// Builds the traceability string painted on content screens (Phase 8.2).
 ///
 /// iOS cannot block screenshots, so a leaked photo of a question should still
-/// identify whose account it came from. Empty fields are skipped — most users
-/// only have an email until they fill in name/phone on their profile.
+/// identify whose account it came from. Empty fields are skipped. The
+/// WhatsApp number is the usual identifier.
 abstract final class WatermarkIdentity {
   static String label({String? fullName, String? phone, String? email}) {
     return [fullName, phone, email]

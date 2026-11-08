@@ -31,7 +31,7 @@ compliance boundary: the app only **links out**.
 
 ```
 Student in MEDCAIN
-  → browser opens CHECKOUT_URL?plan=pro&period=y1&code=CAMPUS20&email=…
+  → browser opens CHECKOUT_URL?plan=pro&period=y1&code=CAMPUS20&phone=…
   → signs in (same Supabase Auth as the app)
   → Pay → create-razorpay-order (Live key) → Razorpay Checkout
   → student pays
@@ -117,8 +117,9 @@ Dashboard → **Authentication → URL configuration**:
 - **Additional redirect URLs**: add `https://medico.shishal.com` (and
   `https://medico.shishal.com/**` if the UI offers a wildcard).
 
-Checkout login uses email + password (no OAuth redirect today). This still
-matters if you later add magic links or password reset from that page.
+Checkout login is the same user-initiated WhatsApp check as the app. The
+student sends a message; the page does not ask for an email or password.
+The redirect URL list still matters if you later add an OAuth provider.
 
 ### 5. Point the Flutter app at the hosted page
 
@@ -131,7 +132,7 @@ CHECKOUT_URL=https://medico.shishal.com/checkout
 Rules:
 
 - Must be `https://` (Android already allows the app to query `https` browsers).
-- No trailing path required. The app adds `plan=pro|elite`, `period=y1|y2|y3|y4`, optional `code=`, and `email=`.
+- No trailing path required. The app adds `plan=pro|elite`, `period=y1|y2|y3|y4`, optional `code=`, and `phone=`.
 - `.env` is bundled as a Flutter **asset**. Changing it requires a **new app
   build**. Editing Supabase or Razorpay after that does **not** require a
   rebuild; editing `CHECKOUT_URL` does.

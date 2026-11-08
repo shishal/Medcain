@@ -1,7 +1,7 @@
 (() => {
   const panel = document.getElementById('panel');
   const params = new URLSearchParams(window.location.search);
-  const prefilledEmail = params.get('email') || '';
+  let prefilledPhone = params.get('phone') || '';
   const requestedPlan = (params.get('plan') || 'pro').toLowerCase();
   const requestedPeriod = (params.get('period') || 'y1').toLowerCase();
   const requestedCode = params.get('code') || '';
@@ -43,6 +43,9 @@
   let appliedQuote = null;
   let quoteSeq = 0;
   let autoApplied = false;
+  let pollTimer = 0;
+  let pollGen = 0;
+  let pollBusy = false;
 
   async function loadCatalog() {
     const { data, error } = await supabase
@@ -124,33 +127,138 @@
     panel.prepend(p);
   }
 
+  function accountLabel(user) {
+    if (user && user.phone) return user.phone;
+    const email = (user && user.email) || '';
+    if (!email || email.endsWith('@auth.medico.internal')) {
+      return 'your WhatsApp number';
+    }
+    return email;
+  }
+
+  function stopPoll() {
+    pollGen += 1;
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = 0;
+    }
+  }
+
+  async function invokeFunction(name, body) {
+    const { data, error } = await supabase.functions.invoke(name, { body });
+    if (!error) return { data };
+    let message = error.message || 'Could not sign in. Please try again.';
+    try {
+      const parsed = await error.context.json();
+      if (parsed && parsed.error) message = parsed.error;
+    } catch {
+      // Non-JSON error body from the gateway / undeployed function.
+    }
+    return { error: message, data };
+  }
+
   function renderLogin() {
+    stopPoll();
     panel.innerHTML = `
       <form class="card" id="login-form">
-        <p>Use the email and password from the Medico app.</p>
-        <label for="email">Email</label>
-        <input id="email" type="email" autocomplete="email" required />
-        <label for="password">Password</label>
-        <input id="password" type="password" autocomplete="current-password" required />
-        <button class="primary" type="submit">Sign in</button>
+        <p>Enter the WhatsApp number for this account. You send us a message — we never text you a code. A new number creates the account.</p>
+        <label for="phone">WhatsApp number</label>
+        <input id="phone" type="tel" autocomplete="tel" inputmode="tel" required placeholder="9876543210" />
+        <button class="primary" type="submit">Continue with WhatsApp</button>
       </form>
     `;
-    panel.querySelector('#email').value = prefilledEmail;
+    panel.querySelector('#phone').value = prefilledPhone;
 
     panel.querySelector('#login-form').addEventListener('submit', async (event) => {
       event.preventDefault();
-      const email = panel.querySelector('#email').value.trim();
-      const password = panel.querySelector('#password').value;
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const phone = panel.querySelector('#phone').value.trim();
+      const button = panel.querySelector('#login-form button');
+      if (button) button.disabled = true;
+      // Open during the click, before the network wait, or the browser blocks it.
+      const popup = window.open('about:blank', '_blank');
+      const result = await invokeFunction('whatsapp-auth-start', { phone });
+      const data = result.data || {};
+      const waUrl = typeof data.wa_url === 'string' ? data.wa_url : '';
+      if (
+        result.error ||
+        !waUrl.startsWith('https://wa.me/') ||
+        !data.challenge_id ||
+        !data.secret
+      ) {
+        if (popup) popup.close();
+        prefilledPhone = phone;
+        renderLogin();
+        showError(result.error || 'Could not start WhatsApp sign-in. Please try again.');
+        return;
+      }
+      if (popup) popup.location = waUrl;
+      renderWaiting({
+        phone: data.phone || phone,
+        message: data.message || '',
+        waUrl,
+        challengeId: data.challenge_id,
+        secret: data.secret,
+      });
+    });
+  }
+
+  function renderWaiting(state) {
+    panel.innerHTML = `
+      <div class="card">
+        <p>Send this message from <strong>${escapeHtml(state.phone)}</strong>. Don't edit it. We sign you in when it arrives.</p>
+        <p><strong>${escapeHtml(state.message)}</strong></p>
+        <button class="primary" id="open-wa" type="button">Open WhatsApp</button>
+        <p class="muted" id="wait-status">Waiting for your message…</p>
+        <button class="ghost" id="cancel-wa" type="button">Use a different number</button>
+      </div>
+    `;
+    panel.querySelector('#open-wa').addEventListener('click', () => {
+      window.open(state.waUrl, '_blank', 'noopener');
+    });
+    panel.querySelector('#cancel-wa').addEventListener('click', () => {
+      renderLogin();
+    });
+    const gen = pollGen;
+    const tick = () => pollOnce(gen, state.challengeId, state.secret);
+    tick();
+    pollTimer = window.setInterval(tick, 2000);
+  }
+
+  async function pollOnce(gen, challengeId, secret) {
+    if (gen !== pollGen || pollBusy) return;
+    pollBusy = true;
+    try {
+    const result = await invokeFunction('whatsapp-auth-status', {
+      challenge_id: challengeId,
+      secret,
+    });
+    if (gen !== pollGen) return;
+    const data = result.data || {};
+    if (data.status === 'pending') return;
+    if (
+      data.status === 'ready' &&
+      data.access_token &&
+      data.refresh_token
+    ) {
+      stopPoll();
+      const { error } = await supabase.auth.setSession({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
       });
       if (error) {
-        showError(error.message);
+        renderLogin();
+        showError('Could not finish sign-in. Please try again.');
         return;
       }
       await renderApp();
-    });
+      return;
+    }
+    stopPoll();
+    renderLogin();
+    showError(result.error || data.error || 'Could not finish sign-in. Please try again.');
+    } finally {
+      pollBusy = false;
+    }
   }
 
   function renderPlans(user) {
@@ -205,7 +313,7 @@
         : '';
 
     panel.innerHTML = `
-      <p class="muted">Signed in as ${escapeHtml(user.email)}</p>
+      <p class="muted">Signed in as ${escapeHtml(accountLabel(user))}</p>
       <p class="muted">Pro and Elite include the same questions and answers. Pro is 1 registered device. Elite is 2.</p>
       ${planCards}
       <p class="muted">How long</p>
@@ -336,6 +444,11 @@
       return;
     }
 
+    const prefill = {};
+    if (data.prefillEmail) prefill.email = data.prefillEmail;
+    const contact = data.prefillPhone || (user && user.phone);
+    if (contact) prefill.contact = contact;
+
     const options = {
       key: data.keyId,
       amount: data.amount,
@@ -343,7 +456,7 @@
       name: data.name,
       description: data.description,
       order_id: data.orderId,
-      prefill: { email: data.prefillEmail || user.email },
+      prefill,
       theme: { color: '#008FD6' },
       handler() {
         busy = false;
@@ -367,6 +480,7 @@
   }
 
   async function renderApp() {
+    stopPoll();
     const user = await currentUser();
     if (!user) {
       renderLogin();

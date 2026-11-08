@@ -11,7 +11,6 @@ import '../../features/admin/presentation/screens/admin_users_screen.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/auth/presentation/providers/auth_session_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/catalog/presentation/screens/catalog_screens.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -105,7 +104,7 @@ GoRouter goRouter(Ref ref) {
       ),
       comicGoRoute(
         path: AppRoutes.signup,
-        builder: (context, state) => const SignupScreen(),
+        builder: (context, state) => const LoginScreen(),
       ),
       comicGoRoute(
         path: AppRoutes.onboarding,

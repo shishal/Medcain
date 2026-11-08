@@ -16,17 +16,17 @@ class CheckoutLauncher {
   CheckoutLauncher({
     required this.checkoutUri,
     required this.launch,
-    this.resolveEmail,
+    this.resolvePhone,
   });
 
   final Uri? checkoutUri;
   final Future<bool> Function(Uri uri) launch;
 
-  /// Prefill for the web login field — not a session or login token.
+  /// Prefill for the checkout WhatsApp field — not a session or login token.
   ///
   /// `String? Function()?` is an optional callback: if provided, we call it
-  /// and, when it returns a non-empty string, append `?email=`.
-  final String? Function()? resolveEmail;
+  /// and, when it returns a non-empty string, append `?phone=`.
+  final String? Function()? resolvePhone;
 
   /// Opens the website with the plan, period, and optional coupon prefilled.
   ///
@@ -56,9 +56,9 @@ class CheckoutLauncher {
     if (code != null && code.isNotEmpty) {
       query['code'] = code;
     }
-    final email = resolveEmail?.call()?.trim();
-    if (email != null && email.isNotEmpty) {
-      query['email'] = email;
+    final phone = resolvePhone?.call()?.trim();
+    if (phone != null && phone.isNotEmpty) {
+      query['phone'] = phone;
     }
 
     final uri = base.replace(queryParameters: query);
@@ -88,6 +88,6 @@ CheckoutLauncher checkoutLauncher(Ref ref) {
     checkoutUri: CheckoutEnv.urlOrNull,
     // externalApplication = the system browser, not an in-app WebView.
     launch: (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
-    resolveEmail: () => ref.read(authRepositoryProvider).currentEmail,
+    resolvePhone: () => ref.read(authRepositoryProvider).currentPhone,
   );
 }

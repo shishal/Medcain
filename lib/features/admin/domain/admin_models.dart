@@ -42,10 +42,17 @@ class AdminUser {
 
   bool get isBlocked => blockedAt != null;
 
+  String get contactLabel {
+    final number = phone?.trim();
+    if (number != null && number.isNotEmpty) return number;
+    if (email.isNotEmpty) return email;
+    return 'No phone';
+  }
+
   String get displayName {
     final name = fullName?.trim();
     if (name != null && name.isNotEmpty) return name;
-    return email;
+    return contactLabel;
   }
 
   factory AdminUser.fromJson(Map<String, dynamic> json) {

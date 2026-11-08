@@ -6,18 +6,20 @@ import '../../domain/watermark_identity.dart';
 
 part 'watermark_label_provider.g.dart';
 
-/// Identity tiled over question content. Email comes from Auth (always
-/// present when signed in); name/phone come from `profiles` when set.
+/// Identity tiled over question content.
 ///
-/// Watches [userProfileProvider] as [AsyncValue] so a profile load/error
-/// still leaves the email watermark visible.
+/// The WhatsApp number comes from Auth when the profile phone is still
+/// empty. A synthetic internal email is never painted.
 @riverpod
 String watermarkLabel(Ref ref) {
-  final email = ref.watch(authRepositoryProvider).currentEmail;
+  final auth = ref.watch(authRepositoryProvider);
   final profile = ref.watch(userProfileProvider).asData?.value;
+  final profilePhone = profile?.phone?.trim();
   return WatermarkIdentity.label(
     fullName: profile?.fullName,
-    phone: profile?.phone,
-    email: email,
+    phone: (profilePhone != null && profilePhone.isNotEmpty)
+        ? profilePhone
+        : auth.currentPhone,
+    email: auth.currentEmail,
   );
 }

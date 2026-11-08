@@ -99,8 +99,16 @@ are that price × the number of years). Change a live price in
 percent is applied on the website from `discount_codes`, never from a number
 the app sends.
 
+## Accounts
+
+Students sign in with **user-initiated WhatsApp**. They enter their mobile
+number, then send one WhatsApp message to the MEDCAIN business number. That
+inbound message proves they control the number. MEDCAIN does not send a
+WhatsApp authentication template (those are paid). A new number creates the
+account; a known number signs in. Checkout uses the same check.
+
 ## Out of v1
 
 In-app notes / charts / viva / drug cards, offline packs, campus-ambassador
-CRM, phone OTP, Internship/PG stages, group-discount checkout, NEET-PG mode
+CRM, SMS OTP, Internship/PG stages, group-discount checkout, NEET-PG mode
 in the UI.

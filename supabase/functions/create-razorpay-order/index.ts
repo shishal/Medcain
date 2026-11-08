@@ -3,6 +3,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+import { isSyntheticEmail } from '../_shared/whatsapp_auth.ts';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { getBillingPeriod, getPaidPlan } from '../_shared/paid_plans.ts';
 
@@ -35,7 +36,19 @@ Deno.serve(async (req) => {
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError || user == null || user.email == null) {
+  if (userError || user == null) {
+    return jsonResponse({ error: 'Sign in to continue.' }, 401);
+  }
+
+  const phone = typeof user.phone === 'string' && user.phone.length > 0
+    ? user.phone
+    : null;
+  const email = typeof user.email === 'string' &&
+      user.email.length > 0 &&
+      !isSyntheticEmail(user.email)
+    ? user.email
+    : null;
+  if (phone == null && email == null) {
     return jsonResponse({ error: 'Sign in to continue.' }, 401);
   }
 
@@ -120,8 +133,9 @@ Deno.serve(async (req) => {
     user_id: user.id,
     plan: planName,
     period: periodName,
-    email: user.email,
   };
+  if (email) notes.email = email;
+  if (phone) notes.phone = phone;
   if (discountCode) notes.discount_code = discountCode;
 
   const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
@@ -161,6 +175,7 @@ Deno.serve(async (req) => {
       ? `${plan.label} · ${period.label} · ${percentOff}% off`
       : `${plan.label} · ${period.label}`,
     name: 'Medico',
-    prefillEmail: user.email,
+    prefillEmail: email,
+    prefillPhone: phone,
   });
 });

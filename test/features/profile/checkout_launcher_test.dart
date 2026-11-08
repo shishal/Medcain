@@ -39,14 +39,14 @@ void main() {
 
     expect(launched.queryParameters['src'], 'app');
     expect(launched.queryParameters['plan'], 'pro');
-    expect(launched.queryParameters.containsKey('email'), isFalse);
+    expect(launched.queryParameters.containsKey('phone'), isFalse);
   });
 
-  test('openCheckout appends email as a prefill query param', () async {
+  test('openCheckout appends phone as a prefill query param', () async {
     late Uri launched;
     final launcher = CheckoutLauncher(
       checkoutUri: Uri.parse('https://checkout.test/pay'),
-      resolveEmail: () => '  a@b.com  ',
+      resolvePhone: () => '  +919876543210  ',
       launch: (uri) async {
         launched = uri;
         return true;
@@ -56,7 +56,7 @@ void main() {
     await launcher.openCheckout(plan: PlanTier.pro);
 
     expect(launched.queryParameters['plan'], 'pro');
-    expect(launched.queryParameters['email'], 'a@b.com');
+    expect(launched.queryParameters['phone'], '+919876543210');
     expect(launched.queryParameters['period'], 'y1');
   });
 
