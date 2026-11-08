@@ -14,6 +14,7 @@ import '../../../profile/domain/plan_tier.dart';
 import '../../../profile/presentation/providers/current_plan_provider.dart';
 import '../../../pyq/domain/pyq_models.dart';
 import '../../../pyq/domain/question_format.dart';
+import '../../../pyq/presentation/open_pyq_reader.dart';
 import '../../../pyq/presentation/providers/pyq_providers.dart';
 import '../../../pyq/presentation/widgets/pyq_teaser_card.dart';
 import '../../data/catalog_repository.dart';
@@ -292,7 +293,11 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                     child: PyqTeaserCard(
                       teaser: items[i],
                       index: i,
-                      onTap: () => context.push(AppRoutes.pyqPath(items[i].id)),
+                      onTap: () => openPyqReader(
+                        context,
+                        questionId: items[i].id,
+                        questionIds: [for (final item in items) item.id],
+                      ),
                     ),
                   ),
             ],

@@ -11,6 +11,7 @@ import 'package:medico/features/profile/domain/plan_tier.dart';
 import 'package:medico/features/profile/presentation/providers/current_plan_provider.dart';
 import 'package:medico/features/pyq/data/pyq_repository.dart';
 import 'package:medico/features/pyq/domain/pyq_models.dart';
+import 'package:medico/features/pyq/presentation/open_pyq_reader.dart';
 import 'package:medico/features/pyq/presentation/providers/pyq_providers.dart';
 import 'package:medico/features/pyq/presentation/screens/pyq_reader_screen.dart';
 import 'package:medico/features/security/data/screenshot_protection.dart';
@@ -65,7 +66,9 @@ PyqDetail _detail({
 Future<void> _pumpReader(
   WidgetTester tester, {
   required PyqDetail detail,
+  Map<String, PyqDetail> byId = const {},
   PlanTier plan = PlanTier.pro,
+  PyqReaderSequence? sequence,
 }) async {
   tester.view.physicalSize = const Size(400, 900);
   tester.view.devicePixelRatio = 1;
@@ -75,11 +78,17 @@ Future<void> _pumpReader(
 
   final router = GoRouter(
     initialLocation: AppRoutes.pyqPath(detail.teaser.id),
+    initialExtra: sequence,
     routes: [
       GoRoute(
         path: AppRoutes.pyq,
-        builder: (_, state) =>
-            PyqReaderScreen(questionId: state.pathParameters['questionId']!),
+        builder: (_, state) {
+          final extra = state.extra;
+          return PyqReaderScreen(
+            questionId: state.pathParameters['questionId']!,
+            sequence: extra is PyqReaderSequence ? extra : null,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.upgrade,
@@ -92,7 +101,7 @@ Future<void> _pumpReader(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        pyqDetailProvider.overrideWith((ref, id) async => detail),
+        pyqDetailProvider.overrideWith((ref, id) async => byId[id] ?? detail),
         currentPlanProvider.overrideWith((ref) async => plan),
         bookmarkedIdsProvider.overrideWith(_StubBookmarkedIds.new),
         screenshotProtectionProvider.overrideWithValue(_NoOpProtection()),
@@ -118,6 +127,8 @@ void main() {
       ),
     );
 
+    expect(find.byType(PageView), findsNothing);
+    expect(find.text('PYQ'), findsOneWidget);
     expect(find.text('Define jaundice.'), findsOneWidget);
     expect(find.text('Yellow discoloration of skin.'), findsOneWidget);
     expect(find.text('Bilirubin deposits in tissues.'), findsNothing);
@@ -223,9 +234,7 @@ void main() {
     );
 
     double px(String text) {
-      final rich = tester.widget<RichText>(
-        find.text(text, findRichText: true),
-      );
+      final rich = tester.widget<RichText>(find.text(text, findRichText: true));
       return rich.textScaler.scale(14);
     }
 
@@ -243,6 +252,69 @@ void main() {
     expect(px('A. Mitochondria'), greaterThan(optionBefore));
     expect(px('Mitochondria make ATP.'), greaterThan(answerBefore));
   });
+
+  testWidgets('swipe left and right moves through the question list', (
+    tester,
+  ) async {
+    final first = _detail(
+      teaser: _teaser(id: 'q1', text: 'Define jaundice.'),
+      sample: 'Yellow skin.',
+    );
+    final second = _detail(
+      teaser: _teaser(id: 'q2', text: 'Define cyanosis.'),
+      sample: 'Blue skin.',
+    );
+    await _pumpReader(
+      tester,
+      detail: first,
+      byId: {'q1': first, 'q2': second},
+      sequence: PyqReaderSequence(['q1', 'q2']),
+    );
+
+    expect(_page(tester), 0);
+    expect(_onScreen(tester, 'Define jaundice.'), isTrue);
+    expect(_onScreen(tester, 'Yellow skin.'), isTrue);
+    expect(_onScreen(tester, 'PYQ · 1 of 2'), isTrue);
+    expect(_onScreen(tester, 'Define cyanosis.'), isFalse);
+
+    await tester.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await tester.pumpAndSettle();
+
+    expect(_page(tester), 1);
+    expect(_onScreen(tester, 'Define cyanosis.'), isTrue);
+    expect(_onScreen(tester, 'Blue skin.'), isTrue);
+    expect(_onScreen(tester, 'PYQ · 2 of 2'), isTrue);
+    expect(_onScreen(tester, 'Define jaundice.'), isFalse);
+
+    // The last question stays put when there is no next page.
+    await tester.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await tester.pumpAndSettle();
+    expect(_page(tester), 1);
+    expect(_onScreen(tester, 'PYQ · 2 of 2'), isTrue);
+
+    await tester.fling(find.byType(PageView), const Offset(400, 0), 1000);
+    await tester.pumpAndSettle();
+
+    expect(_page(tester), 0);
+    expect(_onScreen(tester, 'Define jaundice.'), isTrue);
+    expect(_onScreen(tester, 'PYQ · 1 of 2'), isTrue);
+    expect(_onScreen(tester, 'Define cyanosis.'), isFalse);
+  });
+}
+
+double _page(WidgetTester tester) {
+  return tester.widget<PageView>(find.byType(PageView)).controller!.page!;
+}
+
+/// True when [text] is laid out inside the 400-wide test surface.
+bool _onScreen(WidgetTester tester, String text) {
+  final finder = find.text(text);
+  if (finder.evaluate().isEmpty) return false;
+  for (final box in tester.renderObjectList<RenderBox>(finder)) {
+    final dx = box.localToGlobal(Offset.zero).dx;
+    if (dx >= -1 && dx < 400) return true;
+  }
+  return false;
 }
 
 class _StubBookmarkedIds extends BookmarkedIds {

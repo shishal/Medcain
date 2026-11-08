@@ -22,6 +22,7 @@ import '../../features/profile/presentation/screens/upgrade_prompt_screen.dart';
 import '../../features/practice/presentation/screens/practice_upcoming_screen.dart';
 import '../../features/progress/presentation/screens/progress_screens.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
+import '../../features/pyq/presentation/open_pyq_reader.dart';
 import '../../features/pyq/presentation/screens/pyq_reader_screen.dart';
 import '../../features/pyq/presentation/screens/subject_pyq_screen.dart';
 import '../../features/pyq/presentation/screens/year_paper_outline_screen.dart';
@@ -247,7 +248,11 @@ GoRouter goRouter(Ref ref) {
         path: AppRoutes.pyq,
         builder: (context, state) {
           final id = state.pathParameters['questionId']!;
-          return PyqReaderScreen(questionId: id);
+          final extra = state.extra;
+          return PyqReaderScreen(
+            questionId: id,
+            sequence: extra is PyqReaderSequence ? extra : null,
+          );
         },
       ),
       // More specific `/play` route before bare `:testId` so paths match correctly.
