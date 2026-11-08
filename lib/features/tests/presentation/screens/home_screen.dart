@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/navy_story.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../core/widgets/navy_story_widgets.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
 import '../../../../core/widgets/comic_section_title.dart';
@@ -27,63 +29,84 @@ class HomeScreen extends ConsumerWidget {
         (ref.watch(universityCoverageProvider).value?.paperCount ?? 0) > 0;
     ref.watch(pendingSubmitSyncProvider);
 
+    final brightness = Theme.of(context).brightness;
+
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(phaseSubjectsProvider);
-            ref.invalidate(studyProgressProvider);
-            ref.invalidate(universityCoverageProvider);
-            ref.invalidate(announcementsProvider);
-          },
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: Spacing.xl),
-            children: [
-              const HomeHeroBanner(),
-              const HomeUnreadAnnouncementBanner(),
-              const HomeCoverageBanner(),
-              const ComicSectionTitle(
-                title: 'Subjects',
-                subtitle: 'Tap a subject for previous-year papers.',
-              ),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 280),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                child: subjects.when(
-                  data: (items) => SubjectStickerGrid(
-                    // The switcher keeps the first grid when this key stays
-                    // the same. Subjects often paint before progress, which
-                    // left every card on "No PYQs yet" after the counts arrived.
-                    key: ValueKey(
-                      '${items.map((s) => s.id).join(',')}|'
-                      '$hasUniversityPapers|'
-                      '${coverage.map((c) => '${c.id}:${c.totalPyqs}').join(',')}',
+      backgroundColor: NavyStory.canvas(brightness),
+      body: NavyStoryBackdrop(
+        child: SafeArea(
+          bottom: false,
+          child: RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(phaseSubjectsProvider);
+              ref.invalidate(studyProgressProvider);
+              ref.invalidate(universityCoverageProvider);
+              ref.invalidate(announcementsProvider);
+            },
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: Spacing.xl),
+              children: [
+                const HomeHeroBanner(),
+                Container(
+                  decoration: BoxDecoration(
+                    color: NavyStory.sheet(brightness),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(28),
                     ),
-                    subjects: items,
-                    coverage: coverage,
-                    showLessonProgress: hasUniversityPapers,
                   ),
-                  loading: () => const Padding(
-                    key: ValueKey('subjects-loading'),
-                    padding: EdgeInsets.all(Spacing.lg),
-                    child: LinearProgressIndicator(),
-                  ),
-                  error: (e, _) => Padding(
-                    key: const ValueKey('subjects-error'),
-                    padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-                    child: InlineErrorMessage(
-                      message: UserFacingError.display(e),
-                      onRetry: () => ref.invalidate(phaseSubjectsProvider),
-                    ),
+                  padding: const EdgeInsets.only(top: Spacing.sm),
+                  child: Column(
+                    children: [
+                      const HomeUnreadAnnouncementBanner(),
+                      const HomeCoverageBanner(),
+                      const ComicSectionTitle(
+                        title: 'Subjects',
+                        subtitle: 'Tap a subject for previous-year papers.',
+                      ),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 280),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        child: subjects.when(
+                          data: (items) => SubjectStickerGrid(
+                            // The switcher keeps the first grid when this key stays
+                            // the same. Subjects often paint before progress, which
+                            // left every card on "No PYQs yet" after the counts arrived.
+                            key: ValueKey(
+                              '${items.map((s) => s.id).join(',')}|'
+                              '$hasUniversityPapers|'
+                              '${coverage.map((c) => '${c.id}:${c.totalPyqs}').join(',')}',
+                            ),
+                            subjects: items,
+                            coverage: coverage,
+                            showLessonProgress: hasUniversityPapers,
+                          ),
+                          loading: () => const Padding(
+                            key: ValueKey('subjects-loading'),
+                            padding: EdgeInsets.all(Spacing.lg),
+                            child: LinearProgressIndicator(),
+                          ),
+                          error: (e, _) => Padding(
+                            key: const ValueKey('subjects-error'),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Spacing.lg,
+                            ),
+                            child: InlineErrorMessage(
+                              message: UserFacingError.display(e),
+                              onRetry: () =>
+                                  ref.invalidate(phaseSubjectsProvider),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const HomeResumeBanner(),
+                      const ComicSectionTitle(title: 'More'),
+                      const HomeQuickActions(),
+                    ],
                   ),
                 ),
-              ),
-              const HomeResumeBanner(),
-              const ComicSectionTitle(title: 'More'),
-              const HomeQuickActions(),
-            ],
+              ],
+            ),
           ),
         ),
       ),

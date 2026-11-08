@@ -18,7 +18,18 @@ CustomTransitionPage<void> comicTransitionPage({
         curve: Curves.easeOutCubic,
         reverseCurve: Curves.easeInCubic,
       );
-      return FadeTransition(opacity: curved, child: child);
+      // A short rise with the fade. Reduced motion keeps the cut instant.
+      if (MediaQuery.disableAnimationsOf(context)) return child;
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.04),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
     },
   );
 }

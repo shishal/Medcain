@@ -6,11 +6,10 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/brand_assets.dart';
 import '../../../../core/theme/brand_identity.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../core/widgets/dusk_form_page.dart';
 import '../../../../core/utils/auth_validators.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/utils/soft_keyboard.dart';
-import '../../../../core/widgets/brand_wordmark.dart';
-import '../../../../core/widgets/comic_mascot.dart';
 import '../../../profile/presentation/providers/user_profile_provider.dart';
 import '../../data/auth_repository.dart';
 import '../../domain/device_session.dart';
@@ -58,8 +57,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final fromQuery = switch (reason) {
       AppRoutes.loginReasonOtherDevice =>
         DeviceSessionMessages.signedInElsewhere,
-      AppRoutes.loginReasonPlanSuspended =>
-        DeviceSessionMessages.planSuspended,
+      AppRoutes.loginReasonPlanSuspended => DeviceSessionMessages.planSuspended,
       AppRoutes.loginReasonDeviceLimit => DeviceSessionMessages.deviceLimit,
       _ => null,
     };
@@ -131,126 +129,82 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(Spacing.lg),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                const SizedBox(height: Spacing.lg),
-                const Center(
-                  child: BrandWordmark(
-                    markSize: 40,
-                    showTagline: true,
-                    alignment: MainAxisAlignment.center,
-                  ),
-                ),
-                const SizedBox(height: Spacing.lg),
-                const Center(
-                  child: ComicMascot(
-                    asset: BrandAssets.mascotWave,
-                    size: 120,
-                    heroTag: BrandAssets.mascotHeroTag,
-                  ),
-                ),
-                const SizedBox(height: Spacing.md),
-                Text(
-                  'Welcome back',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: Spacing.xs),
-                Text(
-                  'Sign in to keep studying with ${BrandIdentity.displayName}.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: Spacing.xl),
-                if (_infoMessage != null) ...[
-                  Text(
-                    _infoMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.md),
-                ],
-                if (_errorMessage != null) ...[
-                  Text(
-                    _errorMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.md),
-                ],
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.email],
-                  textInputAction: TextInputAction.next,
-                  stylusHandwritingEnabled: false,
-                  onTap: requestSoftKeyboard,
-                  enabled: !_isLoading,
-                  validator: AuthValidators.email,
-                ),
-                const SizedBox(height: Spacing.md),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    suffixIcon: IconButton(
-                      tooltip: _showPassword
-                          ? 'Hide password'
-                          : 'Show password',
-                      icon: Icon(
-                        _showPassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                      ),
-                      onPressed: () =>
-                          setState(() => _showPassword = !_showPassword),
-                    ),
-                  ),
-                  obscureText: !_showPassword,
-                  keyboardType: TextInputType.visiblePassword,
-                  autofillHints: const [AutofillHints.password],
-                  textInputAction: TextInputAction.done,
-                  stylusHandwritingEnabled: false,
-                  onTap: requestSoftKeyboard,
-                  enabled: !_isLoading,
-                  onFieldSubmitted: (_) => _submit(),
-                  validator: AuthValidators.password,
-                ),
-                const SizedBox(height: Spacing.xl),
-                FilledButton(
-                  onPressed: _isLoading ? null : _submit,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Sign in'),
-                ),
-                const SizedBox(height: Spacing.md),
-                TextButton(
-                  onPressed: _isLoading
-                      ? null
-                      : () => context.go(AppRoutes.signup),
-                  child: const Text('Create an account'),
-                ),
-              ],
+    return DuskFormPage(
+      formKey: _formKey,
+      mascotAsset: BrandAssets.mascotWave,
+      mascotHeroTag: BrandAssets.mascotHeroTag,
+      title: 'Welcome back',
+      subtitle: 'Sign in to keep studying with ${BrandIdentity.displayName}.',
+      children: [
+        if (_infoMessage != null) ...[
+          Text(
+            _infoMessage!,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
+          const SizedBox(height: Spacing.md),
+        ],
+        if (_errorMessage != null) ...[
+          Text(
+            _errorMessage!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          const SizedBox(height: Spacing.md),
+        ],
+        TextFormField(
+          controller: _emailController,
+          decoration: const InputDecoration(labelText: 'Email'),
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+          textInputAction: TextInputAction.next,
+          stylusHandwritingEnabled: false,
+          onTap: requestSoftKeyboard,
+          enabled: !_isLoading,
+          validator: AuthValidators.email,
         ),
-      ),
+        const SizedBox(height: Spacing.md),
+        TextFormField(
+          controller: _passwordController,
+          decoration: InputDecoration(
+            labelText: 'Password',
+            suffixIcon: IconButton(
+              tooltip: _showPassword ? 'Hide password' : 'Show password',
+              icon: Icon(
+                _showPassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+              ),
+              onPressed: () => setState(() => _showPassword = !_showPassword),
+            ),
+          ),
+          obscureText: !_showPassword,
+          keyboardType: TextInputType.visiblePassword,
+          autofillHints: const [AutofillHints.password],
+          textInputAction: TextInputAction.done,
+          stylusHandwritingEnabled: false,
+          onTap: requestSoftKeyboard,
+          enabled: !_isLoading,
+          onFieldSubmitted: (_) => _submit(),
+          validator: AuthValidators.password,
+        ),
+        const SizedBox(height: Spacing.xl),
+        FilledButton(
+          onPressed: _isLoading ? null : _submit,
+          child: _isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Sign in'),
+        ),
+        const SizedBox(height: Spacing.md),
+        TextButton(
+          onPressed: _isLoading ? null : () => context.go(AppRoutes.signup),
+          child: const Text('Create an account'),
+        ),
+      ],
     );
   }
 }

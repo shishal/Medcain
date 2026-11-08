@@ -10,17 +10,17 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('dark canvas is near-black, not teal paper', () {
-    expect(ComicColors.dark.paper, const Color(0xFF0A0A0A));
+    expect(ComicColors.dark.paper, const Color(0xFF070B14));
     expect(AppTheme.splashCanvas, const Color(0xFF000000));
     expect(AppTheme.seedColor, const Color(0xFF008FD6));
-    expect(ComicColors.dark.sticker, const Color(0xFF161A1F));
-    expect(ComicColors.dark.stickerLift, const Color(0xFF1E2430));
+    expect(ComicColors.dark.sticker, const Color(0xFF101628));
+    expect(ComicColors.dark.stickerLift, const Color(0xFF1A2238));
     expect(ComicColors.dark.accentPurple, const Color(0xFF5B8DEF));
   });
 
   test('light canvas is clean gray, not comic paper', () {
-    expect(ComicColors.light.paper, const Color(0xFFF4F4F5));
-    expect(ComicColors.light.sticker, const Color(0xFFFFFFFF));
+    expect(ComicColors.light.paper, const Color(0xFFF3F0FA));
+    expect(ComicColors.light.sticker, const Color(0xFFFFFBFF));
   });
 
   test('ThemeModeNotifier.fromName maps stored values', () {
@@ -35,6 +35,9 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('theme_mode', 'light');
     expect(prefs.getString('theme_mode'), 'light');
-    expect(ThemeModeNotifier.fromName(prefs.getString('theme_mode')!), ThemeMode.light);
+    expect(
+      ThemeModeNotifier.fromName(prefs.getString('theme_mode')!),
+      ThemeMode.light,
+    );
   });
 }

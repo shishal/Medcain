@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'comic_colors.dart';
+import 'navy_story.dart';
 import 'spacing.dart';
 
 /// Material 3 + MEDCAIN blue chrome on charcoal. Docci stays in brand assets.
@@ -14,7 +15,8 @@ abstract final class AppTheme {
   /// Dark native/Flutter splash canvas — matches logo black field.
   static const Color splashCanvas = Color(0xFF000000);
 
-  /// Light native/Flutter splash canvas — matches [ComicColors.light.paper].
+  /// Light native/Flutter splash canvas. The in-app sheet is [NavyStory],
+  /// which is a step warmer than this splash field.
   static const Color splashCanvasLight = Color(0xFFF4F4F5);
 
   /// Splash canvas for the active theme polarity.
@@ -31,24 +33,25 @@ abstract final class AppTheme {
     final comic = brightness == Brightness.dark
         ? ComicColors.dark
         : ComicColors.light;
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: seedColor,
-      brightness: brightness,
-      dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
-    ).copyWith(
-      surface: comic.paper,
-      surfaceContainerLowest: comic.paper,
-      surfaceContainerLow: comic.sticker,
-      surfaceContainer: comic.sticker,
-      surfaceContainerHigh: comic.stickerLift,
-      surfaceContainerHighest: comic.stickerLift,
-      primary: seedColor,
-      onPrimary: Colors.white,
-      secondary: comic.accentPurple,
-      onSecondary: Colors.white,
-      tertiary: comic.proGold,
-      surfaceTint: seedColor,
-    );
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: seedColor,
+          brightness: brightness,
+          dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+        ).copyWith(
+          surface: comic.paper,
+          surfaceContainerLowest: comic.paper,
+          surfaceContainerLow: comic.sticker,
+          surfaceContainer: comic.sticker,
+          surfaceContainerHigh: comic.stickerLift,
+          surfaceContainerHighest: comic.stickerLift,
+          primary: seedColor,
+          onPrimary: Colors.white,
+          secondary: comic.accentPurple,
+          onSecondary: Colors.white,
+          tertiary: comic.proGold,
+          surfaceTint: seedColor,
+        );
 
     return ThemeData(
       useMaterial3: true,
@@ -80,12 +83,15 @@ abstract final class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: comic.sticker,
-        indicatorColor: seedColor.withValues(alpha: 0.22),
+        indicatorColor: NavyStory.cta.withValues(alpha: 0.22),
         elevation: 0,
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: NavyStory.cta),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: seedColor,
+          backgroundColor: NavyStory.cta,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(
             horizontal: Spacing.lg,
@@ -105,7 +111,7 @@ abstract final class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: seedColor,
+        backgroundColor: NavyStory.cta,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
@@ -122,7 +128,7 @@ abstract final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+          borderSide: const BorderSide(color: NavyStory.cta, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: Spacing.md,

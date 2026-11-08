@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/theme/navy_story.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
-import '../../../../core/widgets/comic_card.dart';
+import '../../../../core/widgets/navy_story_widgets.dart';
 import '../../../catalog/presentation/providers/catalog_providers.dart';
 import '../../../practice/domain/practice_enums.dart';
 import '../../../profile/presentation/providers/user_profile_provider.dart';
@@ -48,8 +49,16 @@ class SubjectPyqScreen extends ConsumerWidget {
     String collegeLabelOf(String? id) =>
         id == null ? 'Campus papers' : (collegeLabels[id] ?? 'College');
 
+    final brightness = Theme.of(context).brightness;
+
     return Scaffold(
+      backgroundColor: NavyStory.sheet(brightness),
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: DecoratedBox(
+          decoration: BoxDecoration(gradient: NavyStory.sky(brightness)),
+        ),
         title: Text(title),
         actions: [
           TextButton.icon(
@@ -123,10 +132,13 @@ class SubjectPyqScreen extends ConsumerWidget {
 
           List<Widget> paperRows(List<PyqSittingGroup> groups) {
             return [
-              for (var i = 0; i < groups.length; i++) ...[
-                if (_startsPaperYear(groups, i)) _YearHeading(groups[i].year),
-                _PaperCard(group: groups[i], onTap: () => open(groups[i])),
-              ],
+              for (var i = 0; i < groups.length; i++)
+                _PaperCard(
+                  group: groups[i],
+                  last: i == groups.length - 1,
+                  tone: i.isEven ? NavyStory.railStart : NavyStory.railEnd,
+                  onTap: () => open(groups[i]),
+                ),
             ];
           }
 
@@ -194,10 +206,10 @@ class SubjectPyqScreen extends ConsumerWidget {
                       _UniversityHeading(
                         collegeLabelOf(sections.ownCollege[i].collegeId),
                       ),
-                    if (_startsPaperYear(sections.ownCollege, i))
-                      _YearHeading(sections.ownCollege[i].year),
                     _PaperCard(
                       group: sections.ownCollege[i],
+                      last: i == sections.ownCollege.length - 1,
+                      tone: i.isEven ? NavyStory.railStart : NavyStory.railEnd,
                       onTap: () => open(sections.ownCollege[i]),
                     ),
                   ],
@@ -214,10 +226,10 @@ class SubjectPyqScreen extends ConsumerWidget {
                       _UniversityHeading(
                         codeOf(sections.other[i].universityId),
                       ),
-                    if (_startsPaperYear(sections.other, i))
-                      _YearHeading(sections.other[i].year),
                     _PaperCard(
                       group: sections.other[i],
+                      last: i == sections.other.length - 1,
+                      tone: i.isEven ? NavyStory.railStart : NavyStory.railEnd,
                       onTap: () => open(sections.other[i]),
                     ),
                   ],
@@ -284,40 +296,20 @@ class _UniversityHeading extends StatelessWidget {
   }
 }
 
-/// True when this row starts a new year block (or a new college / university).
-bool _startsPaperYear(List<PyqSittingGroup> groups, int index) {
-  if (index == 0) return true;
-  final previous = groups[index - 1];
-  final current = groups[index];
-  return previous.year != current.year ||
-      previous.universityId != current.universityId ||
-      previous.collegeId != current.collegeId;
-}
-
-class _YearHeading extends StatelessWidget {
-  const _YearHeading(this.year);
-
-  final int year;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: Spacing.sm, bottom: Spacing.xs),
-      child: Text(
-        '$year',
-        style: Theme.of(context).textTheme.titleLarge
-            ?.copyWith(fontWeight: FontWeight.w800),
-      ),
-    );
-  }
-}
-
-/// Paper I / Paper II under a year. Opening it lists only that paper.
+/// One paper on the timeline. The year stays in the title because the
+/// separate year heading would break the rail.
 class _PaperCard extends StatelessWidget {
-  const _PaperCard({required this.group, required this.onTap});
+  const _PaperCard({
+    required this.group,
+    required this.onTap,
+    required this.tone,
+    required this.last,
+  });
 
   final PyqSittingGroup group;
   final VoidCallback onTap;
+  final Color tone;
+  final bool last;
 
   @override
   Widget build(BuildContext context) {
@@ -330,40 +322,30 @@ class _PaperCard extends StatelessWidget {
         group.examTypes.map((t) => t.label).join(' / '),
     ].join(' · ');
 
-    return Padding(
+    return TimelineTile(
       key: ValueKey(
         '${group.section.name}-${group.year}-${group.paperLabel}-'
         '${group.collegeId ?? group.universityId}',
       ),
-      padding: const EdgeInsets.only(left: Spacing.md, bottom: Spacing.sm),
-      child: ComicCard(
-        onTap: onTap,
-        semanticLabel: '${group.year} ${group.paperLabel}, $caption',
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    group.paperLabel,
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.xs),
-                  Text(
-                    caption,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodySmall?.copyWith(color: muted),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: muted),
-          ],
-        ),
+      tone: tone,
+      last: last,
+      onTap: onTap,
+      semanticLabel: '${group.year} ${group.paperLabel}, $caption',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${group.year} ${group.paperLabel}',
+            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: Spacing.xs),
+          Text(
+            caption,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodySmall?.copyWith(color: muted),
+          ),
+        ],
       ),
     );
   }

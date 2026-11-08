@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Canvas + card colors. Dark is near-black (MEDCAIN); light is clean gray.
+/// Canvas + card colors. Dark is the navy story night sheet; light is mist.
 ///
 /// Ink is for glyphs only — not card/button outlines.
 @immutable
@@ -32,9 +32,9 @@ class ComicColors extends ThemeExtension<ComicColors> {
 
   static const light = ComicColors(
     ink: Color(0xFF1A1A1E),
-    paper: Color(0xFFF4F4F5),
-    sticker: Color(0xFFFFFFFF),
-    stickerLift: Color(0xFFF8F8FA),
+    paper: Color(0xFFF3F0FA),
+    sticker: Color(0xFFFFFBFF),
+    stickerLift: Color(0xFFF4F1FA),
     shadow: Color(0x331A1A1E),
     accentPurple: Color(0xFF3D6FBF),
     proGold: Color(0xFFC9A227),
@@ -42,9 +42,9 @@ class ComicColors extends ThemeExtension<ComicColors> {
 
   static const dark = ComicColors(
     ink: Color(0xFFF2F2F3),
-    paper: Color(0xFF0A0A0A),
-    sticker: Color(0xFF161A1F),
-    stickerLift: Color(0xFF1E2430),
+    paper: Color(0xFF070B14),
+    sticker: Color(0xFF101628),
+    stickerLift: Color(0xFF1A2238),
     shadow: Color(0xCC000000),
     accentPurple: Color(0xFF5B8DEF),
     proGold: Color(0xFFF5C542),
@@ -77,7 +77,10 @@ class ComicColors extends ThemeExtension<ComicColors> {
   }
 
   @override
-  ThemeExtension<ComicColors> lerp(ThemeExtension<ComicColors>? other, double t) {
+  ThemeExtension<ComicColors> lerp(
+    ThemeExtension<ComicColors>? other,
+    double t,
+  ) {
     if (other is! ComicColors) return this;
     return ComicColors(
       ink: Color.lerp(ink, other.ink, t) ?? ink,
@@ -85,7 +88,8 @@ class ComicColors extends ThemeExtension<ComicColors> {
       sticker: Color.lerp(sticker, other.sticker, t) ?? sticker,
       stickerLift: Color.lerp(stickerLift, other.stickerLift, t) ?? stickerLift,
       shadow: Color.lerp(shadow, other.shadow, t) ?? shadow,
-      accentPurple: Color.lerp(accentPurple, other.accentPurple, t) ?? accentPurple,
+      accentPurple:
+          Color.lerp(accentPurple, other.accentPurple, t) ?? accentPurple,
       proGold: Color.lerp(proGold, other.proGold, t) ?? proGold,
     );
   }

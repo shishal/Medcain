@@ -6,6 +6,7 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/brand_assets.dart';
 import '../../../../core/theme/comic_colors.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../core/widgets/navy_story_widgets.dart';
 import '../../../../core/widgets/brand_wordmark.dart';
 import '../../../../core/widgets/comic_mascot.dart';
 import '../../../catalog/domain/catalog_models.dart';
@@ -49,74 +50,68 @@ class HomeHeroBanner extends ConsumerWidget {
       if (streak > 0) '$streak-day streak',
     ];
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.md, Spacing.lg, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: BrandWordmark(markSize: 28, compact: true),
-              ),
-              const _NotificationsBellButton(),
-              IconButton.filledTonal(
-                tooltip: 'Search',
-                onPressed: () => context.push(AppRoutes.search),
-                icon: const Icon(Icons.search_rounded),
-              ),
-            ],
-          ),
-          const SizedBox(height: Spacing.md),
-          Row(
-            children: [
-              const ComicMascot(
-                asset: BrandAssets.mascotWave,
-                size: 56,
-                heroTag: BrandAssets.mascotHeroTag,
-                bounce: false,
-                circleBackdrop: true,
-              ),
-              const SizedBox(width: Spacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      hello,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        if (plan != null) ...[
-                          _PlanPill(plan: plan),
-                          const SizedBox(width: Spacing.sm),
-                        ],
-                        Expanded(
-                          child: Text(
-                            subtitleParts.isEmpty
-                                ? 'Pick a subject to start.'
-                                : subtitleParts.join(' · '),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+    final greeting = subtitleParts.isEmpty
+        ? 'Pick a subject to start.'
+        : subtitleParts.join(' · ');
+
+    return DuskEntrance(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.lg,
+          Spacing.sm,
+          Spacing.lg,
+          Spacing.xl,
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: BrandWordmark(markSize: 28, compact: true),
                 ),
+                const _NotificationsBellButton(),
+                IconButton(
+                  tooltip: 'Search',
+                  onPressed: () => context.push(AppRoutes.search),
+                  icon: Icon(Icons.search_rounded, color: scheme.onSurface),
+                ),
+              ],
+            ),
+            const SizedBox(height: Spacing.sm),
+            const ComicMascot(
+              asset: BrandAssets.mascotWave,
+              size: 84,
+              heroTag: BrandAssets.mascotHeroTag,
+              bounce: false,
+              circleBackdrop: true,
+            ),
+            const SizedBox(height: Spacing.sm),
+            Text(
+              hello,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: Spacing.xs),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: Spacing.sm,
+              children: [
+                if (plan != null) _PlanPill(plan: plan),
+                Text(
+                  greeting,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -133,17 +128,17 @@ class _NotificationsBellButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unread = ref.watch(unreadAnnouncementCountProvider);
-    final icon = IconButton.filledTonal(
+    final icon = IconButton(
       tooltip: 'Notifications',
       onPressed: () => context.push(AppRoutes.notifications),
-      icon: const Icon(Icons.notifications_outlined),
+      icon: Icon(
+        Icons.notifications_outlined,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
     );
     if (unread <= 0) return icon;
 
-    return Badge(
-      label: Text(unread > 9 ? '9+' : '$unread'),
-      child: icon,
-    );
+    return Badge(label: Text(unread > 9 ? '9+' : '$unread'), child: icon);
   }
 }
 
