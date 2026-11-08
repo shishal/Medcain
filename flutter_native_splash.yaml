@@ -13,9 +13,11 @@ flutter_native_splash:
   ios: true
   web: false
   android_12:
+    # Android 12 masks this image to a circle. Use the circle-safe mark so
+    # the M legs are not cropped. Pre-12 splash keeps the larger letter-fit.
     color: "#F4F4F5"
     color_dark: "#000000"
-    image: assets/branding/splash_logo_light.png
-    image_dark: assets/branding/splash_logo.png
+    image: assets/branding/splash_icon_light.png
+    image_dark: assets/branding/splash_icon.png
     icon_background_color: "#F4F4F5"
     icon_background_color_dark: "#000000"

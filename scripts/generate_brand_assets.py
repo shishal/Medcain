@@ -11,8 +11,10 @@ Outputs (committed — regenerate, then re-run Flutter icon/splash generators):
   assets/branding/app_icon_light.png     — mark on light paper (light badge)
   assets/branding/app_icon_foreground.png
   assets/branding/app_icon_monochrome.png
-  assets/branding/splash_logo.png        — white+blue M (native/Flutter dark)
-  assets/branding/splash_logo_light.png  — dark+blue M (native/Flutter light)
+  assets/branding/splash_logo.png        — white+blue M, letter-fit (in-app / pre-12 splash)
+  assets/branding/splash_logo_light.png  — dark+blue M, letter-fit (in-app / pre-12 splash)
+  assets/branding/splash_icon.png        — circle-safe M (Android 12 splash, dark)
+  assets/branding/splash_icon_light.png  — circle-safe M (Android 12 splash, light)
   store/play/icon-512.png
   store/play/feature-graphic-1024x500.png
   website/public/img/icon-512.png
@@ -194,6 +196,41 @@ def for_light_canvas(src: Image.Image) -> Image.Image:
     return out
 
 
+def _m_body_box(mark: Image.Image) -> tuple[int, int, int, int]:
+    """Box around the tall M, ignoring the short ECG tails.
+
+    The tails make the ink about twice as wide as it is tall, so fitting the
+    full mark into a square shrinks the letter. Columns as tall as the legs
+    bracket the M; the center peak sits between them.
+    """
+    img = mark.convert("RGBA")
+    w, h = img.size
+    pix = img.load()
+    spans: list[tuple[int, int, int] | None] = [None] * w
+    max_span = 0
+    for x in range(w):
+        ys = [y for y in range(h) if pix[x, y][3] > 32]
+        if len(ys) < 8:
+            continue
+        span = ys[-1] - ys[0] + 1
+        spans[x] = (ys[0], ys[-1], span)
+        if span > max_span:
+            max_span = span
+    full = img.getbbox()
+    if full is None:
+        raise RuntimeError("mark has no ink")
+    if max_span < 8:
+        return full
+    cutoff = max_span * 0.55
+    xs = [x for x, span in enumerate(spans) if span is not None and span[2] >= cutoff]
+    if len(xs) < 4:
+        return full
+    left, right = xs[0], xs[-1]
+    top = min(spans[x][0] for x in xs)  # type: ignore[index]
+    bottom = max(spans[x][1] for x in xs)  # type: ignore[index]
+    return (left, top, right + 1, bottom + 1)
+
+
 def _fit_mark(
     mark: Image.Image,
     size: int,
@@ -201,26 +238,55 @@ def _fit_mark(
     occupy: float,
     background: tuple[int, int, int, int],
     monochrome: tuple[int, int, int, int] | None = None,
+    fit_letter: bool = False,
 ) -> Image.Image:
     cropped = mark.getbbox()
     if cropped is None:
         raise RuntimeError("mark has no ink")
     glyph = mark.crop(cropped)
-    gw, gh = glyph.size
-    target = int(size * occupy)
-    ratio = target / max(gw, gh)
+    if fit_letter:
+        body = _m_body_box(glyph)
+        bw = max(1, body[2] - body[0])
+        bh = max(1, body[3] - body[1])
+        target = int(size * occupy)
+        ratio = target / max(bw, bh)
+        anchor = (
+            (body[0] + body[2]) / 2 * ratio,
+            (body[1] + body[3]) / 2 * ratio,
+        )
+    else:
+        gw, gh = glyph.size
+        target = int(size * occupy)
+        ratio = target / max(gw, gh)
+        anchor = None
     glyph = glyph.resize(
-        (max(1, round(gw * ratio)), max(1, round(gh * ratio))),
+        (max(1, round(glyph.size[0] * ratio)), max(1, round(glyph.size[1] * ratio))),
         Image.Resampling.LANCZOS,
     )
     if monochrome is not None:
         tinted = Image.new("RGBA", glyph.size, monochrome)
         tinted.putalpha(glyph.split()[-1])
         glyph = tinted
+    if anchor is None:
+        x = (size - glyph.size[0]) // 2
+        y = (size - glyph.size[1]) // 2
+    else:
+        # Center the M. ECG tails may run off the canvas — that is intentional.
+        x = round(size / 2 - anchor[0])
+        y = round(size / 2 - anchor[1])
     out = Image.new("RGBA", (size, size), background)
-    x = (size - glyph.size[0]) // 2
-    y = (size - glyph.size[1]) // 2
-    out.alpha_composite(glyph, (x, y))
+    sx, sy = max(0, -x), max(0, -y)
+    dx, dy = max(0, x), max(0, y)
+    gw, gh = glyph.size
+    piece = glyph.crop(
+        (
+            sx,
+            sy,
+            min(gw, sx + size - dx),
+            min(gh, sy + size - dy),
+        )
+    )
+    out.alpha_composite(piece, (dx, dy))
     return out
 
 
@@ -258,7 +324,7 @@ def _feature_graphic(mark: Image.Image) -> Image.Image:
     width, height = 1024, 500
     img = Image.new("RGBA", (width, height), SPLASH_CANVAS)
     badge = _fit_mark(
-        mark, 280, occupy=0.88, background=TRANSPARENT
+        mark, 280, occupy=0.78, background=TRANSPARENT, fit_letter=True
     )
     img.alpha_composite(badge, (48, (height - 280) // 2))
 
@@ -384,29 +450,57 @@ def main() -> None:
     mark_light = for_light_canvas(mark)
     full_light = for_light_canvas(full)
 
-    icon = _fit_mark(mark, 1024, occupy=0.68, background=SPLASH_CANVAS)
+    # Square badges / in-app splash: size to the M so the letter fills the tile.
+    # ECG tails are allowed to leave the canvas. 0.74 keeps the pulse bumps.
+    icon = _fit_mark(
+        mark, 1024, occupy=0.74, background=SPLASH_CANVAS, fit_letter=True
+    )
     _save(icon.convert("RGB"), BRANDING / "app_icon.png")
 
     # Light-theme wordmark badge: dark ink + blue ECG on paper field.
     icon_light = _fit_mark(
-        mark_light, 1024, occupy=0.68, background=SPLASH_CANVAS_LIGHT
+        mark_light,
+        1024,
+        occupy=0.74,
+        background=SPLASH_CANVAS_LIGHT,
+        fit_letter=True,
     )
     _save(icon_light.convert("RGB"), BRANDING / "app_icon_light.png")
 
-    foreground = _fit_mark(mark, 1024, occupy=0.62, background=TRANSPARENT)
-    _save(foreground, BRANDING / "app_icon_foreground.png")
-    _save(foreground, BRANDING / "splash_logo.png")
+    splash = _fit_mark(
+        mark, 1024, occupy=0.74, background=TRANSPARENT, fit_letter=True
+    )
+    _save(splash, BRANDING / "splash_logo.png")
 
     splash_light = _fit_mark(
-        mark_light, 1024, occupy=0.62, background=TRANSPARENT
+        mark_light, 1024, occupy=0.74, background=TRANSPARENT, fit_letter=True
     )
     _save(splash_light, BRANDING / "splash_logo_light.png")
+
+    # Circle-masked surfaces (adaptive icon, Android 12 splash). The visible
+    # disc is the center ~67% of the layer, so a smaller occupy keeps the
+    # M legs inside the mask. Launcher inset is 0 — padding lives here.
+    foreground = _fit_mark(
+        mark, 1024, occupy=0.54, background=TRANSPARENT, fit_letter=True
+    )
+    _save(foreground, BRANDING / "app_icon_foreground.png")
+    _save(foreground, BRANDING / "splash_icon.png")
+
+    splash_icon_light = _fit_mark(
+        mark_light, 1024, occupy=0.54, background=TRANSPARENT, fit_letter=True
+    )
+    _save(splash_icon_light, BRANDING / "splash_icon_light.png")
 
     _save(full_light, BRANDING / "logo_full_light.png")
     _save(full_light, WEB_IMG / "logo-full-light.png")
 
     monochrome = _fit_mark(
-        mark, 1024, occupy=0.62, background=TRANSPARENT, monochrome=BLACK
+        mark,
+        1024,
+        occupy=0.54,
+        background=TRANSPARENT,
+        monochrome=BLACK,
+        fit_letter=True,
     )
     _save(monochrome, BRANDING / "app_icon_monochrome.png")
 
@@ -415,10 +509,12 @@ def main() -> None:
     _save(store_icon, WEB_IMG / "icon-512.png")
     _save(store_icon, WEB_IMG / "app-icon.png")
     # Transparent mark for dark hero / overlays (not light nav — white ink vanishes).
-    mark_badge = _fit_mark(mark, 512, occupy=0.78, background=TRANSPARENT)
+    mark_badge = _fit_mark(
+        mark, 512, occupy=0.80, background=TRANSPARENT, fit_letter=True
+    )
     _save(mark_badge, WEB_IMG / "mark.png")
     mark_badge_light = _fit_mark(
-        mark_light, 512, occupy=0.78, background=TRANSPARENT
+        mark_light, 512, occupy=0.80, background=TRANSPARENT, fit_letter=True
     )
     _save(mark_badge_light, WEB_IMG / "mark-light.png")
     _save(_feature_graphic(mark).convert("RGB"), PLAY / "feature-graphic-1024x500.png")

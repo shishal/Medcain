@@ -65,7 +65,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     final fromNotice = ref.read(deviceSessionNoticeProvider);
     if (fromNotice != null) {
-      ref.read(deviceSessionNoticeProvider.notifier).clear();
+      // didChangeDependencies runs while the tree is building. Clearing the
+      // notice now would notify listeners mid-frame, which Riverpod rejects.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(deviceSessionNoticeProvider.notifier).clear();
+      });
     }
 
     final message = fromQuery ?? fromNotice;
