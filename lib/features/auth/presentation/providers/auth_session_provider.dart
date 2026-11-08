@@ -16,7 +16,12 @@ class AuthSession extends _$AuthSession {
     final repository = ref.watch(authRepositoryProvider);
 
     final subscription = repository.authStateChanges.listen((event) {
-      state = event.session != null;
+      // Password sign-in emits signedIn before signIn() finishes claiming
+      // this device. Publishing that session now rebuilds the router at
+      // the splash screen, then the claim signs the user back out.
+      if (event.event != AuthChangeEvent.signedIn) {
+        state = event.session != null;
+      }
 
       // Cold-start restore: bind this install before the user navigates.
       if (event.event == AuthChangeEvent.initialSession &&
@@ -50,6 +55,14 @@ class AuthSession extends _$AuthSession {
 
   Future<void> signOut() async {
     await ref.read(authRepositoryProvider).signOut();
+  }
+
+  /// Publish the session after [AuthRepository.signIn] / [signUp] finish.
+  ///
+  /// Those methods claim the device and may sign out before returning.
+  /// [syncWithClient] then matches the router to whatever session is left.
+  void syncWithClient() {
+    state = ref.read(authRepositoryProvider).isSignedIn;
   }
 
   /// Force local sign-out when [assertActiveDevice] fails.

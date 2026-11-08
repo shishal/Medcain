@@ -57,6 +57,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         );
 
     if (!mounted) return;
+    ref.read(authSessionProvider.notifier).syncWithClient();
+    if (!mounted) return;
 
     setState(() => _isLoading = false);
 

@@ -100,6 +100,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
 
     if (!mounted) return;
+    // Claim finished (and may have signed out). Publish that result
+    // before navigating so the router does not open the splash screen.
+    ref.read(authSessionProvider.notifier).syncWithClient();
+    if (!mounted) return;
 
     setState(() => _isLoading = false);
 
