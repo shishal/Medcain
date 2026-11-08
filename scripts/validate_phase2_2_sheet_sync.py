@@ -66,6 +66,15 @@ def check_migration(conn) -> list[str]:
     ).fetchone()
     if not column:
         errors.append("questions.content_sync_source is missing")
+    public_code = conn.execute(
+        """
+        select 1 from information_schema.columns
+        where table_schema = 'public' and table_name = 'questions'
+          and column_name = 'public_code'
+        """
+    ).fetchone()
+    if not public_code:
+        errors.append("questions.public_code is missing")
     function = conn.execute(
         "select to_regprocedure('public.sync_content_csv(jsonb,boolean)')"
     ).fetchone()[0]
@@ -99,15 +108,29 @@ def check_sample_csv() -> tuple[list[dict[str, str]], list[str]]:
 
 
 def check_synced_content(conn, rows: list[dict[str, str]]) -> list[str]:
-    ids = [generated_id(row) for row in rows]
-    found = {
-        row[0]
-        for row in conn.execute(
-            "select external_id from public.questions where external_id = any(%s)",
-            (ids,),
-        ).fetchall()
-    }
-    return [f"synced question missing: {external_id}" for external_id in ids if external_id not in found]
+    missing: list[str] = []
+    for row in rows:
+        raw = (row.get("question_id") or "").split(".", 1)[0].strip()
+        if raw.isdigit() and int(raw) > 0:
+            code = raw.zfill(6)
+            found = conn.execute(
+                """
+                select 1 from public.questions
+                where public_code = %s or external_id = %s
+                """,
+                (code, code),
+            ).fetchone()
+            if not found:
+                missing.append(f"synced question missing: {code}")
+            continue
+        external_id = generated_id(row)
+        found = conn.execute(
+            "select 1 from public.questions where external_id = %s",
+            (external_id,),
+        ).fetchone()
+        if not found:
+            missing.append(f"synced question missing: {external_id}")
+    return missing
 
 
 def rpc(conn, rows: list[dict[str, str]], apply: bool) -> dict:
@@ -185,6 +208,51 @@ def exercise_sync(conn) -> list[str]:
         preview = rpc(conn, valid, False)
         if not preview.get("ok") or preview.get("applied"):
             errors.append("valid preview did not succeed without writes")
+
+        dup_stem = f"Duplicate stem {suffix}"
+        duplicate = rpc(
+            conn,
+            [
+                sitting(anatomy, dup_stem, chapter_name="Chapter A"),
+                sitting(anatomy, dup_stem, chapter_name="Chapter B", year="2022"),
+            ],
+            False,
+        )
+        dup_ids = {
+            item.get("question_id")
+            for item in duplicate.get("question_ids", [])
+            if item.get("question_id")
+        }
+        if not duplicate.get("ok") or len(dup_ids) != 2:
+            errors.append(
+                "duplicate stem with different chapters was not two questions: "
+                + " ".join(duplicate.get("errors", []))
+            )
+
+        shared = rpc(
+            conn,
+            [
+                sitting(anatomy, f"Shared id {suffix}", question_id="000001", chapter_name="One"),
+                sitting(
+                    anatomy,
+                    f"Shared id {suffix}",
+                    question_id="1",
+                    chapter_name="Two",
+                    year="2022",
+                ),
+            ],
+            False,
+        )
+        shared_ids = {
+            item.get("question_id")
+            for item in shared.get("question_ids", [])
+            if item.get("question_id")
+        }
+        if not shared.get("ok") or shared_ids != {"000001"}:
+            errors.append(
+                "same question_id with different chapters was rejected: "
+                + " ".join(shared.get("errors", []))
+            )
 
         for rows, expected in invalid_cases:
             result = rpc(conn, rows, False)

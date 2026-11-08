@@ -32,6 +32,7 @@ LEAN_TEMPLATE_COLUMNS = (
     "topic_name",
     "question_type",
     "marks",
+    "question_id",
     "question_text",
     "option_a",
     "option_b",
@@ -129,6 +130,44 @@ def call_sync(rows: list[dict[str, str]], *, apply: bool) -> dict:
         raise RuntimeError(f"Supabase RPC failed ({error.code}): {body}") from error
 
 
+def write_question_ids(path: Path, result: dict) -> int:
+    """Fill blank or unpadded question_id cells from an applied sync."""
+    assigned = {
+        int(item["row_number"]): str(item["question_id"])
+        for item in result.get("question_ids", [])
+        if item.get("row_number") and item.get("question_id")
+    }
+    if not assigned:
+        return 0
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = list(reader.fieldnames or [])
+        rows = list(reader)
+    key = "question_id"
+    normalized = [name.strip().lower().replace(" ", "_").replace("-", "_") for name in fieldnames]
+    if key not in normalized:
+        fieldnames.append(key)
+        normalized.append(key)
+    column = fieldnames[normalized.index(key)]
+    written = 0
+    for row in rows:
+        for name in fieldnames:
+            if row.get(name) is None:
+                row[name] = ""
+    for row_number, row in enumerate(rows, start=2):
+        code = assigned.get(row_number)
+        if not code:
+            continue
+        if (row.get(column) or "").strip() != code:
+            row[column] = code
+            written += 1
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+    return written
+
+
 def print_result(result: dict) -> None:
     for error in result.get("errors", []):
         print(f"ERROR: {error}", file=sys.stderr)
@@ -172,7 +211,12 @@ def main() -> int:
 
         result = call_sync(rows, apply=True)
         print_result(result)
-        return 0 if result.get("ok") and result.get("applied") else 1
+        if result.get("ok") and result.get("applied"):
+            written = write_question_ids(args.csv_path, result)
+            if written:
+                print(f"Wrote {written} question_id value(s) back to {args.csv_path}")
+            return 0
+        return 1
     except (OSError, ValueError, RuntimeError) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1

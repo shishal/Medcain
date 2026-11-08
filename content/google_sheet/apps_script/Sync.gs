@@ -8,7 +8,7 @@ function checkConfiguration() {
       'SUPABASE_URL is set (' + cfg.url + ').\n' +
         'SUPABASE_SERVICE_ROLE_KEY is set (value hidden).\n\n' +
         'Editor tab: Questions.\n' +
-        'Required migrations through 20261103180000_admin_console.sql.',
+        'Required migrations through 20261108120000_question_public_codes.sql.',
       ui.ButtonSet.OK
     );
   } catch (e) {
@@ -20,6 +20,7 @@ function syncToApp() {
   var ui = SpreadsheetApp.getUi();
   try {
     getSupabaseConfig_();
+    ensureQuestionIdColumn_();
     // App edits land on the sheet before this snapshot is imported, so they
     // are not deleted as rows missing from the sheet.
     var pulled = pullAppEdits_({ silent: true });
@@ -63,14 +64,48 @@ function syncToApp() {
     if (!result.ok || !result.applied) {
       throw new Error((result.errors || ['Apply failed.']).join('\n'));
     }
+    var stamped = writeQuestionIds_(result.question_ids);
     ui.alert(
       'Sync complete',
       'Inserted: ' + (result.counts.insert || 0) +
         '\nUpdated: ' + (result.counts.update || 0) +
-        '\nDeleted: ' + (result.counts.delete || 0),
+        '\nDeleted: ' + (result.counts.delete || 0) +
+        '\nQuestion ids written: ' + stamped,
       ui.ButtonSet.OK
     );
   } catch (e) {
     ui.alert('Sync failed', String(e.message || e), ui.ButtonSet.OK);
   }
+}
+
+/** Keep question_id as text so 000123 is not stored as the number 123. */
+function ensureQuestionIdColumn_() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(QUESTIONS_TAB);
+  if (!sheet) return;
+  var col = ensureQuestionColumn_(sheet, 'question_id');
+  sheet.getRange(1, col, sheet.getMaxRows(), 1).setNumberFormat('@');
+}
+
+/** @return {number} cells written */
+function writeQuestionIds_(assignments) {
+  if (!assignments || !assignments.length) return 0;
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(QUESTIONS_TAB);
+  if (!sheet) return 0;
+  var col = ensureQuestionColumn_(sheet, 'question_id');
+  var last = sheet.getLastRow();
+  if (last < 2) return 0;
+  var range = sheet.getRange(2, col, last - 1, 1);
+  range.setNumberFormat('@');
+  var values = range.getValues();
+  var written = 0;
+  for (var i = 0; i < assignments.length; i++) {
+    var item = assignments[i];
+    var idx = Number(item.row_number) - 2;
+    if (idx < 0 || idx >= values.length || !item.question_id) continue;
+    var code = String(item.question_id);
+    if (String(values[idx][0]) !== code) written++;
+    values[idx][0] = code;
+  }
+  range.setValues(values);
+  return written;
 }

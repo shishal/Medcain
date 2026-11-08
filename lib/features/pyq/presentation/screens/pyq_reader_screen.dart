@@ -134,6 +134,7 @@ class _PyqBodyState extends ConsumerState<_PyqBody> {
         .map((a) => '${a.year} ${a.paperName}')
         .join(' · ');
     final meta = [
+      if (d.teaser.publicCode.isNotEmpty) d.teaser.publicCode,
       if (d.teaser.format != QuestionFormat.unclassified) d.teaser.format.label,
       if (d.teaser.marks != null) '${d.teaser.marks} marks',
       // Skip `should`, which is only what a blank CSV cell imports as.

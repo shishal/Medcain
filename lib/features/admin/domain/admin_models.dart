@@ -102,6 +102,7 @@ class AdminQuestionSummary {
     required this.isActive,
     this.subjectName,
     required this.appearanceCount,
+    this.publicCode = '',
   });
 
   final String id;
@@ -113,6 +114,9 @@ class AdminQuestionSummary {
   final String? subjectName;
   final int appearanceCount;
 
+  /// Six-digit id shared with the Questions sheet.
+  final String publicCode;
+
   factory AdminQuestionSummary.fromJson(Map<String, dynamic> json) {
     return AdminQuestionSummary(
       id: json['id'] as String,
@@ -123,6 +127,7 @@ class AdminQuestionSummary {
       isActive: json['is_active'] != false,
       subjectName: json['subject_name'] as String?,
       appearanceCount: _int(json['appearance_count']) ?? 0,
+      publicCode: json['public_code'] as String? ?? '',
     );
   }
 }
@@ -198,6 +203,7 @@ class AdminQuestionDetail {
     this.subjectId,
     this.subjectName,
     required this.appearances,
+    this.publicCode = '',
   });
 
   final String id;
@@ -221,6 +227,9 @@ class AdminQuestionDetail {
   final String? subjectName;
   final List<AdminAppearance> appearances;
 
+  /// Six-digit id shared with the Questions sheet.
+  final String publicCode;
+
   factory AdminQuestionDetail.fromJson(Map<String, dynamic> json) {
     final rawAppearances = json['appearances'];
     return AdminQuestionDetail(
@@ -243,6 +252,7 @@ class AdminQuestionDetail {
       topicName: json['topic_name'] as String?,
       subjectId: json['subject_id'] as String?,
       subjectName: json['subject_name'] as String?,
+      publicCode: json['public_code'] as String? ?? '',
       appearances: rawAppearances is List
           ? [
               for (final item in rawAppearances)

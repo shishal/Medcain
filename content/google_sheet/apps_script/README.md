@@ -7,7 +7,7 @@ menu previews one transactional import and requires typing `APPLY` before writes
 
 1. Import `../tabs/Questions.csv` as tab `Questions`.
 2. Apply migrations through
-   `supabase/migrations/20261018180000_question_sheet_columns.sql`.
+   `supabase/migrations/20261108120000_question_public_codes.sql`.
 3. Script properties: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Install
@@ -22,7 +22,7 @@ Paste these files into Apps Script:
 
 ## What the menu does
 
-**Pull app edits** writes rows queued by the in-app admin (question text, marks, answer, plan / free tier, papers) into `Questions`. It adds `required_plan` and `is_active` headers if the tab does not have them. A matching subject + type + stem + sitting is updated; a new question is appended; a removed paper deletes that sheet row.
+**Pull app edits** writes rows queued by the in-app admin (question text, marks, answer, plan / free tier, papers, `question_id`) into `Questions`. It adds `question_id`, `required_plan`, and `is_active` headers if the tab does not have them. A matching id + sitting is updated; a new question is appended; a removed paper deletes that sheet row.
 
 **Sync to App** pulls those edits first, then:
 

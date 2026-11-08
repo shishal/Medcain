@@ -74,6 +74,7 @@ class PyqTeaser {
     this.sittings = const [],
     this.hasDirectAnswer = false,
     this.hasExplanation = false,
+    this.publicCode = '',
   });
 
   final String id;
@@ -104,6 +105,9 @@ class PyqTeaser {
 
   /// `explanation_text` or `explanation_deep` has non-blank text.
   final bool hasExplanation;
+
+  /// Six-digit id shared with the Questions sheet (`000123`). Blank on older rows.
+  final String publicCode;
 
   QuestionFormat get format =>
       QuestionFormat.fromKindAndMarks(kind: kind, marks: marks);
@@ -140,6 +144,7 @@ class PyqTeaser {
       ),
       hasDirectAnswer: json[PyqTeaserColumns.hasDirectAnswer] as bool? ?? false,
       hasExplanation: json[PyqTeaserColumns.hasExplanation] as bool? ?? false,
+      publicCode: json[PyqTeaserColumns.publicCode] as String? ?? '',
     );
   }
 
@@ -172,6 +177,7 @@ class PyqTeaser {
       sittings: sittings ?? this.sittings,
       hasDirectAnswer: hasDirectAnswer,
       hasExplanation: hasExplanation,
+      publicCode: publicCode,
     );
   }
 }

@@ -34,6 +34,7 @@ Same header as the Numbers question sheet. `course` may be present and is ignore
 | `topic_name` | no | Free text. Stored as a lesson under that chapter. Needs `chapter_name` when filled. |
 | `question_type` | yes | `pyq_theory` or `mcq`. |
 | `marks` | no | Numeric marks for this question. |
+| `question_id` | no | Six-digit id (`000123`). Leave blank to create a question; sync writes the id back. The same id on another row is another sitting of that question. |
 | `question_text` | yes | Stem. Markdown is fine. |
 | `option_a` … `option_d` | mcq | Blank on theory. |
 | `correct_option` | mcq | `A` / `B` / `C` / `D`. Blank on theory. |
@@ -67,8 +68,8 @@ question on one sitting.
 
 ## Editor rules
 
-1. Only edit `Questions`. Never invent IDs.
-2. Repeat the same subject + question type + stem for another sitting, page, or resource.
+1. Only edit `Questions`. Leave `question_id` blank for a new question. Sync fills `000001` style ids and writes them back. Do not change an id that is already filled in.
+2. `question_id` is the only identity. Two rows are separate questions whenever their ids differ, even if the stem, chapter, topic, and marks match. Copy an id to attach another year or paper to that same question. Clear it to save a new one.
 3. Theory: `question_type` = `pyq_theory` and leave options blank. MCQ: `mcq`, all four options, and `correct_option`.
 4. Leave `college_alias` and `college_name` both blank, or fill both with a college already in the catalog.
 5. Preview shows destructive removals; type `APPLY` to confirm.
@@ -85,5 +86,7 @@ python3 scripts/sync_content_csv.py --apply     # type APPLY to write
 ```
 
 Apply migrations through
-`supabase/migrations/20261018180000_question_sheet_columns.sql`
-before the first sync.
+`supabase/migrations/20261108120000_question_public_codes.sql`
+before the first sync. After Apply, the sheet's `question_id` column is filled
+with each question's six-digit id. Paste the updated Apps Script so those ids
+are written back.
