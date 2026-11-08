@@ -68,7 +68,11 @@ List<T> _list<T>(Object? raw, T Function(Map<String, dynamic>) parse) {
   if (raw is! List) return const [];
   return [
     for (final item in raw)
-      if (item is Map<String, dynamic>) parse(item),
+      // Nested JSON from the RPC is sometimes Map<dynamic, dynamic>
+      // (decoded on another isolate). `is Map<String, dynamic>` drops those
+      // rows, so the streak still shows and every subject card reads as
+      // zero PYQs.
+      if (item is Map) parse(Map<String, dynamic>.from(item)),
   ];
 }
 

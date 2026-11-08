@@ -53,7 +53,14 @@ class HomeScreen extends ConsumerWidget {
                 switchOutCurve: Curves.easeInCubic,
                 child: subjects.when(
                   data: (items) => SubjectStickerGrid(
-                    key: ValueKey(items.map((s) => s.id).join(',')),
+                    // The switcher keeps the first grid when this key stays
+                    // the same. Subjects often paint before progress, which
+                    // left every card on "No PYQs yet" after the counts arrived.
+                    key: ValueKey(
+                      '${items.map((s) => s.id).join(',')}|'
+                      '$hasUniversityPapers|'
+                      '${coverage.map((c) => '${c.id}:${c.totalPyqs}').join(',')}',
+                    ),
                     subjects: items,
                     coverage: coverage,
                     showLessonProgress: hasUniversityPapers,
