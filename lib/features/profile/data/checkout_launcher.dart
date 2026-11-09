@@ -85,7 +85,7 @@ class CheckoutLauncher {
 @Riverpod(keepAlive: true)
 CheckoutLauncher checkoutLauncher(Ref ref) {
   return CheckoutLauncher(
-    checkoutUri: CheckoutEnv.urlOrNull,
+    checkoutUri: CheckoutEnv.url,
     // externalApplication = the system browser, not an in-app WebView.
     launch: (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
     resolvePhone: () => ref.read(authRepositoryProvider).currentPhone,
