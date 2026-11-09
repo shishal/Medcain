@@ -821,11 +821,11 @@ paper, subject, chapter, topic, stem, answer, explanations). `question_id`
 ties rows to one question. Sync upserts the normalized tables above. Editors
 do not invent UUIDs. See `content/google_sheet/README.md`.
 
-### 9.3 Profile academic fields + 4-day trial
+### 9.3 Profile academic fields
 
 `profiles` gains `university_id`, `college_id`, `batch_year`, `mbbs_phase_id`,
-`onboarding_completed_at`. `handle_new_user` inserts `plan = 'pro'` with
-`plan_expires_at = now() + 4 days`. Authenticated GRANT update is limited to
+`onboarding_completed_at`. `handle_new_user` inserts `plan = 'free'` with no
+expiry (`20261109150000_signup_starts_on_free.sql`). Authenticated GRANT update is limited to
 name/phone/academic fields — never `plan` / `plan_expires_at` /
 `plan_suspended_at` / `active_device_id`.
 

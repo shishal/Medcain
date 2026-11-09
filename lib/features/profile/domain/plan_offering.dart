@@ -27,9 +27,9 @@ class PlanOffering {
 
   static const free = PlanOffering(
     tier: PlanTier.free,
-    tagline: 'A sample after the trial',
+    tagline: 'Questions marked free',
     features: [
-      PlanFeatureLine('Sample questions', included: true),
+      PlanFeatureLine('Questions marked free', included: true),
       PlanFeatureLine('All years and subjects', included: false),
       PlanFeatureLine('Answers on every question', included: false),
     ],

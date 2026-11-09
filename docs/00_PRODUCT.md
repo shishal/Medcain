@@ -67,15 +67,15 @@ Topic → lesson is for grouping, not the first tap.
 
 ## Monetization
 
-Signup grants **Pro for 4 days**, then the effective plan falls back to `free`
-via `current_plan()`. Free keeps a teaser slice (`required_plan = 'free'`).
+Signup starts on **Free**. Free sees questions marked `required_plan = 'free'`.
+`current_plan()` is what the database uses for that gate.
 
 **Pro** and **Elite** both include every question, every year, and every
 subject, with answers. The only difference is registered devices:
 
 | Plan | Library | Registered devices |
 |---|---|---|
-| Free | Teaser slice | 1 |
+| Free | Questions marked free | 1 |
 | Pro | All questions, years, subjects, and answers | 1 |
 | Elite | Same as Pro | 2 |
 

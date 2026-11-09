@@ -47,7 +47,7 @@ WHAT YOU CAN DO
 • Bookmark questions from review and come back to them later.
 
 PLANS
-Download is free. New accounts get Pro for 4 days. Free keeps a teaser slice of the bank. Pro and Elite unlock more PYQs, practice, and full explanations.
+Download is free. A new account is Free and sees questions marked free. Pro and Elite unlock the rest of the bank, practice, and full explanations.
 
 Plans are purchased on our website in the device browser — not inside this app. After you pay, return to MEDCAIN and refresh your profile to see the new plan.
 
@@ -106,7 +106,7 @@ MEDCAIN is an MBBS university-exam companion: previous-year theory questions wit
 
 Browse real university papers by year. Open a question for a direct answer and explanation, then jump to the textbook page. Practice MCQs in tutor or exam mode. Bookmark questions from review.
 
-A Free plan is included. New accounts get Pro for 4 days. Pro and Elite unlock more of the bank and full explanations. Plans are bought on our website in Safari — this app does not charge inside the binary.
+A Free plan is included and shows questions marked free. Pro and Elite unlock the rest of the bank and full explanations. Plans are bought on our website in Safari — this app does not charge inside the binary.
 
 Privacy policy: https://medcain.shishal.com/privacy
 Manage or cancel a plan: https://medcain.shishal.com/account
