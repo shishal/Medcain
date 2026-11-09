@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://medico.shishal.com/sitemap.xml
+Sitemap: https://medcain.shishal.com/sitemap.xml

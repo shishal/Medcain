@@ -1494,7 +1494,7 @@ def wiki_url(slug: str) -> str:
 
 
 def medico_url(subject: str) -> str:
-    return f"https://medico.shishal.com/kuhs/{SUBJECT_SLUG[subject]}/"
+    return f"https://medcain.shishal.com/kuhs/{SUBJECT_SLUG[subject]}/"
 
 
 def paper_id(subject: str, year: int, paper_name: str, exam_type: str) -> str:

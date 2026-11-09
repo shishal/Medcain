@@ -1,4 +1,4 @@
-# MEDCAIN public site (medico.shishal.com)
+# MEDCAIN public site (medcain.shishal.com)
 
 Static marketing + Play Store legal pages. Served by nginx in Docker on your
 machine; Cloudflare sits in front.
@@ -15,16 +15,15 @@ Secret keys stay on the Supabase Edge Functions, not in this image.
 
 | Play / store field | URL |
 |---|---|
-| Website | https://medico.shishal.com/ |
-| Privacy policy | https://medico.shishal.com/privacy/ |
-| Manage / cancel a plan | https://medico.shishal.com/account/ |
-| Terms (optional extra) | https://medico.shishal.com/terms/ |
-| Support email | support@medico.shishal.com |
+| Website | https://medcain.shishal.com/ |
+| Privacy policy | https://medcain.shishal.com/privacy/ |
+| Manage / cancel a plan | https://medcain.shishal.com/account/ |
+| Terms (optional extra) | https://medcain.shishal.com/terms/ |
+| Support email | medcain@shishal.com |
 
 `/refunds/` redirects to `/account/`.
 
-Create the mailbox `support@medico.shishal.com` (or a forward to your real
-inbox) before you submit a public listing.
+Support mail goes to `medcain@shishal.com`.
 
 ## Run with Docker Compose
 
@@ -80,7 +79,7 @@ The container listens on **127.0.0.1:8083** only. Do not publish `8083` to
 Zero open inbound ports.
 
 1. Cloudflare Zero Trust → Networks → Tunnels → Create.
-2. Public hostname: `medico.shishal.com` → service `http://127.0.0.1:8083`
+2. Public hostname: `medcain.shishal.com` → service `http://127.0.0.1:8083`
    (or `http://site:80` if cloudflared is on the same Compose network).
 3. Put the tunnel token in `.env` at the **repo root** (gitignored):
 
@@ -95,7 +94,7 @@ Zero open inbound ports.
    ```
 
    The tunnel container reaches nginx as `http://site:80`. In the Cloudflare
-   dashboard, set the public hostname `medico.shishal.com` to that origin
+   dashboard, set the public hostname `medcain.shishal.com` to that origin
    (not `127.0.0.1`) when cloudflared is on this Compose network.
 
 If you already run `cloudflared` as a host service, skip the Compose profile
@@ -103,8 +102,8 @@ and point that tunnel at `http://127.0.0.1:8083`.
 
 ### 4. Check
 
-- https://medico.shishal.com/healthz → `ok`
-- https://medico.shishal.com/privacy/ loads without a login
+- https://medcain.shishal.com/healthz → `ok`
+- https://medcain.shishal.com/privacy/ loads without a login
 - View source is HTML files, not a Flutter web build
 
 ## Payments
@@ -126,9 +125,9 @@ Compose blanks those on the site container even though they live in `.env`.
 docker compose up --build -d
 ```
 
-Then open https://medico.shishal.com/checkout — you should see a sign-in
+Then open https://medcain.shishal.com/checkout — you should see a sign-in
 form. Razorpay API keys and the webhook are a separate step:
 [`docs/06_PAYMENTS_PRODUCTION.md`](../docs/06_PAYMENTS_PRODUCTION.md).
 
 Flutter store builds should set
-`CHECKOUT_URL=https://medico.shishal.com/checkout`.
+`CHECKOUT_URL=https://medcain.shishal.com/checkout`.

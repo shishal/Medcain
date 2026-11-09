@@ -17,8 +17,8 @@ visible way to **manage / cancel** a plan — publish those pages before you
 submit, even though billing is external.
 
 Public site (host on your machine via `website/` + Cloudflare):
-https://medico.shishal.com — privacy, terms, and account/refund pages live
-there. Create the mailbox `support@medico.shishal.com` before a public listing.
+https://medcain.shishal.com — privacy, terms, and account/refund pages live
+there. Support mail goes to `medcain@shishal.com`.
 
 ---
 
@@ -54,8 +54,8 @@ Plans are purchased on our website in the device browser — not inside this app
 PRIVACY AND ACCOUNT
 You sign in with email. We do not show ads. See the privacy policy for what we store and why.
 
-Privacy policy: https://medico.shishal.com/privacy
-Manage or cancel a plan: https://medico.shishal.com/account
+Privacy policy: https://medcain.shishal.com/privacy
+Manage or cancel a plan: https://medcain.shishal.com/account
 ```
 
 ### Category
@@ -65,8 +65,8 @@ Education
 Education, Medical, Exam prep, MBBS, PYQ
 
 ### Contact
-Support email: support@medico.shishal.com
-Website: https://medico.shishal.com
+Support email: medcain@shishal.com
+Website: https://medcain.shishal.com
 
 ### Graphics to upload
 | Slot | File | Size |
@@ -108,8 +108,8 @@ Browse real university papers by year. Open a question for a direct answer and e
 
 A Free plan is included. New accounts get Pro for 4 days. Pro and Elite unlock more of the bank and full explanations. Plans are bought on our website in Safari — this app does not charge inside the binary.
 
-Privacy policy: https://medico.shishal.com/privacy
-Manage or cancel a plan: https://medico.shishal.com/account
+Privacy policy: https://medcain.shishal.com/privacy
+Manage or cancel a plan: https://medcain.shishal.com/account
 ```
 
 ### Keywords (100 characters max, comma-separated, no spaces after commas preferred)
@@ -143,7 +143,7 @@ First release: catalog tests, practice builder, results, bookmarks, and plan com
 This app does not sell subscriptions or digital goods inside the binary. Tapping Upgrade opens our website checkout in the system browser (Razorpay). Sign in with the review account below to browse Free-tier tests without paying.
 
 Demo account: (create a Free-plan reviewer account and paste email/password here)
-Privacy policy: https://medico.shishal.com/privacy
+Privacy policy: https://medcain.shishal.com/privacy
 ```
 
 ---

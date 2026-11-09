@@ -2,5 +2,5 @@
 abstract final class SupportLinks {
   static const whatsAppUrl = 'https://wa.me/910000000000';
   static const telegramUrl = 'https://t.me/medico_community';
-  static const emailUrl = 'mailto:support@medico.shishal.com';
+  static const emailUrl = 'mailto:medcain@shishal.com';
 }

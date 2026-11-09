@@ -39,7 +39,7 @@ services:
       - web
 
   # Optional sidecar. Create a Cloudflare Tunnel whose public hostname is
-  # medico.shishal.com and whose origin is http://site:80 (this network).
+  # medcain.shishal.com and whose origin is http://site:80 (this network).
   # Then: CLOUDFLARE_TUNNEL_TOKEN=... docker compose --profile tunnel up -d
   cloudflared:
     image: cloudflare/cloudflared:latest

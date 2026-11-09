@@ -151,7 +151,7 @@ you decide to launch publicly:
 - The 12-tester closed-test rule (organization account; not this path)
 
 When you *do* go public, paste listing copy from `07_STORE_LISTING.md`
-(privacy / account URLs already point at https://medico.shishal.com), then
+(privacy / account URLs already point at https://medcain.shishal.com), then
 complete Data safety using the draft at the bottom of this file. Deploy
 steps for the site are in `website/README.md`.
 

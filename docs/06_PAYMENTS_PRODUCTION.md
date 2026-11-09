@@ -92,7 +92,7 @@ Razorpay **Live** Checkout expects the page to be served over **https://**.
 `python3 checkout/serve.py` is local-only.
 
 The public site already serves checkout at
-`https://medico.shishal.com/checkout` (`website/public/checkout/`). From the
+`https://medcain.shishal.com/checkout` (`website/public/checkout/`). From the
 repo root, rebuild so nginx and the page are current:
 
 ```bash
@@ -105,7 +105,7 @@ app). Never put `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, or
 `SUPABASE_SERVICE_ROLE_KEY` in that container. The Razorpay **public** key is
 returned at runtime by `create-razorpay-order`.
 
-Open `https://medico.shishal.com/checkout`. You should see the sign-in form.
+Open `https://medcain.shishal.com/checkout`. You should see the sign-in form.
 Paste that URL into Flutter `CHECKOUT_URL`, Razorpay website details, and
 Supabase Auth redirect URLs.
 
@@ -114,8 +114,8 @@ Supabase Auth redirect URLs.
 Dashboard → **Authentication → URL configuration**:
 
 - **Site URL**: can stay the app / marketing site.
-- **Additional redirect URLs**: add `https://medico.shishal.com` (and
-  `https://medico.shishal.com/**` if the UI offers a wildcard).
+- **Additional redirect URLs**: add `https://medcain.shishal.com` (and
+  `https://medcain.shishal.com/**` if the UI offers a wildcard).
 
 Checkout login is the same user-initiated WhatsApp check as the app. The
 student sends a message; the page does not ask for an email or password.
@@ -126,7 +126,7 @@ The redirect URL list still matters if you later add an OAuth provider.
 In the **gitignored** `.env` that store / Codemagic builds use:
 
 ```
-CHECKOUT_URL=https://medico.shishal.com/checkout
+CHECKOUT_URL=https://medcain.shishal.com/checkout
 ```
 
 Rules:

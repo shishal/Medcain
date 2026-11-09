@@ -199,7 +199,7 @@ export function blockedReply(toDigits: string): Record<string, unknown> {
     type: 'text',
     text: {
       body:
-        'This MEDCAIN account is blocked. Email support@medico.shishal.com if that is a mistake.',
+        'This MEDCAIN account is blocked. Email medcain@shishal.com if that is a mistake.',
     },
   };
 }

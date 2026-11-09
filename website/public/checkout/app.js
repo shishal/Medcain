@@ -18,7 +18,7 @@
       window.location.hostname === 'localhost';
     panel.innerHTML = local
       ? '<p class="error">Checkout is not configured. Copy <code>config.example.js</code> to <code>config.js</code>, or run <code>python3 checkout/serve.py</code>.</p>'
-      : '<p class="error">Checkout is not available right now. Email support@medico.shishal.com if this keeps happening.</p>';
+      : '<p class="error">Checkout is not available right now. Email medcain@shishal.com if this keeps happening.</p>';
     return;
   }
 
