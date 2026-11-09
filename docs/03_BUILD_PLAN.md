@@ -38,6 +38,8 @@ Mini / Subject / Mock / Grand list IA is retired.
 
 ## UG-C — Content pipeline
 
+**Retired.** Questions are edited in the website admin. The sheet snapshot no longer deletes missing rows. The tasks below are the history of that pipeline.
+
 **UG-C.1 — Sheet tabs**
 - Description: One lean Questions CSV/tab. Subject + stem are required;
   topic/lesson/paper/marks/textbook/page/resources are optional, and MCQ
@@ -194,6 +196,8 @@ The original QBank phases follow. Do not extend them. Kept so migrations and old
 ---
 
 ## Phase 2 — Content Pipeline (Google Sheet → Supabase)
+
+**Retired.** The sheet, Apps Script, and `sync_content_csv` are no longer the editor. Questions are edited in the website admin. The tasks below are the history of that pipeline.
 
 **2.1 — Design the Google Sheet structure**
 - Description: Create a Google Sheet with one tab per content type: `Subjects`, `Topics`, `Questions`, `Tests`, `TestQuestions`. Columns mirror the database schema field names exactly (e.g. the `Questions` tab has columns `topic_name`, `question_text`, `option_a`...`option_d`, `correct_option`, `explanation_text`, `difficulty`, `required_plan`) so the sync script's mapping logic stays simple.

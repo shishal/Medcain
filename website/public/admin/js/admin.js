@@ -438,7 +438,6 @@
     function drawShell() {
       app.innerHTML = `
         <div id="msg"></div>
-        <p class="hint">Edits still sync back to the question sheet. Pull app edits before any sheet Apply.</p>
         <form id="filters" class="card filters">
           ${field('Stem, subject, or id', inputControl('query', '', 'placeholder="Search"'))}
           ${field('State', selectControl('state', states.map((item) => [item, item]), '', 'Any state'))}
@@ -663,7 +662,7 @@
 
       app.innerHTML = `
         <div id="msg"></div>
-        <p class="hint">Saves still sync back to the question sheet. Pull app edits before any sheet Apply.${q.public_code ? ` Code ${esc(q.public_code)}.` : ''}</p>
+        ${q.public_code ? `<p class="hint">Code ${esc(q.public_code)}.</p>` : ''}
         <form id="question-form" class="card" data-form="question">
           <div class="form-grid">
             ${field('Subject', selectControl('subject_id', subjects.map((item) => [item.id, item.name]), q.subject_id || '', 'Choose'))}
@@ -923,7 +922,7 @@
           <form class="form-grid" data-form="college">
             ${field('Name', inputControl('col_name', college.name || '', 'required'))}
             ${field('Short form', inputControl('col_short', college.short_form || '', 'required placeholder="MAMC"'))}
-            <p class="hint span-2">Short form is the college alias on the question sheet. Unique in this university.</p>
+            <p class="hint span-2">Short form is the college alias. Unique in this university.</p>
             <div class="actions span-2">
               <button class="btn btn-primary" type="submit" ${collegeUniversityId ? '' : 'disabled'}>${college.id ? 'Save college' : 'Add college'}</button>
               ${college.id ? '<button class="btn btn-ghost" type="button" data-action="clear-college">Cancel</button>' : ''}

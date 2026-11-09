@@ -17,9 +17,9 @@ on Profile (state, university, college, MBBS year, batch).
 
 **v1 content bank** is **Kerala University of Health Sciences (KUHS)** —
 code `KUHS`. Other universities are listed so the picker is real. If that
-university has no tagged papers yet, PYQ lists for it stay empty until sheet
-rows are added. Adding another university later is new sheet rows, not a
-schema rewrite.
+university has no tagged papers yet, PYQ lists for it stay empty until
+questions are added in the website admin. Adding another university later
+is new catalog and question rows, not a schema rewrite.
 
 Curriculum (year → subject → topic → lesson) is **shared** across universities
 and is how we **tag** questions for revision. PYQs are

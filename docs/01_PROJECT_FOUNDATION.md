@@ -131,7 +131,7 @@ copy a competitor mascot or pixel-identical layouts.
 3. Create a Codemagic account, connect it to your GitHub repo (push your Flutter project to GitHub first — Codemagic builds from a repo, not a local zip).
 4. Enroll in the Apple Developer Program ($99/yr) — do this early, approval can take a few days.
 5. Register a Google Play Console account ($25 one-time).
-6. Set up a `.env`-style secrets approach: Supabase anon key can be client-side (it's public by design, RLS is what actually protects data), but the Supabase **service_role** key (used only by the Google Sheet sync script, never the app) must never appear in the Flutter codebase or be committed to git.
+6. Set up a `.env`-style secrets approach: Supabase anon key can be client-side (it's public by design, RLS is what actually protects data), but the Supabase **service_role** key (used by Edge Functions, never the app) must never appear in the Flutter codebase or be committed to git.
 
 ## Open question for you to resolve before Phase 3
 

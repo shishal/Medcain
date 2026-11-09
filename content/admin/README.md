@@ -1,8 +1,8 @@
 # Admin catalog seeds (not routine content sync)
 
 These files are the affiliating-university + college catalog used at onboarding
-(state → university → college). They are **not** read by `sync_content_csv` /
-the Questions Google Sheet.
+(state → university → college). Questions are edited in the website admin,
+not from these files.
 
 | File | Role |
 |---|---|

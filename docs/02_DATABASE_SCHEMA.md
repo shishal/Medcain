@@ -49,7 +49,7 @@ create index idx_topics_subject on topics(subject_id);
 
 create table questions (
   id uuid primary key default gen_random_uuid(),
-  external_id text unique,        -- Phase 2.2 Google Sheet stable id (e.g. Q-MED-CARD-001)
+  external_id text unique,        -- legacy id (e.g. Q-MED-CARD-001); public_code is the id now
   topic_id uuid not null references topics(id) on delete restrict,
   question_text text not null,
   option_a text not null,
@@ -390,7 +390,7 @@ create table question_tags (
 create index idx_question_tags_tag on question_tags(tag_id);
 ```
 
-Add a `Tags` tab to the Google Sheet (comma-separated tag names per question row) so content entry can assign tags the same way it assigns subjects/topics — extend the Phase 2 sync script to handle this, creating any new tag by name automatically.
+Tags are not edited from a sheet. Assign them in the database when a tagging screen exists.
 
 ### 7.2 Plan limits (data-driven, not hardcoded)
 
@@ -732,7 +732,7 @@ list. It returns every active question. `question_text` is the stem only when
 sees a Pro card without the words. Explanations, options, and keys are not
 columns. The app masks that card and does not open the reader.
 
-`universities.slug` is `lower(code)` from sheet sync (not a sheet column).
+`universities.slug` is `lower(code)`.
 `universities.code` is the short form (`KUHS`). `colleges.short_form` is the
 campus short form (`MAMC`), unique per university, case-insensitive
 (`20261018120000_college_short_form.sql`). Pickers show
@@ -740,45 +740,26 @@ campus short form (`MAMC`), unique per university, case-insensitive
 `is_fallback` is retired — drop with
 `supabase/migrations/20260913120000_drop_university_fallback.sql`.
 
-### 9.2c One-file CSV sync
+### 9.2c Questions
 
-Apply migrations through
-`supabase/migrations/20261018180000_question_sheet_columns.sql`.
+The Google Sheet and `sync_content_csv` are retired
+(`supabase/migrations/20261109200000_retire_question_sheet.sql`). Edit
+questions in the website admin at `/admin/`. A leftover sheet Apply cannot
+insert, update, or delete questions.
 
-Routine content entry uses only `content/google_sheet/tabs/Questions.csv`
-(same columns as the Numbers question sheet; `course` is ignored).
-
-| Sheet column | Required | Stored as |
-|---|---|---|
-| `course` | no | Ignored. |
-| `state` | no | Checked against `universities.state` when filled. Not stored again. |
-| `university_alias` + `university_name` | yes | Must be the same existing `universities` row (`code` + `name`). |
-| `college_alias` + `college_name` | no | Both blank, or both matching one `colleges` row of that university (`short_form` + `name`). Blank is allowed for every exam type, including PRE PROF and INTERNAL. |
-| `exam_type` | yes | `prof`, `supply`, `pre_prof`, `internal`. Sheet values: PROF, SUPPLY, PRE PROF / Pre Proff, INTERNAL. |
-| `year` | yes | `exam_papers.exam_year`. |
-| `month` | yes | `exam_papers.exam_month` (1–12). Entry is a name such as May or June. |
-| `paper_number` | no | `exam_papers.paper_name` (Paper I, Paper II). |
-| `subject_name` | yes | Existing `subjects.name`. Sync does not create subjects. |
-| `chapter_name` | no | Free text → `topics` under that subject (created if new). |
-| `topic_name` | no | Free text → `lessons` under that chapter. Requires `chapter_name`. |
-| `question_type` | yes | `questions.kind`: `pyq_theory` or `mcq`. |
-| `marks` | no | `questions.marks`. |
-| `question_id` | no | `questions.public_code`, six digits (`000123`). Blank on sync allocates the next id and the sheet client writes it back. |
-| `question_text` | yes | Stem. Markdown is stored as text. |
-| `option_a` … `option_d`, `correct_option` | mcq only | Blank on theory. `correct_option` is A–D. |
-| `answers` | no | `question_sample_answers.body` (Pro-gated). |
-| `exp_1` | no | `questions.explanation_text`. |
-| `exp_2` | no | `questions.explanation_deep`. |
+Question identity is `questions.public_code`, six digits (`000123`). It is
+not derived from the stem, so two questions can share a stem. Older imports
+still have `questions.content_sync_source = 'questions_csv_v2'`.
 
 A sitting is one `exam_papers` row: university + college + subject + exam type
-+ year + month + paper label. Rows that share a `question_id` are one question;
-another sitting is another appearance. The same stem with a different
-`question_id` is a different question. Older rows with `exam_type = 'university'`
+(`prof`, `supply`, `pre_prof`, `internal`) + year + month + paper label.
+Several sittings on one `public_code` are one question. The same stem with a
+different id is a different question. Older rows with `exam_type = 'university'`
 are migrated to `prof`. `paper_name` may be null. `exam_month` may be null
-only on papers imported before this sheet.
+only on papers imported before months were required.
 
-**MBBS year is not a CSV column.** Table `subject_phase_defaults` maps
-the university-exam subjects to `year1`–`year4`:
+Table `subject_phase_defaults` maps the university-exam subjects to
+`year1`–`year4`:
 
 | Year | Subjects |
 |---|---|
@@ -789,37 +770,12 @@ the university-exam subjects to `year1`–`year4`:
 
 FMT is Forensic Medicine & Toxicology. PSM is Community Medicine
 (Preventive and Social Medicine). OBGYN is Obstetrics & Gynaecology.
-Allied subjects are not separate catalog rows. The question sheet does not
-create subjects — `subject_name` must already be a `subjects` row. Unknown
-subjects fail validation.
+Allied subjects are not separate catalog rows. The admin does not create a
+subject from a free-text name — `subject_name` must already be a `subjects`
+row.
 
-Admin seeds (universities, colleges) live under `content/admin/` and are
-loaded by `scripts/seed_universities_colleges.py` — not by the Questions sync.
-
-Both Google Apps Script and `scripts/sync_content_csv.py` call
-`sync_content_csv(jsonb, boolean)`. Preview (`false`) validates and returns
-insert/update/delete counts without writes. Apply (`true`) repeats validation
-and normalizes the complete snapshot in one transaction. The function is
-granted only to `service_role`.
-
-Question identity is `questions.public_code`, the six-digit `question_id`
-on the sheet. It is not derived from the stem, so two rows can share a stem
-and still be two questions. CSV-managed rows carry
-`questions.content_sync_source = 'questions_csv_v2'`. Rows absent from the
-next snapshot are deleted with dependent history after the client shows
-preview counts and receives explicit confirmation. Changing `question_id`
-therefore creates a new identity; this destructive behavior is intentional
-for this pipeline. Apply
-`supabase/migrations/20261108120000_question_public_codes.sql` before using
-`question_id`.
-
-### 9.2b Editor sheet vs database
-
-The Google Sheet is **denormalized** for a non-technical editor: one wide
-`Questions` row per appearance (university, college, exam type, year, month,
-paper, subject, chapter, topic, stem, answer, explanations). `question_id`
-ties rows to one question. Sync upserts the normalized tables above. Editors
-do not invent UUIDs. See `content/google_sheet/README.md`.
+Universities and colleges are seeded from `content/admin/` by
+`scripts/seed_universities_colleges.py`.
 
 ### 9.3 Profile academic fields
 
@@ -997,6 +953,6 @@ That account signs in with WhatsApp and lands on `/admin`. A student JWT that ca
 
 Every admin RPC calls `assert_admin()` and writes `admin_audit_log`. Password values are stripped if a client puts them in the audit detail.
 
-Question saves also insert `sheet_outbox`. Apps Script **Pull app edits** (and the start of **Sync to App**) writes those rows into the Questions tab, then the existing `sync_content_csv` import runs. Pull before a direct `scripts/sync_content_csv.py --apply`, or app-created rows that are not on the sheet yet can be deleted as missing from the snapshot. App edits of a row win over unsaved sheet edits of that same stem.
+Question saves stay in Postgres. The sheet outbox is gone, so an admin save does not queue a pull.
 
 `blocked_at` is not the 3-device `plan_suspended_at`. Blocking bans the auth user. Unblocking clears the ban.

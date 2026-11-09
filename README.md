@@ -17,7 +17,7 @@ supabase db push
 # or paste supabase/migrations/20260830140000_ug_university_pivot.sql
 ```
 
-Then bind the Google Sheet tabs in `content/google_sheet/tabs/` (including
-Universities, Lessons, Appearances, TextbookRefs) and run **MEDCAIN → Sync to App**.
+Questions, catalog, users, announcements, prices, and coupons are edited
+in the website admin at `/admin/`.
 
 Replace the WhatsApp number in `lib/core/support.dart` before a public listing.

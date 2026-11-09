@@ -317,7 +317,7 @@ class _AdminQuestionScreenState extends ConsumerState<AdminQuestionScreen> {
               ),
             ),
           Text(
-            'Free tier is plan Free. Pull app edits in the sheet before the next sync, or a blank required_plan cell resets this to free.',
+            'Free tier is plan Free.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: Spacing.md),
