@@ -16,7 +16,8 @@ import '../../../profile/presentation/providers/current_plan_provider.dart';
 import '../../../profile/presentation/providers/user_profile_provider.dart';
 import '../../../progress/presentation/providers/ug_home_providers.dart';
 
-/// Greeting: brand + Docci + name + year/university. Plan pill is display-only.
+/// Greeting: brand + Docci + name + year/university.
+/// A free plan shows an Upgrade control beside the pill that opens Plans.
 class HomeHeroBanner extends ConsumerWidget {
   const HomeHeroBanner({super.key});
 
@@ -95,6 +96,7 @@ class HomeHeroBanner extends ConsumerWidget {
                       children: [
                         if (plan != null) ...[
                           _PlanPill(plan: plan),
+                          if (plan == PlanTier.free) const _UpgradePlanLink(),
                           const SizedBox(width: Spacing.sm),
                         ],
                         Expanded(
@@ -147,7 +149,7 @@ class _NotificationsBellButton extends ConsumerWidget {
   }
 }
 
-/// Display-only plan badge. Gold is reserved for paid tiers (see
+/// Plan badge. Gold is reserved for paid tiers (see
 /// docs/01_PROJECT_FOUNDATION.md) — a free account used to wear a gold chip.
 class _PlanPill extends StatelessWidget {
   const _PlanPill({required this.plan});
@@ -174,6 +176,33 @@ class _PlanPill extends StatelessWidget {
         style: Theme.of(context).textTheme.labelSmall
             ?.copyWith(color: fg, fontWeight: FontWeight.w700),
       ),
+    );
+  }
+}
+
+/// Sits beside the Free pill and opens the plan comparison screen.
+class _UpgradePlanLink extends StatelessWidget {
+  const _UpgradePlanLink();
+
+  @override
+  Widget build(BuildContext context) {
+    final comic = ComicColors.of(context);
+    final style = Theme.of(context).textTheme.labelSmall?.copyWith(
+      color: comic.proGold,
+      fontWeight: FontWeight.w700,
+    );
+
+    return TextButton(
+      style: TextButton.styleFrom(
+        foregroundColor: comic.proGold,
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: Size.zero,
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
+        textStyle: style,
+      ),
+      onPressed: () => context.push(AppRoutes.upgrade),
+      child: const Text('Upgrade'),
     );
   }
 }
