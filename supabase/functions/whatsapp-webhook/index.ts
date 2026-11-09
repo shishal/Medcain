@@ -68,13 +68,21 @@ Deno.serve(async (req) => {
   }
 
   const expectedNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? '';
-  for (const message of extractInboundMessages(payload)) {
+  const messages = extractInboundMessages(payload);
+  if (messages.length === 0) {
+    console.error('webhook had no inbound text messages');
+  }
+  for (const message of messages) {
+    // A wrong Phone number ID used to drop the message and leave the app
+    // waiting. The login code and the sender's phone are the real checks.
     if (
       expectedNumberId.length > 0 &&
       message.phoneNumberId != null &&
       message.phoneNumberId !== expectedNumberId
     ) {
-      continue;
+      console.error(
+        'phone number id differs from WHATSAPP_PHONE_NUMBER_ID; accepting the message',
+      );
     }
     const outcome = await verifyMessage(service, message);
     if (outcome === 'retry') {
@@ -117,7 +125,10 @@ async function verifyMessage(
   message: InboundWhatsAppMessage,
 ): Promise<VerifyOutcome> {
   const code = parseLoginCode(message.body);
-  if (code == null) return 'ok';
+  if (code == null) {
+    console.error('ignored message: body is not a login code');
+    return 'ok';
+  }
 
   const { data: seen, error: seenError } = await service
     .from('whatsapp_auth_challenges')
@@ -142,6 +153,11 @@ async function verifyMessage(
     return 'retry';
   }
   if (challenge == null || !samePhone(challenge.phone, message.from)) {
+    console.error(
+      challenge == null
+        ? 'ignored message: no pending challenge for that code'
+        : 'ignored message: sender phone does not match the challenge',
+    );
     return 'ok';
   }
 
