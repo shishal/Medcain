@@ -10,6 +10,7 @@ import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
 import '../../../../core/widgets/comic_card.dart';
 import '../../../bookmarks/presentation/widgets/lesson_bookmark_icon_button.dart';
+import '../../../practice/domain/practice_builder_draft.dart';
 import '../../../profile/domain/plan_tier.dart';
 import '../../../profile/presentation/providers/current_plan_provider.dart';
 import '../../../pyq/domain/pyq_models.dart';
@@ -211,13 +212,24 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
             for (final t in feed.teasers)
               if (_formatFilter == null || t.format == _formatFilter) t,
           ];
+          final hasMcq = feed.teasers.any((teaser) => teaser.kind == 'mcq');
           return ListView(
             padding: const EdgeInsets.all(Spacing.md),
             children: [
-              // A permanently disabled "Practice · upcoming" button used to
-              // sit here, above the real actions. Practice mode gets its own
-              // tab when it ships; a dead control in the best spot on the
-              // screen is worse than no control.
+              if (hasMcq) ...[
+                FilledButton.icon(
+                  onPressed: () => context.go(
+                    AppRoutes.practice,
+                    extra: PracticeBuilderDraft(
+                      lessonIds: {widget.lessonId},
+                      scopeLabel: widget.title,
+                    ),
+                  ),
+                  icon: const Icon(Icons.quiz_outlined),
+                  label: const Text('Practice MCQs'),
+                ),
+                const SizedBox(height: Spacing.sm),
+              ],
               FilledButton.tonal(
                 onPressed: () async {
                   final result = await ref

@@ -30,9 +30,25 @@ class PracticeBuilderForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lessonMessage = draft.lessonScopeMessage;
+
     return ListView(
       padding: const EdgeInsets.all(Spacing.lg),
       children: [
+        if (lessonMessage != null) ...[
+          ComicCard(
+            child: Row(
+              children: [
+                Expanded(child: Text(lessonMessage)),
+                TextButton(
+                  onPressed: () => onChanged(draft.withoutLessonScope()),
+                  child: const Text('All lessons'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Spacing.lg),
+        ],
         _SourceFilterSection(
           selected: draft.sourceFilter,
           onSelected: (value) => onChanged(draft.copyWith(sourceFilter: value)),

@@ -179,6 +179,17 @@ class _TestPlayerScreenState extends ConsumerState<TestPlayerScreen>
 
   void _exit(BuildContext context) {
     _flush();
+    final practice =
+        ref
+            .read(playerSessionProvider(widget.testId))
+            .asData
+            ?.value
+            .isEphemeralPractice ??
+        false;
+    if (practice) {
+      context.go(AppRoutes.practice);
+      return;
+    }
     if (context.canPop()) {
       context.pop();
       return;

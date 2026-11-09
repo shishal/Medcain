@@ -19,7 +19,8 @@ import '../../features/profile/domain/plan_tier.dart';
 import '../../features/profile/presentation/providers/user_profile_provider.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/upgrade_prompt_screen.dart';
-import '../../features/practice/presentation/screens/practice_upcoming_screen.dart';
+import '../../features/practice/domain/practice_builder_draft.dart';
+import '../../features/practice/presentation/screens/practice_builder_screen.dart';
 import '../../features/progress/presentation/screens/progress_screens.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/pyq/presentation/open_pyq_reader.dart';
@@ -178,7 +179,12 @@ GoRouter goRouter(Ref ref) {
             routes: [
               comicGoRoute(
                 path: AppRoutes.practice,
-                builder: (context, state) => const PracticeUpcomingScreen(),
+                builder: (context, state) {
+                  final extra = state.extra;
+                  return PracticeBuilderScreen(
+                    initialDraft: extra is PracticeBuilderDraft ? extra : null,
+                  );
+                },
               ),
             ],
           ),

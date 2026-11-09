@@ -32,7 +32,8 @@ class PracticeRepository {
             .select(
               '${SubjectColumns.id},'
               '${SubjectColumns.name},'
-              '${SubjectColumns.displayOrder}',
+              '${SubjectColumns.displayOrder},'
+              '${SubjectColumns.mbbsPhaseId}',
             )
             .order(SubjectColumns.displayOrder),
         _client
@@ -48,11 +49,34 @@ class PracticeRepository {
             .from(Tables.tags)
             .select('${TagColumns.id},${TagColumns.name}')
             .order(TagColumns.name),
+        _client
+            .from(Tables.mbbsPhases)
+            .select(
+              '${MbbsPhaseColumns.id},'
+              '${MbbsPhaseColumns.name},'
+              '${MbbsPhaseColumns.displayOrder}',
+            ),
       ]);
+
+      final phases = <String, Map<String, dynamic>>{
+        for (final row
+            in (results[3] as List<dynamic>).cast<Map<String, dynamic>>())
+          row[MbbsPhaseColumns.id] as String: row,
+      };
+      final subjects =
+          [
+            for (final row
+                in (results[0] as List<dynamic>).cast<Map<String, dynamic>>())
+              _subjectFromRow(row, phases),
+          ]..sort((a, b) {
+            final byPhase = a.phaseOrder.compareTo(b.phaseOrder);
+            if (byPhase != 0) return byPhase;
+            return a.displayOrder.compareTo(b.displayOrder);
+          });
 
       return Success(
         PracticeCatalog(
-          subjects: _mapRows(results[0], Subject.fromJson),
+          subjects: subjects,
           topics: _mapRows(results[1], Topic.fromJson),
           tags: _mapRows(results[2], PracticeTag.fromJson),
         ),
@@ -124,6 +148,9 @@ class PracticeRepository {
         RpcFunctions.createPracticeSession,
         params: {
           CreatePracticeSessionParams.topicIds: draft.resolvedTopicIds(catalog),
+          CreatePracticeSessionParams.subjectIds: draft.resolvedSubjectIds(
+            catalog,
+          ),
           CreatePracticeSessionParams.tagIds: draft.resolvedTagIds,
           CreatePracticeSessionParams.difficulties: draft.resolvedDifficulties
               ?.map((d) => d.dbValue)
@@ -226,6 +253,21 @@ class PracticeRepository {
         ),
       );
     }
+  }
+
+  static Subject _subjectFromRow(
+    Map<String, dynamic> row,
+    Map<String, Map<String, dynamic>> phases,
+  ) {
+    final phaseId = row[SubjectColumns.mbbsPhaseId] as String?;
+    final phase = phaseId == null ? null : phases[phaseId];
+    return Subject.fromJson(
+      row,
+      phaseName: phase?[MbbsPhaseColumns.name] as String?,
+      phaseOrder: phase == null
+          ? 0
+          : _asInt(phase[MbbsPhaseColumns.displayOrder]),
+    );
   }
 
   static List<T> _mapRows<T>(

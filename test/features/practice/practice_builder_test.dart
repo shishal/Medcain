@@ -118,14 +118,19 @@ void main() {
       expect(draft.resolvedTopicIds(catalog), isNull);
     });
 
-    test('explicit topics win', () {
-      const draft = PracticeBuilderDraft(selectedTopicIds: {'card'});
+    test('explicit topics win and are not also sent as subjects', () {
+      const draft = PracticeBuilderDraft(
+        selectedSubjectIds: {'med'},
+        selectedTopicIds: {'card'},
+      );
       expect(draft.resolvedTopicIds(catalog), ['card']);
+      expect(draft.resolvedSubjectIds(catalog), isNull);
     });
 
-    test('subject-only selection expands to that subject\'s topics', () {
+    test('subject-only selection is sent as subjects, not every topic', () {
       const draft = PracticeBuilderDraft(selectedSubjectIds: {'med'});
-      expect(draft.resolvedTopicIds(catalog), ['card', 'gi']);
+      expect(draft.resolvedTopicIds(catalog), isNull);
+      expect(draft.resolvedSubjectIds(catalog), ['med']);
     });
   });
 

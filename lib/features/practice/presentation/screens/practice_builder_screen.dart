@@ -41,6 +41,17 @@ class _PracticeBuilderScreenState extends ConsumerState<PracticeBuilderScreen> {
     _draft = widget.initialDraft ?? const PracticeBuilderDraft();
   }
 
+  @override
+  void didUpdateWidget(PracticeBuilderScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final next = widget.initialDraft;
+    // A new extra from "Practice similar" or a lesson replaces the form.
+    // A tab revisit passes null and must keep what the student already set.
+    if (next != null && !identical(next, oldWidget.initialDraft)) {
+      _draft = next;
+    }
+  }
+
   Future<void> _submit({
     required PracticeBuilderDraft draft,
     required PracticeCatalog catalog,
@@ -86,16 +97,7 @@ class _PracticeBuilderScreenState extends ConsumerState<PracticeBuilderScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Practice'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go(AppRoutes.home);
-            }
-          },
-        ),
+        automaticallyImplyLeading: false,
         actions: [
           if (catalogAsync.hasValue &&
               catalogAsync.requireValue.subjects.isNotEmpty &&

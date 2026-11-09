@@ -93,27 +93,37 @@ class _PracticeBuilderFilterSheetState
                 Expanded(
                   child: ListView(
                     children: [
-                      _ChipBlock(
-                        title: 'Subjects',
-                        helper: _draft.selectedSubjectIds.isEmpty
-                            ? 'None chosen — all subjects'
-                            : null,
-                        children: [
-                          for (final subject in widget.catalog.subjects)
-                            FilterChip(
-                              label: Text(subject.name),
-                              selected: _draft.selectedSubjectIds.contains(
-                                subject.id,
-                              ),
-                              onSelected: (_) => _set(
-                                _draft.toggleSubject(
+                      for (
+                        var i = 0;
+                        i < widget.catalog.subjectsByPhase.length;
+                        i++
+                      ) ...[
+                        if (i > 0) const SizedBox(height: Spacing.md),
+                        _ChipBlock(
+                          title:
+                              widget.catalog.subjectsByPhase[i].phaseName ??
+                              'Subjects',
+                          helper: i == 0 && _draft.selectedSubjectIds.isEmpty
+                              ? 'None chosen — all subjects'
+                              : null,
+                          children: [
+                            for (final subject
+                                in widget.catalog.subjectsByPhase[i].subjects)
+                              FilterChip(
+                                label: Text(subject.name),
+                                selected: _draft.selectedSubjectIds.contains(
                                   subject.id,
-                                  widget.catalog,
+                                ),
+                                onSelected: (_) => _set(
+                                  _draft.toggleSubject(
+                                    subject.id,
+                                    widget.catalog,
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: Spacing.md),
                       _ChipBlock(
                         title: 'Topics',

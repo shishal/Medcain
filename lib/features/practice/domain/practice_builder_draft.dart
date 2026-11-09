@@ -24,6 +24,7 @@ class PracticeBuilderDraft {
     this.timerMinutes = 10,
     this.negativeMarking = false,
     this.lessonIds = const {},
+    this.scopeLabel,
   });
 
   /// Empty set = all subjects. [Set] so toggling a chip is O(1) contains-check.
@@ -41,6 +42,19 @@ class PracticeBuilderDraft {
 
   /// When set, the generator only picks MCQs on these lessons.
   final Set<String> lessonIds;
+
+  /// Lesson title shown on the builder. Not sent to Postgres.
+  final String? scopeLabel;
+
+  /// Banner copy when the session is limited to [lessonIds].
+  String? get lessonScopeMessage {
+    if (lessonIds.isEmpty) return null;
+    final label = scopeLabel?.trim();
+    if (label != null && label.isNotEmpty) {
+      return 'Only MCQs from $label';
+    }
+    return 'Only MCQs from your last lesson';
+  }
 
   /// True when any subject / topic / tag chip is on.
   bool get hasContentFilters =>
@@ -78,6 +92,9 @@ class PracticeBuilderDraft {
             as String?;
 
     return PracticeBuilderDraft(
+      selectedSubjectIds: _stringSet(
+        criteria[PracticeFilterCriteriaKeys.subjectIds],
+      ),
       selectedTopicIds: _stringSet(
         criteria[PracticeFilterCriteriaKeys.topicIds],
       ),
@@ -124,17 +141,24 @@ class PracticeBuilderDraft {
     );
   }
 
-  /// Topic IDs to send to the RPC. Null means "no topic filter" (all).
+  /// Topic IDs to send to the RPC. Null means "no topic filter".
   ///
-  /// If the student picked subjects but no topics, send every topic under
-  /// those subjects so Medicine-only doesn't accidentally become "all".
+  /// A subject-only selection is sent as [resolvedSubjectIds] instead, so
+  /// paper-tagged MCQs with an empty topic still match that subject.
   List<String>? resolvedTopicIds(PracticeCatalog catalog) {
-    if (selectedTopicIds.isNotEmpty) return selectedTopicIds.toList();
-    if (selectedSubjectIds.isEmpty) return null;
-    final ids = catalog
-        .topicsForSubjects(selectedSubjectIds)
-        .map((t) => t.id)
-        .toList();
+    if (selectedTopicIds.isEmpty) return null;
+    final known = catalog.topics.map((topic) => topic.id).toSet();
+    final ids = selectedTopicIds.where(known.contains).toList();
+    return ids.isEmpty ? null : ids;
+  }
+
+  /// Subject IDs to send when no topic is chosen. Null means every subject.
+  ///
+  /// Ignored once topics are selected — a topic is already inside a subject.
+  List<String>? resolvedSubjectIds(PracticeCatalog catalog) {
+    if (selectedTopicIds.isNotEmpty || selectedSubjectIds.isEmpty) return null;
+    final known = catalog.subjects.map((subject) => subject.id).toSet();
+    final ids = selectedSubjectIds.where(known.contains).toList();
     return ids.isEmpty ? null : ids;
   }
 
@@ -237,6 +261,8 @@ class PracticeBuilderDraft {
     int? timerMinutes,
     bool? negativeMarking,
     Set<String>? lessonIds,
+    String? scopeLabel,
+    bool clearScopeLabel = false,
   }) {
     return PracticeBuilderDraft(
       selectedSubjectIds: selectedSubjectIds ?? this.selectedSubjectIds,
@@ -251,8 +277,13 @@ class PracticeBuilderDraft {
       timerMinutes: timerMinutes ?? this.timerMinutes,
       negativeMarking: negativeMarking ?? this.negativeMarking,
       lessonIds: lessonIds ?? this.lessonIds,
+      scopeLabel: clearScopeLabel ? null : (scopeLabel ?? this.scopeLabel),
     );
   }
+
+  /// Drop the lesson limit and practice the whole bank again.
+  PracticeBuilderDraft withoutLessonScope() =>
+      copyWith(lessonIds: const {}, clearScopeLabel: true);
 
   static Map<String, dynamic> _asMap(Object? value) {
     if (value is Map<String, dynamic>) return value;

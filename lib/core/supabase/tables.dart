@@ -344,6 +344,7 @@ abstract final class CreatePracticeSessionParams {
   static const timerMinutes = 'p_timer_minutes';
   static const negativeMarking = 'p_negative_marking';
   static const lessonIds = 'p_lesson_ids';
+  static const subjectIds = 'p_subject_ids';
 }
 
 /// Keys inside `tests.practice_filter_criteria` (written by `create_practice_session`).
@@ -357,6 +358,7 @@ abstract final class PracticeFilterCriteriaKeys {
   static const negativeMarking = 'negative_marking';
   static const timerMinutes = 'timer_minutes';
   static const lessonIds = 'lesson_ids';
+  static const subjectIds = 'subject_ids';
 }
 
 abstract final class UniversityColumns {

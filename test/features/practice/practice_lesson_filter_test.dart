@@ -11,4 +11,19 @@ void main() {
     expect(draft.lessonIds, {'lesson-1'});
     expect(draft.copyWith(questionCount: 5).lessonIds, {'lesson-1'});
   });
+
+  test('lesson scope can be cleared without dropping other filters', () {
+    const draft = PracticeBuilderDraft(
+      lessonIds: {'lesson-1'},
+      scopeLabel: 'Cell',
+      sourceFilter: QuestionSourceFilter.all,
+    );
+    expect(draft.lessonScopeMessage, 'Only MCQs from Cell');
+
+    final cleared = draft.withoutLessonScope();
+    expect(cleared.lessonIds, isEmpty);
+    expect(cleared.scopeLabel, isNull);
+    expect(cleared.lessonScopeMessage, isNull);
+    expect(cleared.sourceFilter, QuestionSourceFilter.all);
+  });
 }

@@ -16,6 +16,30 @@ class PracticeCatalog {
     if (subjectIds.isEmpty) return topics;
     return topics.where((t) => subjectIds.contains(t.subjectId)).toList();
   }
+
+  /// One group when years aren't loaded, otherwise one group per year.
+  List<SubjectPhaseGroup> get subjectsByPhase {
+    final sorted = [...subjects]
+      ..sort((a, b) {
+        final byPhase = a.phaseOrder.compareTo(b.phaseOrder);
+        if (byPhase != 0) return byPhase;
+        final byName = (a.phaseName ?? '').compareTo(b.phaseName ?? '');
+        if (byName != 0) return byName;
+        return a.displayOrder.compareTo(b.displayOrder);
+      });
+
+    final groups = <String, List<Subject>>{};
+    for (final subject in sorted) {
+      groups.putIfAbsent(subject.phaseName ?? '', () => []).add(subject);
+    }
+    return [
+      for (final entry in groups.entries)
+        SubjectPhaseGroup(
+          phaseName: entry.key.isEmpty ? null : entry.key,
+          subjects: entry.value,
+        ),
+    ];
+  }
 }
 
 class Subject {
@@ -23,19 +47,43 @@ class Subject {
     required this.id,
     required this.name,
     required this.displayOrder,
+    this.phaseId,
+    this.phaseName,
+    this.phaseOrder = 0,
   });
 
   final String id;
   final String name;
   final int displayOrder;
 
-  factory Subject.fromJson(Map<String, dynamic> json) {
+  /// MBBS year this subject belongs to. Null on older rows and in tests.
+  final String? phaseId;
+  final String? phaseName;
+  final int phaseOrder;
+
+  factory Subject.fromJson(
+    Map<String, dynamic> json, {
+    String? phaseName,
+    int phaseOrder = 0,
+  }) {
     return Subject(
       id: json[SubjectColumns.id] as String,
       name: json[SubjectColumns.name] as String,
       displayOrder: _asInt(json[SubjectColumns.displayOrder]),
+      phaseId: json[SubjectColumns.mbbsPhaseId] as String?,
+      phaseName: phaseName,
+      phaseOrder: phaseOrder,
     );
   }
+}
+
+/// Subjects grouped by MBBS year, in year then subject order.
+class SubjectPhaseGroup {
+  const SubjectPhaseGroup({required this.phaseName, required this.subjects});
+
+  /// Null when the catalog has no year labels — the sheet says "Subjects".
+  final String? phaseName;
+  final List<Subject> subjects;
 }
 
 class Topic {
