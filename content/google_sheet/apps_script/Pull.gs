@@ -6,7 +6,20 @@
  * Other sheet-only edits still flow into Postgres on Sync to App.
  */
 
-var PULL_HEADERS = ['question_id', 'required_plan', 'is_active'];
+var PULL_HEADERS = [
+  'question_id',
+  'required_plan',
+  'is_active',
+  'textbook_title',
+  'textbook_authors',
+  'textbook_edition',
+  'page',
+  'section_heading',
+  'resource_title',
+  'resource_url',
+  'resource_source_label',
+  'resource_is_free',
+];
 
 function pullAppEdits() {
   var ui = SpreadsheetApp.getUi();

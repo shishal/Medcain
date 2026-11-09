@@ -1,0 +1,261 @@
+/* Admin console. Sits on top of site.css tokens. */
+
+/* .btn sets display, which would otherwise beat the hidden attribute. */
+[hidden] {
+  display: none !important;
+}
+
+#sign-out {
+  padding: 8px 14px;
+  font-size: 0.875rem;
+}
+
+.admin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 0 0 12px;
+}
+
+.admin-nav a {
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.admin-nav a:hover,
+.admin-nav a[aria-current='page'] {
+  color: var(--coral);
+}
+
+.admin h1 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  margin-bottom: var(--space-sm);
+}
+
+.admin .lede,
+.admin .hint {
+  color: var(--muted);
+}
+
+.admin .hint {
+  font-size: 0.875rem;
+  margin-top: -8px;
+}
+
+.msg {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  margin: 0 0 var(--space-md);
+}
+
+.msg.error {
+  background: color-mix(in srgb, #c0392b 16%, var(--surface));
+}
+
+.msg.ok {
+  background: var(--coral-soft);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.tile {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.tile:hover {
+  border-color: var(--coral);
+  color: var(--ink);
+}
+
+.tile strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.tile span {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.admin label {
+  display: block;
+  font-weight: 650;
+  margin-bottom: var(--space-xs);
+}
+
+.admin input,
+.admin select,
+.admin textarea {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: var(--space-md);
+  border: 1px solid color-mix(in srgb, var(--ink) 28%, var(--line));
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.admin input::placeholder,
+.admin textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.admin input:focus,
+.admin select:focus,
+.admin textarea:focus {
+  outline: 2px solid var(--coral);
+  outline-offset: 1px;
+  border-color: var(--coral);
+}
+
+.admin textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.filters,
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0 12px;
+}
+
+.span-2 {
+  grid-column: 1 / -1;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  margin-bottom: var(--space-md);
+}
+
+.check input {
+  width: auto;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.admin .btn-small {
+  padding: 8px 14px;
+  font-size: 0.875rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-bottom: var(--space-md);
+}
+
+.admin table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin th,
+.admin td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.admin th {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.stem {
+  max-width: 420px;
+}
+
+.badge-inline {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--coral-soft);
+  color: var(--coral-deep);
+}
+
+.md-field .md-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.md-field .md-tabs button[aria-pressed='true'] {
+  background: var(--coral);
+  color: #fff;
+  border-color: transparent;
+}
+
+.md-preview {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: var(--space-md);
+  background: var(--bg);
+  min-height: 80px;
+}
+
+.md-preview :first-child {
+  margin-top: 0;
+}
+
+.md-preview pre,
+.md-preview code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+}
+
+.md-preview pre {
+  overflow-x: auto;
+  padding: 8px;
+  background: var(--surface);
+  border-radius: var(--radius);
+}
+
+.pager {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: var(--space-md) 0;
+}
+
+.section-title {
+  margin-top: var(--space-lg);
+}

@@ -23,6 +23,12 @@ Secret keys stay on the Supabase Edge Functions, not in this image.
 
 `/refunds/` redirects to `/account/`.
 
+`/admin/` is the operator console (questions, catalog, users, announcements,
+prices, coupons). It is not linked from the marketing pages. Sign-in is the
+same WhatsApp flow as checkout, and every save goes through an admin-only
+database function. The container writes `admin/config.js` from the same public
+`SUPABASE_URL` and `SUPABASE_ANON_KEY` as checkout.
+
 Support mail goes to `medcain@shishal.com`.
 
 ## Run with Docker Compose

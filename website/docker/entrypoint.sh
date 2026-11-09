@@ -3,7 +3,6 @@
 # and a script it cannot exec shows up as "not found".
 set -eu
 
-out=/usr/share/nginx/html/checkout/config.js
 url=${SUPABASE_URL:-}
 key=${SUPABASE_ANON_KEY:-}
 
@@ -31,12 +30,24 @@ case "$url" in
   *YOUR_PROJECT*) url="" ;;
 esac
 
+write_public_config() {
+  dest=$1
+  var_name=$2
+  mkdir -p "$(dirname "$dest")"
+  if [ -z "$url" ] || [ -z "$key" ]; then
+    printf 'window.%s = {"supabaseUrl":"https://YOUR_PROJECT_REF.supabase.co","supabaseAnonKey":""};\n' "$var_name" >"$dest"
+  else
+    printf 'window.%s = {"supabaseUrl":"%s","supabaseAnonKey":"%s"};\n' "$var_name" "$url" "$key" >"$dest"
+  fi
+}
+
+write_public_config /usr/share/nginx/html/checkout/config.js CHECKOUT_CONFIG
+write_public_config /usr/share/nginx/html/admin/config.js ADMIN_CONFIG
+
 if [ -z "$url" ] || [ -z "$key" ]; then
-  printf '%s\n' 'window.CHECKOUT_CONFIG = {"supabaseUrl":"https://YOUR_PROJECT_REF.supabase.co","supabaseAnonKey":""};' >"$out"
-  echo "checkout config: SUPABASE_URL / SUPABASE_ANON_KEY missing (url_len=${#url} key_len=${#key}); checkout will show unavailable" >&2
+  echo "site config: SUPABASE_URL / SUPABASE_ANON_KEY missing (url_len=${#url} key_len=${#key}); checkout and admin will show unavailable" >&2
 else
-  printf 'window.CHECKOUT_CONFIG = {"supabaseUrl":"%s","supabaseAnonKey":"%s"};\n' "$url" "$key" >"$out"
-  echo "checkout config: wrote public Supabase settings" >&2
+  echo "site config: wrote public Supabase settings for checkout and admin" >&2
 fi
 
 exec /docker-entrypoint.sh "$@"
