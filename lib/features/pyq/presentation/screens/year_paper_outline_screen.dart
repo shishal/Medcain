@@ -99,13 +99,8 @@ class YearPaperOutlineScreen extends ConsumerWidget {
             teasers: feed.teasers,
             year: year,
             tab: tab,
-            paperName: filter.paperName,
-            universityId: filter.universityId,
-            examType: filter.examType,
-            isMcq: filter.isMcq,
+            filter: filter,
             sittingScope: scope,
-            topicId: filter.topicId,
-            priorities: filter.priorities,
           );
           return _OutlineBody(
             year: year,

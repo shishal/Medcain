@@ -10,7 +10,9 @@ import '../../../../core/widgets/comic_card.dart';
 import '../../../catalog/presentation/providers/catalog_providers.dart';
 import '../../../practice/domain/practice_enums.dart';
 import '../../../profile/presentation/providers/user_profile_provider.dart';
+import '../../domain/pyq_models.dart';
 import '../../domain/pyq_sections.dart';
+import '../../domain/subject_pyq_filters.dart';
 import '../providers/pyq_providers.dart';
 import '../widgets/subject_pyq_filter_sheet.dart';
 
@@ -86,22 +88,36 @@ class SubjectPyqScreen extends ConsumerWidget {
           );
           final activeSummary = filter.isActive
               ? [
-                  if (filter.universityId != null) codeOf(filter.universityId!),
-                  if (filter.year != null) '${filter.year}',
-                  if (filter.examType != null) filter.examType!.label,
-                  if (filter.paperName != null) filter.paperName!,
-                  if (filter.isMcq != null) filter.isMcq! ? 'MCQ' : 'Theory',
-                  if (filter.topicId != null)
+                  if (filter.universityIds.isNotEmpty)
+                    (filter.universityIds.map(codeOf).toList()..sort()).join(
+                      ', ',
+                    ),
+                  if (filter.years.isNotEmpty)
+                    (filter.years.toList()..sort((a, b) => b.compareTo(a)))
+                        .join(', '),
+                  if (filter.examTypes.isNotEmpty)
+                    PaperExamType.values
+                        .where(filter.examTypes.contains)
+                        .map((type) => type.label)
+                        .join(', '),
+                  if (filter.paperNames.isNotEmpty)
+                    (filter.paperNames.toList()..sort()).join(', '),
+                  if (filter.questionKinds.isNotEmpty)
+                    PyqQuestionKind.values
+                        .where(filter.questionKinds.contains)
+                        .map((kind) => kind.label)
+                        .join(', '),
+                  if (filter.topicIds.isNotEmpty)
                     feed.chapters
-                        .where((c) => c.id == filter.topicId)
+                        .where((c) => filter.topicIds.contains(c.id))
                         .map((c) => c.name)
-                        .firstOrNull,
+                        .join(', '),
                   if (filter.priorities.isNotEmpty)
                     QuestionPriority.values
                         .where(filter.priorities.contains)
                         .map((p) => p.label)
                         .join(', '),
-                ].whereType<String>().join(' · ')
+                ].where((part) => part.isNotEmpty).join(' · ')
               : null;
 
           void open(PyqSittingGroup group) => context.push(

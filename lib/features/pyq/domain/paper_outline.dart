@@ -1,7 +1,6 @@
 import 'pyq_models.dart';
 import 'question_format.dart';
 import 'subject_pyq_filters.dart';
-import '../../practice/domain/practice_enums.dart';
 
 /// Question-type tabs on a year's paper outline (Screen 3).
 enum PaperOutlineTab {
@@ -40,28 +39,27 @@ bool matchesOutlineTab(PyqTeaser teaser, PaperOutlineTab tab) {
 }
 
 /// Teasers for one year + tab, merged across Paper I / II.
+///
+/// [year] is the paper row that was opened. [filter] still applies, so a
+/// multi-year pick does not pull the other years into this outline.
 List<PyqTeaser> teasersForOutlineTab({
   required List<PyqTeaser> teasers,
   required int year,
   required PaperOutlineTab tab,
-  String? paperName,
-  String? universityId,
-  PaperExamType? examType,
-  bool? isMcq,
+  SubjectPyqFilter filter = const SubjectPyqFilter(),
   bool Function(PaperSitting sitting)? sittingScope,
-  String? topicId,
-  Set<QuestionPriority> priorities = const {},
 }) {
   final filtered = filterSubjectPyqs(
     teasers: teasers,
-    paperName: paperName,
-    universityId: universityId,
-    examType: examType,
-    isMcq: isMcq,
+    paperNames: filter.paperNames,
+    universityIds: filter.universityIds,
+    examTypes: filter.examTypes,
+    questionKinds: filter.questionKinds,
+    years: filter.years,
     year: year,
     sittingScope: sittingScope,
-    topicId: topicId,
-    priorities: priorities,
+    topicIds: filter.topicIds,
+    priorities: filter.priorities,
   );
   final matching = [
     for (final t in filtered)

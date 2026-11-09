@@ -30,6 +30,7 @@ Future<void> showSubjectPyqFilterSheet({
 
 /// University > Year > Exam type > Paper > MCQ/Theory, then chapter and
 /// priority. Each level only offers what exists under the picks above it.
+/// Every row can combine several values; All clears that row.
 class SubjectPyqFilterSheet extends ConsumerWidget {
   const SubjectPyqFilterSheet({
     super.key,
@@ -86,14 +87,15 @@ class SubjectPyqFilterSheet extends ConsumerWidget {
                           _ChipGroup(
                             title: 'University',
                             allLabel: 'All universities',
-                            isAllSelected: filter.universityId == null,
-                            onAll: () => notifier.setUniversity(null),
+                            isAllSelected: filter.universityIds.isEmpty,
+                            onAll: notifier.clearUniversities,
                             chips: [
                               for (final id in options.universityIds)
                                 _ChipData(
                                   label: universityCodes[id] ?? 'University',
-                                  selected: filter.universityId == id,
-                                  onSelected: () => notifier.setUniversity(id),
+                                  selected: filter.universityIds.contains(id),
+                                  onSelected: () =>
+                                      notifier.toggleUniversity(id),
                                 ),
                             ],
                           ),
@@ -101,14 +103,14 @@ class SubjectPyqFilterSheet extends ConsumerWidget {
                           _ChipGroup(
                             title: 'Year',
                             allLabel: 'All years',
-                            isAllSelected: filter.year == null,
-                            onAll: () => notifier.setYear(null),
+                            isAllSelected: filter.years.isEmpty,
+                            onAll: notifier.clearYears,
                             chips: [
                               for (final year in options.years)
                                 _ChipData(
                                   label: '$year',
-                                  selected: filter.year == year,
-                                  onSelected: () => notifier.setYear(year),
+                                  selected: filter.years.contains(year),
+                                  onSelected: () => notifier.toggleYear(year),
                                 ),
                             ],
                           ),
@@ -116,14 +118,15 @@ class SubjectPyqFilterSheet extends ConsumerWidget {
                           _ChipGroup(
                             title: 'Exam type',
                             allLabel: 'All types',
-                            isAllSelected: filter.examType == null,
-                            onAll: () => notifier.setExamType(null),
+                            isAllSelected: filter.examTypes.isEmpty,
+                            onAll: notifier.clearExamTypes,
                             chips: [
                               for (final type in options.examTypes)
                                 _ChipData(
                                   label: type.label,
-                                  selected: filter.examType == type,
-                                  onSelected: () => notifier.setExamType(type),
+                                  selected: filter.examTypes.contains(type),
+                                  onSelected: () =>
+                                      notifier.toggleExamType(type),
                                 ),
                             ],
                           ),
@@ -131,49 +134,48 @@ class SubjectPyqFilterSheet extends ConsumerWidget {
                           _ChipGroup(
                             title: 'Paper',
                             allLabel: 'All papers',
-                            isAllSelected: filter.paperName == null,
-                            onAll: () => notifier.setPaperName(null),
+                            isAllSelected: filter.paperNames.isEmpty,
+                            onAll: notifier.clearPaperNames,
                             chips: [
                               for (final name in options.paperNames)
                                 _ChipData(
                                   label: name,
-                                  selected: filter.paperName == name,
-                                  onSelected: () => notifier.setPaperName(name),
+                                  selected: filter.paperNames.contains(name),
+                                  onSelected: () =>
+                                      notifier.togglePaperName(name),
                                 ),
                             ],
                           ),
                         _ChipGroup(
                           title: 'Question type',
                           allLabel: 'MCQ + Theory',
-                          isAllSelected: filter.isMcq == null,
-                          onAll: () => notifier.setFormat(),
+                          isAllSelected: filter.questionKinds.isEmpty,
+                          onAll: notifier.clearQuestionKinds,
                           chips: [
-                            _ChipData(
-                              label: 'MCQ',
-                              selected: filter.isMcq == true,
-                              onSelected: () => notifier.setFormat(isMcq: true),
-                            ),
-                            _ChipData(
-                              label: 'Theory',
-                              selected: filter.isMcq == false,
-                              onSelected: () =>
-                                  notifier.setFormat(isMcq: false),
-                            ),
+                            for (final kind in PyqQuestionKind.values)
+                              _ChipData(
+                                label: kind.label,
+                                selected: filter.questionKinds.contains(kind),
+                                onSelected: () =>
+                                    notifier.toggleQuestionKind(kind),
+                              ),
                           ],
                         ),
                         if (chapters.isNotEmpty)
                           _ChipGroup(
                             title: 'Chapters',
                             allLabel: 'All chapters',
-                            isAllSelected: filter.topicId == null,
-                            onAll: () => notifier.setTopicId(null),
+                            isAllSelected: filter.topicIds.isEmpty,
+                            onAll: notifier.clearTopics,
                             chips: [
                               for (final chapter in chapters)
                                 _ChipData(
                                   label: chapter.name,
-                                  selected: filter.topicId == chapter.id,
+                                  selected: filter.topicIds.contains(
+                                    chapter.id,
+                                  ),
                                   onSelected: () =>
-                                      notifier.setTopicId(chapter.id),
+                                      notifier.toggleTopic(chapter.id),
                                 ),
                             ],
                           ),
@@ -247,7 +249,8 @@ class _ChipData {
   final VoidCallback onSelected;
 }
 
-/// A titled row of filter chips with an "All ..." chip first.
+/// A titled row of filter chips. All clears the row; the other chips toggle
+/// and stay on together.
 class _ChipGroup extends StatelessWidget {
   const _ChipGroup({
     required this.title,

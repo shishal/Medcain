@@ -65,37 +65,58 @@ class SubjectPyqFilters extends _$SubjectPyqFilters {
   SubjectPyqFilter build(String subjectId) => const SubjectPyqFilter();
 
   // Sitting-level picks are checked against the loaded feed so that changing
-  // a parent (say University) clears a child (say Year) that no longer exists.
+  // a parent (say University) drops a child (say Year) that no longer exists
+  // under any remaining parent.
   void _set(SubjectPyqFilter next) {
     final teasers =
         ref.read(subjectPyqsProvider(subjectId)).value?.teasers ?? const [];
     state = reconcileFilter(next, teasers);
   }
 
-  void setUniversity(String? universityId) =>
-      _set(state.copyWith(universityId: universityId));
+  void toggleUniversity(String id) =>
+      _set(state.copyWith(universityIds: _toggled(state.universityIds, id)));
 
-  void setYear(int? year) => _set(state.copyWith(year: year));
+  void clearUniversities() => _set(state.copyWith(universityIds: const {}));
 
-  void setExamType(PaperExamType? examType) =>
-      _set(state.copyWith(examType: examType));
+  void toggleYear(int year) =>
+      _set(state.copyWith(years: _toggled(state.years, year)));
 
-  void setPaperName(String? paperName) =>
-      _set(state.copyWith(paperName: paperName));
+  void clearYears() => _set(state.copyWith(years: const {}));
 
-  void setFormat({bool? isMcq}) => _set(state.copyWith(isMcq: isMcq));
+  void toggleExamType(PaperExamType examType) =>
+      _set(state.copyWith(examTypes: _toggled(state.examTypes, examType)));
 
-  void setTopicId(String? topicId) => _set(state.copyWith(topicId: topicId));
+  void clearExamTypes() => _set(state.copyWith(examTypes: const {}));
 
-  void togglePriority(QuestionPriority value) {
-    final next = {...state.priorities};
-    if (!next.add(value)) next.remove(value);
-    _set(state.copyWith(priorities: next));
-  }
+  void togglePaperName(String paperName) =>
+      _set(state.copyWith(paperNames: _toggled(state.paperNames, paperName)));
+
+  void clearPaperNames() => _set(state.copyWith(paperNames: const {}));
+
+  void toggleQuestionKind(PyqQuestionKind kind) =>
+      _set(state.copyWith(questionKinds: _toggled(state.questionKinds, kind)));
+
+  void clearQuestionKinds() => _set(state.copyWith(questionKinds: const {}));
+
+  void toggleTopic(String topicId) =>
+      _set(state.copyWith(topicIds: _toggled(state.topicIds, topicId)));
+
+  void clearTopics() => _set(state.copyWith(topicIds: const {}));
+
+  void togglePriority(QuestionPriority value) =>
+      _set(state.copyWith(priorities: _toggled(state.priorities, value)));
 
   void clear() {
     state = const SubjectPyqFilter();
   }
+}
+
+/// Copy, then add [value] or remove it if it was already in the set.
+/// The filter stores new sets instead of editing the one already in state.
+Set<T> _toggled<T>(Set<T> current, T value) {
+  final next = {...current};
+  if (!next.add(value)) next.remove(value);
+  return next;
 }
 
 @riverpod

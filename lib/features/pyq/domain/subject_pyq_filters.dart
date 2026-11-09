@@ -2,68 +2,75 @@ import '../../practice/domain/practice_enums.dart';
 import 'pyq_models.dart';
 import 'question_format.dart';
 
-// A private "not passed" marker. Dart cannot tell `copyWith(year: null)`
-// (clear the year) from `copyWith()` (keep it) with a plain nullable
-// parameter, so the defaults below use this object instead.
-const Object _keep = Object();
+/// MCQ vs written theory on the subject filter.
+///
+/// An empty set means both. Several values mean "any of these".
+enum PyqQuestionKind {
+  mcq,
+  theory;
 
-/// Picks on the subject PYQ screen. The first five narrow *sittings*
-/// (University > Year > exam type > Paper > MCQ/Theory); the rest are tags
-/// on the question itself.
+  String get label => switch (this) {
+    PyqQuestionKind.mcq => 'MCQ',
+    PyqQuestionKind.theory => 'Theory',
+  };
+}
+
+/// Picks on the subject PYQ screen.
+///
+/// Each set is empty when that row is "All". A question is kept when one
+/// sitting hits every non-empty sitting set (university, year, exam type,
+/// paper), and the question's own tags hit chapter, question kind, and
+/// priority. Within one set, any selected value is enough.
 class SubjectPyqFilter {
   const SubjectPyqFilter({
-    this.universityId,
-    this.year,
-    this.examType,
-    this.paperName,
-    this.isMcq,
-    this.topicId,
+    this.universityIds = const {},
+    this.years = const {},
+    this.examTypes = const {},
+    this.paperNames = const {},
+    this.questionKinds = const {},
+    this.topicIds = const {},
     this.priorities = const {},
   });
 
-  final String? universityId;
-  final int? year;
-  final PaperExamType? examType;
-  final String? paperName;
+  final Set<String> universityIds;
+  final Set<int> years;
+  final Set<PaperExamType> examTypes;
+  final Set<String> paperNames;
 
-  /// null = MCQ and theory, true = MCQ only, false = theory only.
-  final bool? isMcq;
-  final String? topicId;
+  /// Empty = MCQ and theory.
+  final Set<PyqQuestionKind> questionKinds;
+
+  /// Empty = every chapter, including questions with no chapter tag.
+  final Set<String> topicIds;
 
   /// Empty = every priority.
   final Set<QuestionPriority> priorities;
 
   bool get isActive =>
-      universityId != null ||
-      year != null ||
-      examType != null ||
-      paperName != null ||
-      isMcq != null ||
-      topicId != null ||
+      universityIds.isNotEmpty ||
+      years.isNotEmpty ||
+      examTypes.isNotEmpty ||
+      paperNames.isNotEmpty ||
+      questionKinds.isNotEmpty ||
+      topicIds.isNotEmpty ||
       priorities.isNotEmpty;
 
   SubjectPyqFilter copyWith({
-    Object? universityId = _keep,
-    Object? year = _keep,
-    Object? examType = _keep,
-    Object? paperName = _keep,
-    Object? isMcq = _keep,
-    Object? topicId = _keep,
+    Set<String>? universityIds,
+    Set<int>? years,
+    Set<PaperExamType>? examTypes,
+    Set<String>? paperNames,
+    Set<PyqQuestionKind>? questionKinds,
+    Set<String>? topicIds,
     Set<QuestionPriority>? priorities,
   }) {
     return SubjectPyqFilter(
-      universityId: identical(universityId, _keep)
-          ? this.universityId
-          : universityId as String?,
-      year: identical(year, _keep) ? this.year : year as int?,
-      examType: identical(examType, _keep)
-          ? this.examType
-          : examType as PaperExamType?,
-      paperName: identical(paperName, _keep)
-          ? this.paperName
-          : paperName as String?,
-      isMcq: identical(isMcq, _keep) ? this.isMcq : isMcq as bool?,
-      topicId: identical(topicId, _keep) ? this.topicId : topicId as String?,
+      universityIds: universityIds ?? this.universityIds,
+      years: years ?? this.years,
+      examTypes: examTypes ?? this.examTypes,
+      paperNames: paperNames ?? this.paperNames,
+      questionKinds: questionKinds ?? this.questionKinds,
+      topicIds: topicIds ?? this.topicIds,
       priorities: priorities ?? this.priorities,
     );
   }
@@ -71,14 +78,22 @@ class SubjectPyqFilter {
 
 /// True when [sitting] satisfies every sitting-level pick. All picks are
 /// checked on the same sitting: "2023" and "Paper II" must be one paper,
-/// not two different ones.
+/// not a 2023 Paper I plus a different year's Paper II.
+///
+/// An empty set does not narrow. A set with several values matches if the
+/// sitting has any one of them.
 bool sittingMatches(PaperSitting sitting, SubjectPyqFilter filter) {
-  return (filter.universityId == null ||
-          sitting.universityId == filter.universityId) &&
-      (filter.year == null || sitting.year == filter.year) &&
-      (filter.examType == null || sitting.examType == filter.examType) &&
-      (filter.paperName == null || sitting.label == filter.paperName);
+  return _allows(filter.universityIds, sitting.universityId) &&
+      _allows(filter.years, sitting.year) &&
+      _allows(filter.examTypes, sitting.examType) &&
+      _allows(filter.paperNames, sitting.label);
 }
+
+bool _allows<T>(Set<T> selected, T value) =>
+    selected.isEmpty || selected.contains(value);
+
+PyqQuestionKind _questionKind(PyqTeaser teaser) =>
+    teaser.kind == 'mcq' ? PyqQuestionKind.mcq : PyqQuestionKind.theory;
 
 /// Client-side chips on a subject PYQ feed. Does not score or gate plans.
 ///
@@ -87,25 +102,27 @@ bool sittingMatches(PaperSitting sitting, SubjectPyqFilter filter) {
 List<PyqTeaser> filterSubjectPyqs({
   required List<PyqTeaser> teasers,
   QuestionFormat? format,
-  bool? isMcq,
-  String? universityId,
-  PaperExamType? examType,
-  String? paperName,
+  Set<PyqQuestionKind> questionKinds = const {},
+  Set<String> universityIds = const {},
+  Set<PaperExamType> examTypes = const {},
+  Set<String> paperNames = const {},
+  Set<int> years = const {},
   int? year,
   bool Function(PaperSitting sitting)? sittingScope,
-  String? topicId,
+  Set<String> topicIds = const {},
   Set<QuestionPriority> priorities = const {},
 }) {
   final sittingPicks = SubjectPyqFilter(
-    universityId: universityId,
-    year: year,
-    examType: examType,
-    paperName: paperName,
+    universityIds: universityIds,
+    years: years,
+    examTypes: examTypes,
+    paperNames: paperNames,
   );
   final needsSitting =
-      universityId != null ||
-      examType != null ||
-      paperName != null ||
+      universityIds.isNotEmpty ||
+      examTypes.isNotEmpty ||
+      paperNames.isNotEmpty ||
+      years.isNotEmpty ||
       year != null ||
       sittingScope != null;
 
@@ -114,6 +131,7 @@ List<PyqTeaser> filterSubjectPyqs({
     return t.sittings.any(
       (s) =>
           sittingMatches(s, sittingPicks) &&
+          (year == null || s.year == year) &&
           (sittingScope == null || sittingScope(s)),
     );
   }
@@ -121,14 +139,17 @@ List<PyqTeaser> filterSubjectPyqs({
   final out = [
     for (final t in teasers)
       if ((format == null || t.format == format) &&
-          (isMcq == null || (t.kind == 'mcq') == isMcq) &&
+          _allows(questionKinds, _questionKind(t)) &&
           sittingOk(t) &&
-          (topicId == null || t.topicId == topicId) &&
+          (topicIds.isEmpty ||
+              (t.topicId != null && topicIds.contains(t.topicId))) &&
           (priorities.isEmpty || priorities.contains(t.priority)))
         t,
   ];
-  // A full paper sitting: essays first, then short, VSA, MCQ (printed order).
-  if (paperName != null && year != null) {
+  // A single printed paper in a single year: essays first, then short,
+  // VSA, MCQ (printed order). Several years or papers keep feed order.
+  final pinnedYear = year != null && !years.contains(year) ? 1 : 0;
+  if (paperNames.length == 1 && years.length + pinnedYear == 1) {
     out.sort((a, b) {
       final byFormat = a.format.index.compareTo(b.format.index);
       if (byFormat != 0) return byFormat;
@@ -145,12 +166,12 @@ List<PyqTeaser> applySubjectPyqFilter(
 ) {
   return filterSubjectPyqs(
     teasers: teasers,
-    universityId: filter.universityId,
-    year: filter.year,
-    examType: filter.examType,
-    paperName: filter.paperName,
-    isMcq: filter.isMcq,
-    topicId: filter.topicId,
+    universityIds: filter.universityIds,
+    years: filter.years,
+    examTypes: filter.examTypes,
+    paperNames: filter.paperNames,
+    questionKinds: filter.questionKinds,
+    topicIds: filter.topicIds,
     priorities: filter.priorities,
   );
 }
@@ -174,6 +195,7 @@ class PyqFilterOptions {
 
 /// University > Year > exam type > Paper. Each list only holds values that
 /// exist under the picks made above it, so the sheet never offers a dead end.
+/// Several picks at one level keep a value when any of them still has it.
 PyqFilterOptions availableFilterOptions(
   List<PyqTeaser> teasers,
   SubjectPyqFilter filter,
@@ -184,20 +206,19 @@ PyqFilterOptions availableFilterOptions(
 
   final underUniversity = [
     for (final s in sittings)
-      if (filter.universityId == null || s.universityId == filter.universityId)
-        s,
+      if (_allows(filter.universityIds, s.universityId)) s,
   ];
   final years = {for (final s in underUniversity) s.year};
 
   final underYear = [
     for (final s in underUniversity)
-      if (filter.year == null || s.year == filter.year) s,
+      if (_allows(filter.years, s.year)) s,
   ];
   final examTypes = {for (final s in underYear) s.examType};
 
   final underType = [
     for (final s in underYear)
-      if (filter.examType == null || s.examType == filter.examType) s,
+      if (_allows(filter.examTypes, s.examType)) s,
   ];
   final paperNames = {
     for (final s in underType)
@@ -215,37 +236,44 @@ PyqFilterOptions availableFilterOptions(
   );
 }
 
+Set<T> _kept<T>(Set<T> picked, Iterable<T> allowed) {
+  if (picked.isEmpty) return picked;
+  final allow = allowed.toSet();
+  return picked.where(allow.contains).toSet();
+}
+
 /// Drops any sitting-level pick that no longer exists under the picks above
 /// it, so changing University does not leave a stale Year behind.
+/// A value stays when it still exists under at least one remaining parent.
 SubjectPyqFilter reconcileFilter(
   SubjectPyqFilter filter,
   List<PyqTeaser> teasers,
 ) {
   var next = SubjectPyqFilter(
-    isMcq: filter.isMcq,
-    topicId: filter.topicId,
+    questionKinds: filter.questionKinds,
+    topicIds: filter.topicIds,
     priorities: filter.priorities,
   );
-  if (availableFilterOptions(
-    teasers,
-    next,
-  ).universityIds.contains(filter.universityId)) {
-    next = next.copyWith(universityId: filter.universityId);
-  }
-  if (availableFilterOptions(teasers, next).years.contains(filter.year)) {
-    next = next.copyWith(year: filter.year);
-  }
-  if (availableFilterOptions(
-    teasers,
-    next,
-  ).examTypes.contains(filter.examType)) {
-    next = next.copyWith(examType: filter.examType);
-  }
-  if (availableFilterOptions(
-    teasers,
-    next,
-  ).paperNames.contains(filter.paperName)) {
-    next = next.copyWith(paperName: filter.paperName);
-  }
+  next = next.copyWith(
+    universityIds: _kept(
+      filter.universityIds,
+      availableFilterOptions(teasers, next).universityIds,
+    ),
+  );
+  next = next.copyWith(
+    years: _kept(filter.years, availableFilterOptions(teasers, next).years),
+  );
+  next = next.copyWith(
+    examTypes: _kept(
+      filter.examTypes,
+      availableFilterOptions(teasers, next).examTypes,
+    ),
+  );
+  next = next.copyWith(
+    paperNames: _kept(
+      filter.paperNames,
+      availableFilterOptions(teasers, next).paperNames,
+    ),
+  );
   return next;
 }

@@ -174,7 +174,7 @@ void main() {
     test('applies the filter before grouping', () {
       final sections = _build(
         teasers,
-        filter: const SubjectPyqFilter(examType: PaperExamType.preProf),
+        filter: const SubjectPyqFilter(examTypes: {PaperExamType.preProf}),
       );
       expect(sections.ownUniversity, isEmpty);
       expect(sections.ownCollege.single.year, 2026);
@@ -196,14 +196,37 @@ void main() {
 
     test('year and paper must match on one sitting', () {
       expect(
-        filterSubjectPyqs(teasers: teasers, year: 2023, paperName: 'Paper II'),
+        filterSubjectPyqs(
+          teasers: teasers,
+          years: {2023},
+          paperNames: {'Paper II'},
+        ),
         isEmpty,
       );
       expect(
         filterSubjectPyqs(
           teasers: teasers,
-          year: 2024,
-          paperName: 'Paper II',
+          years: {2024},
+          paperNames: {'Paper II'},
+        ).single.id,
+        'q',
+      );
+    });
+
+    test('several years or papers match when one sitting hits each set', () {
+      expect(
+        filterSubjectPyqs(
+          teasers: teasers,
+          years: {2023, 2024},
+          paperNames: {'Paper I', 'Paper II'},
+        ).single.id,
+        'q',
+      );
+      expect(
+        filterSubjectPyqs(
+          teasers: teasers,
+          years: {2023},
+          paperNames: {'Paper I', 'Paper II'},
         ).single.id,
         'q',
       );
@@ -225,46 +248,72 @@ void main() {
 
       final inU2 = availableFilterOptions(
         teasers,
-        const SubjectPyqFilter(universityId: 'u2'),
+        const SubjectPyqFilter(universityIds: {'u2'}),
       );
       expect(inU2.years, [2024]);
       expect(inU2.examTypes, [PaperExamType.supply]);
+
+      final both = availableFilterOptions(
+        teasers,
+        const SubjectPyqFilter(universityIds: {'u1', 'u2'}),
+      );
+      expect(both.years, [2024, 2023]);
     });
 
-    test('changing a parent clears a child that no longer exists', () {
+    test('changing a parent drops a child that no longer exists', () {
       const picked = SubjectPyqFilter(
-        universityId: 'u2',
-        year: 2024,
-        examType: PaperExamType.supply,
+        universityIds: {'u2'},
+        years: {2024},
+        examTypes: {PaperExamType.supply},
       );
       final moved = reconcileFilter(
-        picked.copyWith(universityId: 'u1'),
+        picked.copyWith(universityIds: {'u1'}),
         teasers,
       );
-      expect(moved.universityId, 'u1');
-      expect(moved.year, isNull);
-      expect(moved.examType, isNull);
+      expect(moved.universityIds, {'u1'});
+      expect(moved.years, isEmpty);
+      expect(moved.examTypes, isEmpty);
 
       final kept = reconcileFilter(picked, teasers);
-      expect(kept.year, 2024);
-      expect(kept.examType, PaperExamType.supply);
+      expect(kept.years, {2024});
+      expect(kept.examTypes, {PaperExamType.supply});
+    });
+
+    test('keeps a child that still exists under one remaining parent', () {
+      const picked = SubjectPyqFilter(
+        universityIds: {'u1', 'u2'},
+        years: {2023, 2024},
+      );
+      final moved = reconcileFilter(
+        picked.copyWith(universityIds: {'u1'}),
+        teasers,
+      );
+      expect(moved.universityIds, {'u1'});
+      expect(moved.years, {2023});
     });
 
     test('keeps the question-level picks while reconciling', () {
       final result = reconcileFilter(
-        const SubjectPyqFilter(universityId: 'gone', isMcq: true, topicId: 't'),
+        const SubjectPyqFilter(
+          universityIds: {'gone'},
+          questionKinds: {PyqQuestionKind.mcq},
+          topicIds: {'t'},
+        ),
         teasers,
       );
-      expect(result.universityId, isNull);
-      expect(result.isMcq, isTrue);
-      expect(result.topicId, 't');
+      expect(result.universityIds, isEmpty);
+      expect(result.questionKinds, {PyqQuestionKind.mcq});
+      expect(result.topicIds, {'t'});
     });
 
     test('copyWith can clear a pick as well as keep it', () {
-      const filter = SubjectPyqFilter(year: 2024, isMcq: true);
-      expect(filter.copyWith(year: null).year, isNull);
-      expect(filter.copyWith(topicId: 't').year, 2024);
-      expect(filter.copyWith(isMcq: null).isMcq, isNull);
+      const filter = SubjectPyqFilter(
+        years: {2024},
+        questionKinds: {PyqQuestionKind.mcq},
+      );
+      expect(filter.copyWith(years: {}).years, isEmpty);
+      expect(filter.copyWith(topicIds: {'t'}).years, {2024});
+      expect(filter.copyWith(questionKinds: {}).questionKinds, isEmpty);
     });
   });
 }

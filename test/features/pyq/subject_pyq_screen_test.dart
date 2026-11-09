@@ -136,13 +136,19 @@ void main() {
         ),
       ];
       expect(filterSubjectPyqs(teasers: mixed).map((t) => t.id), ['q1', 'q2']);
-      expect(filterSubjectPyqs(teasers: mixed, topicId: 'll').single.id, 'q2');
-      expect(filterSubjectPyqs(teasers: mixed, paperName: 'Paper I'), isEmpty);
+      expect(
+        filterSubjectPyqs(teasers: mixed, topicIds: {'ll'}).single.id,
+        'q2',
+      );
+      expect(
+        filterSubjectPyqs(teasers: mixed, paperNames: {'Paper I'}),
+        isEmpty,
+      );
       expect(
         filterSubjectPyqs(
           teasers: mixed,
-          paperName: 'Paper II',
-          year: 2024,
+          paperNames: {'Paper II'},
+          years: {2024},
         ).map((t) => t.id),
         ['q1', 'q2'],
       );
@@ -183,8 +189,8 @@ void main() {
     ];
     final ordered = filterSubjectPyqs(
       teasers: teasers,
-      paperName: 'Paper I',
-      year: 2024,
+      paperNames: {'Paper I'},
+      years: {2024},
     );
     expect(ordered.first.id, 'essay');
     expect(ordered.last.id, 'mcq');
@@ -205,7 +211,7 @@ void main() {
       'untagged',
     ]);
     expect(
-      filterSubjectPyqs(teasers: teasers, topicId: 'll').single.id,
+      filterSubjectPyqs(teasers: teasers, topicIds: {'ll'}).single.id,
       'tagged',
     );
   });
@@ -215,10 +221,26 @@ void main() {
       _teaser(id: 'mcq', text: 'MCQ', kind: 'mcq', marks: 1),
       _teaser(id: 'essay', text: 'Essay'),
     ];
-    expect(filterSubjectPyqs(teasers: teasers, isMcq: true).single.id, 'mcq');
     expect(
-      filterSubjectPyqs(teasers: teasers, isMcq: false).single.id,
+      filterSubjectPyqs(
+        teasers: teasers,
+        questionKinds: {PyqQuestionKind.mcq},
+      ).single.id,
+      'mcq',
+    );
+    expect(
+      filterSubjectPyqs(
+        teasers: teasers,
+        questionKinds: {PyqQuestionKind.theory},
+      ).single.id,
       'essay',
+    );
+    expect(
+      filterSubjectPyqs(
+        teasers: teasers,
+        questionKinds: {PyqQuestionKind.mcq, PyqQuestionKind.theory},
+      ).map((t) => t.id),
+      ['mcq', 'essay'],
     );
   });
 
@@ -434,6 +456,32 @@ void main() {
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
     expect(find.text('2023'), findsOneWidget);
+    expect(find.text('2024'), findsNothing);
+  });
+
+  testWidgets('Filters sheet keeps every selected year', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.text('Filters'));
+    await tester.pumpAndSettle();
+    await tapFilterChip(tester, '2024');
+    await tapFilterChip(tester, '2023');
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2024, 2023'), findsOneWidget);
+    expect(find.text('2024'), findsWidgets);
+    expect(find.text('2023'), findsWidgets);
+    expect(find.text('2025'), findsNothing);
+    expect(find.text('2022'), findsNothing);
+
+    await tester.tap(find.text('Filters'));
+    await tester.pumpAndSettle();
+    await tapFilterChip(tester, '2024');
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2023'), findsWidgets);
     expect(find.text('2024'), findsNothing);
   });
 }
