@@ -440,7 +440,7 @@
         <div id="msg"></div>
         <p class="hint">Edits still sync back to the question sheet. Pull app edits before any sheet Apply.</p>
         <form id="filters" class="card filters">
-          ${field('Stem, subject, or code', inputControl('query', '', 'placeholder="Search"'))}
+          ${field('Stem, subject, or id', inputControl('query', '', 'placeholder="Search"'))}
           ${field('State', selectControl('state', states.map((item) => [item, item]), '', 'Any state'))}
           ${field('University', selectControl('university_id', universityPairs(''), '', 'Any university'))}
           ${field('College', selectControl('college_id', [], '', 'Any college'))}
