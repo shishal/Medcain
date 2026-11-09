@@ -80,7 +80,9 @@ subject, with answers. The only difference is registered devices:
 | Elite | Same as Pro | 2 |
 
 A phone that is not registered is refused. It does not suspend the plan.
-Moving a registration is a support action (clear the old `device_claims` row).
+On the website user page, an admin can free a phone or raise that account's
+phone count (up to 10). The plan counts above stay the default for everyone
+else. `profiles.max_registered_devices` stores the raise.
 
 Purchase, in the app, asks for a prepaid period and an optional percent-off
 coupon, then opens the **website** to pay. The app does not charge a card.

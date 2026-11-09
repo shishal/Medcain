@@ -788,14 +788,17 @@ name/phone/academic fields — never `plan` / `plan_expires_at` /
 ### 9.3b Registered devices
 
 Migration: `supabase/migrations/20260919140000_single_device_login.sql`,
-updated by `20261107160000_plan_periods_and_devices.sql`.
+updated by `20261107160000_plan_periods_and_devices.sql` and
+`20261109220000_admin_device_slots.sql`.
 
 **Policy:** a plan has a slot count (`plan_limits.max_registered_devices`):
-Free 1, Pro 1, Elite 2. `claim_active_device` registers this install when a
-slot is free. A full plan refuses the new phone and leaves the registered
-ones signed in. It does **not** set `plan_suspended_at`. Pro still ends
-other Auth sessions, because only one phone may stay signed in. Elite does
-not. `assert_active_device` is true only for a row with `registered_at` set.
+Free 1, Pro 1, Elite 2. `profiles.max_registered_devices`, when set, raises
+that one account (1–10) and never lowers the plan. The effective cap is the
+higher of the two (`registered_device_limit`). `claim_active_device` registers
+this install when a slot is free. A full plan refuses the new phone and leaves
+the registered ones signed in. It does **not** set `plan_suspended_at`. A cap
+of 1 still ends other Auth sessions. A higher cap does not.
+`assert_active_device` is true only for a row with `registered_at` set.
 
 `device_claims.registered_at` is the slot. `registered_at` null means the
 install was seen and does not occupy a slot. Admins skip the cap.
@@ -803,7 +806,11 @@ install was seen and does not occupy a slot. Admins skip the cap.
 Existing `plan_suspended_at` rows stay suspended until support clears them.
 New logins do not create that pause.
 
-**Support: move a registration** (SQL editor / service role only):
+**Support:** the website user page calls `admin_reset_devices` (every phone),
+`admin_release_device` (one phone), and `admin_set_device_limit` (raise the
+count). Reset and release also delete the matching Auth sessions so the old
+phone cannot claim the slot again on the next open. The same writes, from
+the SQL editor / service role:
 
 ```sql
 -- Free one slot so the student can register the new phone.
@@ -817,8 +824,9 @@ where user_id = '<user-uuid>'
 
 - Pro: device A registers. Device B is refused; A still has the plan.
 - Elite: A and B both register and both pass `assert_active_device`. Device C is refused.
-- Buying Pro while two Elite slots are filled clears the older slot.
-- Authenticated role cannot `UPDATE` `active_device_id` / `plan_suspended_at` / `registered_at`.
+- Buying Pro while two Elite slots are filled clears the older slot, unless that account's raise is still higher.
+- An admin raise of 3 on Pro lets three phones register. Clearing the raise returns the account to 1 and signs out the extra phones.
+- Authenticated role cannot `UPDATE` `active_device_id` / `plan_suspended_at` / `registered_at` / `max_registered_devices`.
 - `profiles.is_admin` accounts skip the device cap.
 
 ```sql
@@ -865,8 +873,11 @@ Google Sheet / CSV tab.
 | `search_catalog(p_query)` | subjects, lessons, PYQ teasers |
 | `create_practice_session(..., p_lesson_ids uuid[] default null)` | MCQ-only + optional lesson filter |
 | `mark_lesson_learnt(p_lesson_id)` / `mark_question_learnt(p_question_id)` | progress + study_event |
-| `claim_active_device(p_device_id)` | jsonb — register this install if a slot is free (Pro 1, Elite 2) |
+| `claim_active_device(p_device_id)` | jsonb — register this install if a slot is free (plan count, or the account raise if higher) |
 | `assert_active_device(p_device_id)` | boolean — this install holds a registered slot |
+| `admin_set_device_limit(p_user_id, p_max)` | jsonb — raise one account up to 10 phones; null follows the plan |
+| `admin_release_device(p_user_id, p_device_id)` | jsonb — free one phone and end its session |
+| `admin_reset_devices(p_user_id)` | jsonb — free every phone and sign the account out |
 
 Lesson resources: visible if `is_free` OR the user's plan covers the parent
 lesson's `required_plan`.
@@ -946,7 +957,7 @@ That account signs in with WhatsApp and lands on `/admin`. A student JWT that ca
 
 | Action | Where it runs |
 |---|---|
-| Profile, plan, expiry, clear device suspension | `admin_update_profile`, `admin_set_plan`, `admin_clear_device_suspension` |
+| Profile, plan, expiry, clear device suspension, device slots | `admin_update_profile`, `admin_set_plan`, `admin_clear_device_suspension`, `admin_set_device_limit`, `admin_release_device`, `admin_reset_devices` |
 | Password, email, block / unblock | Edge Function `admin-user-auth` (GoTrue ban + `profiles.blocked_at` + session revoke). New accounts have no password; email and password actions remain for older accounts that still have a real email. |
 | Questions, papers, free tier (`required_plan`) | `admin_save_question`, `admin_save_appearance`, `admin_delete_appearance` |
 | In-app notification | `admin_upsert_announcement` |

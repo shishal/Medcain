@@ -227,6 +227,11 @@
     return date.toLocaleString();
   }
 
+  function phoneCount(count) {
+    const n = Number(count) || 0;
+    return `${n} phone${n === 1 ? '' : 's'}`;
+  }
+
   function rupeesFromPaise(paise) {
     const rupees = Number(paise) / 100;
     if (!Number.isFinite(rupees)) return '';
@@ -1155,9 +1160,31 @@
       return rpc('admin_list_colleges', { p_university_id: universityId });
     }
 
+    function deviceTableFor(account) {
+      const list = Array.isArray(account.devices) ? account.devices : [];
+      if (!list.length) return '<p>No phone has signed in yet.</p>';
+      return `<div class="table-wrap"><table>
+        <thead><tr><th>Phone</th><th>Last seen</th><th>Slot</th><th></th></tr></thead>
+        <tbody>${list.map((device) => `
+          <tr>
+            <td><code>${esc(device.device_id)}</code></td>
+            <td>${esc(formatWhen(device.last_seen_at))}</td>
+            <td>${device.registered_at ? '<span class="badge-inline">Registered</span>' : 'Seen'}</td>
+            <td>${device.registered_at ? `<button class="btn btn-ghost btn-small" type="button" data-release="${esc(device.device_id)}">Remove</button>` : ''}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>`;
+    }
+
     async function draw() {
       const collegeRows = await colleges(user.university_id);
       const whatsapp = !user.email;
+      const planLimit = Number(user.plan_device_limit) || 1;
+      const allowed = Number(user.device_limit) || planLimit;
+      const registered = Number(user.registered_device_count) || 0;
+      const deviceTable = deviceTableFor(user);
+      const overLimit = registered > allowed
+        ? '<p class="hint">More phones are registered than this account allows. Saving the limit signs out the extra phones and keeps the most recently used.</p>'
+        : '';
       app.innerHTML = `
         <div id="msg"></div>
         <p><a href="/admin/users/">Back to users</a></p>
@@ -1175,10 +1202,23 @@
           <h2>Plan</h2>
           ${field('Plan', selectControl('plan', PLANS, user.plan || 'free'))}
           ${field('Expiry', `<input id="plan_expires" type="date" value="${esc(toDateInput(user.plan_expires_at))}" />`)}
-          <p class="hint">Leave the date empty to clear the expiry. The day ends at 23:59.</p>
+          <p class="hint">Leave the date empty to clear the expiry. The day ends at 23:59. Saving a plan with fewer phones signs out the extra ones, unless the device limit below is higher.</p>
           <button class="btn btn-primary" type="submit">Save plan</button>
         </form>
         ${user.plan_suspended_at ? `<form class="card" data-form="suspension"><h2>Device suspension</h2><p>Suspended ${esc(formatWhen(user.plan_suspended_at))}.</p><button class="btn btn-primary" type="submit">Clear device suspension</button></form>` : ''}
+        <form class="card" data-form="devices">
+          <h2>Devices</h2>
+          <p>This plan allows ${esc(phoneCount(planLimit))}. ${esc(phoneCount(registered))} registered.</p>
+          ${deviceTable}
+          ${overLimit}
+          ${field('Phones this account may register', inputControl('device_limit', allowed, `inputmode="numeric" min="${planLimit}" max="10"`))}
+          <p class="hint">Type a higher number to allow more phones on this account, up to 10. It cannot go below the plan. Leave the box empty to follow the plan again. This number stays if the plan changes.</p>
+          <div class="actions">
+            <button class="btn btn-primary" type="submit" name="intent" value="limit">Save device limit</button>
+            <button class="btn btn-ghost" type="submit" name="intent" value="reset">Reset devices</button>
+          </div>
+          <p class="hint">Reset signs every phone out and frees every slot. The next sign-in can register a phone.</p>
+        </form>
         <form class="card" data-form="auth">
           <h2>Sign-in</h2>
           ${whatsapp
@@ -1221,7 +1261,19 @@
       );
     };
 
-    handlers.click = null;
+    handlers.click = async (event) => {
+      const button = event.target.closest('[data-release]');
+      if (!button) return;
+      const deviceId = button.getAttribute('data-release');
+      if (!deviceId) return;
+      if (!window.confirm('Sign this phone out and free its slot?')) return;
+      user = await rpc('admin_release_device', {
+        p_user_id: userId,
+        p_device_id: deviceId,
+      });
+      await draw();
+      message('ok', 'Phone removed. That install can no longer use the plan.');
+    };
     handlers.submit = async (event) => {
       event.preventDefault();
       const formName = event.target.getAttribute('data-form');
@@ -1253,6 +1305,22 @@
           user = await rpc('admin_clear_device_suspension', { p_user_id: userId });
           await draw();
           message('ok', 'Device suspension cleared.');
+        }
+        if (formName === 'devices' && intent === 'limit') {
+          const raw = val('device_limit');
+          if (raw && !/^\d+$/.test(raw)) throw new Error('Enter a whole number of phones.');
+          user = await rpc('admin_set_device_limit', {
+            p_user_id: userId,
+            p_max: raw ? Number(raw) : null,
+          });
+          await draw();
+          message('ok', 'Device limit saved.');
+        }
+        if (formName === 'devices' && intent === 'reset') {
+          if (!window.confirm('Sign this user out of every phone and free every device slot?')) return;
+          user = await rpc('admin_reset_devices', { p_user_id: userId });
+          await draw();
+          message('ok', 'Devices reset. The next sign-in can register a phone.');
         }
         if (formName === 'auth' && intent === 'email') {
           await invoke('admin-user-auth', {
