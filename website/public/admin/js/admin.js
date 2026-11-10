@@ -69,6 +69,7 @@
     announcements: renderAnnouncements,
     pricing: renderPricing,
     coupons: renderCoupons,
+    backup: renderBackup,
   };
 
   function esc(value) {
@@ -421,6 +422,7 @@
         <a class="tile" href="/admin/announcements/"><strong>Announcements</strong><span>In-app inbox on Home</span></a>
         <a class="tile" href="/admin/pricing/"><strong>Pricing</strong><span>Pro and Elite list prices</span></a>
         <a class="tile" href="/admin/coupons/"><strong>Coupons</strong><span>Percent-off codes</span></a>
+        <a class="tile" href="/admin/backup/"><strong>Backup</strong><span>Download or restore the database</span></a>
       </div>
     `;
   }
@@ -1562,6 +1564,309 @@
 
     await reload();
     draw();
+  }
+
+  function renderBackup() {
+    handlers.submit = null;
+    handlers.change = null;
+    let openFile = null;
+    let busy = false;
+
+    function setStatus(text) {
+      const el = document.getElementById('backup-status');
+      if (el) el.textContent = text || '';
+    }
+
+    function syncRestore() {
+      const button = document.getElementById('run-restore');
+      const confirm = document.getElementById('restore-confirm');
+      if (!button || !confirm) return;
+      button.disabled = busy || !openFile || confirm.value.trim() !== 'RESTORE';
+    }
+
+    function setBusy(on) {
+      busy = on;
+      window.onbeforeunload = on ? () => true : null;
+      app.querySelectorAll('button, input').forEach((el) => {
+        if (el.id === 'run-restore') return;
+        el.disabled = on;
+      });
+      syncRestore();
+    }
+
+    function saveFile(filename, text, type) {
+      const blob = new Blob([text], { type: type || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    function showFile(file) {
+      openFile = file;
+      const extra = document.getElementById('extra-downloads');
+      const summary = document.getElementById('restore-summary');
+      if (extra) extra.hidden = false;
+      if (!summary) return;
+      const tables = file.tables || {};
+      const names = Array.isArray(file.load_order) ? file.load_order : Object.keys(tables);
+      const rows = names.reduce((sum, name) => {
+        const list = tables[name];
+        return sum + (Array.isArray(list) ? list.length : 0);
+      }, 0);
+      const accounts = file.auth && Array.isArray(file.auth.users) ? file.auth.users.length : 0;
+      const when = formatWhen(file.generated_at) || file.generated_at || '';
+      summary.innerHTML = `
+        <ul class="summary-list">
+          <li>Taken ${esc(when)}</li>
+          <li>${esc(names.length)} tables, ${esc(rows)} rows</li>
+          <li>${esc(accounts)} sign-in accounts</li>
+        </ul>
+      `;
+      syncRestore();
+    }
+
+    function parseBackup(text) {
+      let file;
+      try {
+        file = JSON.parse(text);
+      } catch (error) {
+        throw new Error('That file is not a backup JSON file.');
+      }
+      if (!file || file.format !== 'medcain-backup' || file.version !== 1) {
+        throw new Error('That file is not a MEDCAIN backup.');
+      }
+      if (typeof file.schema_sql !== 'string' || !Array.isArray(file.load_order) || !file.tables) {
+        throw new Error('That backup file is missing the schema or the tables.');
+      }
+      file.load_order.forEach((name) => {
+        if (!Array.isArray(file.tables[name])) file.tables[name] = [];
+      });
+      if (!file.auth) file.auth = { users: [], identities: [] };
+      if (!Array.isArray(file.auth.users)) file.auth.users = [];
+      if (!Array.isArray(file.auth.identities)) file.auth.identities = [];
+      return file;
+    }
+
+    async function readTable(schema, table, expected) {
+      const rows = [];
+      let offset = 0;
+      for (;;) {
+        const chunk = await rpc('admin_backup_rows', {
+          p_schema: schema,
+          p_table: table,
+          p_offset: offset,
+          p_limit: 40,
+        });
+        const part = chunk && Array.isArray(chunk.rows) ? chunk.rows : [];
+        rows.push(...part);
+        const ofTotal = expected == null ? '' : ` of ${expected}`;
+        setStatus(`Reading ${table} (${rows.length}${ofTotal})…`);
+        if (chunk && chunk.done) return rows;
+        if (!part.length) throw new Error(`Backup stopped early while reading ${table}.`);
+        offset += part.length;
+        if (offset > 2000000) throw new Error(`Backup of ${table} is too large to finish here.`);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+
+    async function stageChunks(schema, table, rows) {
+      if (!rows.length) {
+        await rpc('admin_restore_stage', { p_schema: schema, p_table: table, p_rows: [] });
+        return;
+      }
+      let size = 20;
+      let index = 0;
+      while (index < rows.length) {
+        const slice = rows.slice(index, index + size);
+        try {
+          await rpc('admin_restore_stage', {
+            p_schema: schema,
+            p_table: table,
+            p_rows: slice,
+          });
+          index += slice.length;
+          setStatus(`Uploading ${table} (${index} of ${rows.length})…`);
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        } catch (error) {
+          const text = String(error && error.message ? error.message : error);
+          if (size > 1 && /too large|payload|timeout|Failed to fetch|network/i.test(text)) {
+            size = Math.max(1, Math.floor(size / 2));
+            continue;
+          }
+          throw error;
+        }
+      }
+    }
+
+    app.innerHTML = `
+      <div id="msg"></div>
+      <p class="hint" id="backup-status"></p>
+      <section class="card">
+        <h2>Download</h2>
+        <p>Saves a file on this computer. It contains the table definitions, every row, the SQL functions, row-level security, and grants. Keep it private. It includes password hashes, phone numbers, and payment records.</p>
+        <p class="hint">Edge Functions (WhatsApp sign-in, Razorpay, admin password changes) and their secret keys are not in the database, so they are not in the file. That code lives in the git repo under <code>supabase/functions</code>. The keys stay in the Supabase dashboard.</p>
+        <div class="actions">
+          <button class="btn btn-primary" type="button" data-action="download-backup">Download backup</button>
+        </div>
+        <p class="actions" id="extra-downloads" hidden>
+          <button class="btn btn-ghost btn-small" type="button" data-action="save-schema">Download schema SQL</button>
+          <button class="btn btn-ghost btn-small" type="button" data-action="save-reset">Download reset SQL</button>
+        </p>
+      </section>
+      <section class="card">
+        <h2>Restore</h2>
+        <p>Replaces the tables in the file with that file's rows. Tables that are not in the file are left as they are. The account you are signed in as stays an admin, and that account's profile has to be in the file.</p>
+        <p class="hint">The live database changes only at the last step. If the upload stops, nothing is replaced. To rebuild a brand-new Supabase project, apply the git migrations (or the schema SQL, after the reset SQL) and put the Edge Function secrets back, then restore this file.</p>
+        <label for="backup-file">Backup file</label>
+        <input id="backup-file" type="file" accept="application/json,.json" />
+        <div id="restore-summary"></div>
+        <label class="check" for="restore-auth">
+          <input id="restore-auth" type="checkbox" checked />
+          <span>Also restore sign-in accounts, so people can log in as they did when this file was saved.</span>
+        </label>
+        <label for="restore-confirm">Type RESTORE to confirm</label>
+        <input id="restore-confirm" autocomplete="off" />
+        <div class="actions">
+          <button class="btn btn-primary" id="run-restore" type="button" data-action="run-restore" disabled>Restore data</button>
+        </div>
+      </section>
+    `;
+
+    document.getElementById('restore-confirm').addEventListener('input', syncRestore);
+    document.getElementById('backup-file').addEventListener('change', async (event) => {
+      const input = event.target;
+      const file = input.files && input.files[0];
+      message('', '');
+      if (!file) return;
+      try {
+        showFile(parseBackup(await file.text()));
+        setStatus('File read. Type RESTORE and choose Restore data when you mean to replace the database.');
+      } catch (error) {
+        openFile = null;
+        const summary = document.getElementById('restore-summary');
+        if (summary) summary.innerHTML = '';
+        syncRestore();
+        message('error', errorText(error));
+      }
+    });
+
+    handlers.click = async (event) => {
+      const button = event.target.closest('[data-action]');
+      if (!button || busy) return;
+      const action = button.getAttribute('data-action');
+
+      if (action === 'save-schema' || action === 'save-reset') {
+        if (!openFile) return;
+        const text = action === 'save-schema' ? openFile.schema_sql : openFile.reset_public_sql;
+        if (!text) {
+          message('error', 'This backup does not include that SQL script.');
+          return;
+        }
+        const stamp = String(openFile.generated_at || 'backup').replace(/[:.]/g, '-');
+        saveFile(
+          action === 'save-schema' ? `medcain-schema-${stamp}.sql` : `medcain-reset-${stamp}.sql`,
+          text,
+          'application/sql',
+        );
+        return;
+      }
+
+      if (action === 'download-backup') {
+        setBusy(true);
+        message('', '');
+        try {
+          setStatus('Counting tables…');
+          const manifest = await rpc('admin_backup_manifest');
+          setStatus('Reading the schema…');
+          const schema = await rpc('admin_backup_schema');
+          if (!schema || typeof schema.schema_sql !== 'string') {
+            throw new Error('The schema could not be read.');
+          }
+          const tables = {};
+          const order = manifest.load_order || [];
+          for (const item of manifest.tables || []) {
+            tables[item.name] = await readTable('public', item.name, item.rows);
+          }
+          setStatus('Reading sign-in accounts…');
+          const backup = {
+            format: 'medcain-backup',
+            version: 1,
+            generated_at: manifest.generated_at,
+            postgres_version: manifest.postgres_version,
+            not_included: manifest.not_included || [],
+            load_order: order,
+            schema_sql: schema.schema_sql || '',
+            reset_public_sql: schema.reset_public_sql || '',
+            tables,
+            auth: {
+              users: await readTable('auth', 'users', manifest.auth_users),
+              identities: await readTable('auth', 'identities', manifest.auth_identities),
+            },
+          };
+          const stamp = String(backup.generated_at || new Date().toISOString()).replace(/[:.]/g, '-');
+          saveFile(`medcain-backup-${stamp}.json`, JSON.stringify(backup), 'application/json');
+          showFile(backup);
+          setStatus('Backup saved. Store the file somewhere private.');
+          message('ok', 'Backup downloaded.');
+        } catch (error) {
+          setStatus('');
+          message('error', errorText(error));
+        } finally {
+          setBusy(false);
+        }
+        return;
+      }
+
+      if (action !== 'run-restore') return;
+      if (!openFile || document.getElementById('restore-confirm').value.trim() !== 'RESTORE') {
+        message('error', 'Type RESTORE to confirm.');
+        return;
+      }
+      const restoreAuth = document.getElementById('restore-auth').checked;
+      if (restoreAuth && !openFile.auth.users.length && !openFile.auth.identities.length) {
+        message('error', 'This backup has no sign-in accounts. Uncheck that option, or use a full backup.');
+        return;
+      }
+      setBusy(true);
+      message('', '');
+      try {
+        const names = openFile.load_order.filter(
+          (name) => name !== 'admin_restore_runs' && name !== 'admin_restore_staging',
+        );
+        setStatus('Opening the restore…');
+        await rpc('admin_restore_begin', {
+          p_confirm: 'RESTORE',
+          p_tables: names,
+          p_restore_auth: restoreAuth,
+        });
+        if (restoreAuth) {
+          await stageChunks('auth', 'users', openFile.auth.users);
+          await stageChunks('auth', 'identities', openFile.auth.identities);
+        }
+        for (const name of names) {
+          await stageChunks('public', name, openFile.tables[name] || []);
+        }
+        setStatus('Applying the backup…');
+        await rpc('admin_restore_commit');
+        setStatus('Restore finished.');
+        message('ok', 'The database matches this backup. Your account is still an admin.');
+      } catch (error) {
+        try {
+          await rpc('admin_restore_cancel');
+        } catch (cancelError) {
+          // The upload is also discarded the next time a restore starts.
+        }
+        setStatus('');
+        message('error', errorText(error));
+      } finally {
+        setBusy(false);
+      }
+    };
   }
 
   function report(error) {

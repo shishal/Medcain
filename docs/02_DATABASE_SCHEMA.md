@@ -967,3 +967,11 @@ Every admin RPC calls `assert_admin()` and writes `admin_audit_log`. Password va
 Question saves stay in Postgres. The sheet outbox is gone, so an admin save does not queue a pull.
 
 `blocked_at` is not the 3-device `plan_suspended_at`. Blocking bans the auth user. Unblocking clears the ban.
+
+### Backup
+
+Migration: `supabase/migrations/20261109230000_admin_backup.sql`. The website page is `/admin/backup/`.
+
+`admin_backup_manifest`, `admin_backup_schema`, and `admin_backup_rows` build a local JSON file: public tables (parents first), SQL function bodies, triggers, row-level security, grants, and auth users plus identities. Rows are JSON text so large numbers are not rounded in the browser. Edge Function source and dashboard secrets are not stored in Postgres, so they are not in the file.
+
+Restore stages chunks in `admin_restore_staging`, then `admin_restore_commit` replaces the listed tables in one transaction. A failed commit rolls back. The signed-in profile stays `is_admin`. Apply this migration before using the page.

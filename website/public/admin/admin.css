@@ -259,3 +259,29 @@
 .section-title {
   margin-top: var(--space-lg);
 }
+
+.backup-status,
+#backup-status {
+  min-height: 1.4em;
+}
+
+.summary-list {
+  margin: 0 0 var(--space-md);
+  padding-left: 1.2rem;
+}
+
+.admin label.check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-weight: 500;
+}
+
+.admin label.check input {
+  width: auto;
+  margin-top: 4px;
+}
+
+.admin input[type='file'] {
+  width: auto;
+}
