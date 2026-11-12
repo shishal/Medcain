@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Fade + rise in, delayed by [index] so grids feel like stickers landing.
 class StaggeredFade extends StatelessWidget {

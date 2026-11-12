@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Answer / palette colors that are not on [ColorScheme] (correct green,
 /// review purple). Keep these in one place so the MCQ player, solution review

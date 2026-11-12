@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../domain/palette_cell.dart';
 import '../../../../core/theme/player_colors.dart';

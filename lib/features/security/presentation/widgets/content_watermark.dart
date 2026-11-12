@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Faint repeating identity overlay. Visual only — does not block input.
 class ContentWatermark extends StatelessWidget {

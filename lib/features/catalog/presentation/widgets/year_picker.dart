@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/theme/brand_assets.dart';
 import '../../../../core/theme/comic_colors.dart';

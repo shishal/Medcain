@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:medico/features/catalog/domain/catalog_models.dart';
 import 'package:medico/features/catalog/presentation/widgets/year_picker.dart';

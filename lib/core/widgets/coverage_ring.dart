@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Circular stroke for a 0–1 fraction (lesson coverage, accuracy).
 ///

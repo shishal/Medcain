@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
@@ -28,6 +28,14 @@ class MedicoApp extends ConsumerWidget {
             darkTheme: AppTheme.dark,
             themeMode: themeMode,
             routerConfig: router,
+            // go_router and other packages still read the theme from
+            // package:flutter/material.dart. This bridge copies it down.
+            builder: (context, child) {
+              // ignore: deprecated_member_use
+              return MaterialUiCompatibilityBridge(
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
           ),
         ),
       ),

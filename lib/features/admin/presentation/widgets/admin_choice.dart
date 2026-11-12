@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Labeled dropdown. [items] are `(value, label)` pairs.
 class AdminChoice extends StatelessWidget {

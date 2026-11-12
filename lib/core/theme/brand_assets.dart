@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Paths and helpers for MEDCAIN brand art + Docci comic illustrations.
 ///

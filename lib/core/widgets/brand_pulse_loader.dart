@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// ECG trace that draws itself, then a pulse runs the line — MEDCAIN's spinner.
 class BrandPulseLoader extends StatefulWidget {

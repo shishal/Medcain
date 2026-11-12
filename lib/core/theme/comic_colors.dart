@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Canvas + card colors. Dark is near-black (MEDCAIN); light is clean gray.
 ///

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/theme/spacing.dart';
 import '../../../tests/presentation/widgets/palette_cell_view.dart';
