@@ -34,7 +34,9 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
   String? _universityId;
   String? _collegeId;
   String? _phaseId;
-  String _plan = 'free';
+  String _plan = '';
+  List<(String, String)> _plans = const [];
+  List<(String, String, bool)> _planRows = const [];
   DateTime? _expires;
   var _loading = true;
   var _busy = false;
@@ -67,6 +69,7 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
     final repo = ref.read(adminRepositoryProvider);
     final catalog = ref.read(catalogRepositoryProvider);
     final userResult = await repo.getUser(widget.userId);
+    final planResult = await repo.listAssignablePlans();
     final universities = await catalog.fetchUniversities();
     final phases = await catalog.fetchPhases();
     if (!mounted) return;
@@ -102,6 +105,14 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
         Failure() => const [],
       };
       _colleges = colleges;
+      _planRows = switch (planResult) {
+        Success(:final value) => value,
+        Failure() => const [],
+      };
+      _plans = [
+        for (final row in _planRows)
+          if (row.$3 || row.$1 == _plan) (row.$1, row.$2),
+      ];
       _loading = false;
     });
   }
@@ -115,7 +126,7 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
     _universityId = user.universityId;
     _collegeId = user.collegeId;
     _phaseId = user.mbbsPhaseId;
-    _plan = user.plan;
+    _plan = user.planId ?? '';
     _expires = user.planExpiresAt?.toLocal();
     _blockReason.text = user.blockedReason ?? '';
   }
@@ -164,6 +175,10 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
   }
 
   Future<void> _savePlan() async {
+    if (_plan.isEmpty) {
+      setState(() => _error = 'Pick a plan.');
+      return;
+    }
     await _run(() async {
       final result = await ref
           .read(adminRepositoryProvider)
@@ -375,10 +390,10 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
           AdminChoice(
             label: 'Plan',
             value: _plan,
-            items: adminPlans,
+            items: _plans,
             onChanged: _busy
                 ? (_) {}
-                : (id) => setState(() => _plan = id ?? 'free'),
+                : (id) => setState(() => _plan = id ?? ''),
           ),
           const SizedBox(height: Spacing.sm),
           ListTile(

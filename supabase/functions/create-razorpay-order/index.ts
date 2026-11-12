@@ -1,11 +1,10 @@
 // Creates a Razorpay Order for the signed-in user.
-// Amount comes from checkout_quote() → paid_plan_catalog, never from the body.
+// Amount comes from checkout_quote() → plans.amount_paise, never from the body.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import { isSyntheticEmail } from '../_shared/whatsapp_auth.ts';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { getBillingPeriod, getPaidPlan } from '../_shared/paid_plans.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -52,32 +51,28 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Sign in to continue.' }, 401);
   }
 
-  let planName = '';
-  let periodName = 'y1';
+  const planIdPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  let planId = '';
   let requestedCode: string | null = null;
   try {
     const body = await req.json();
-    planName = typeof body?.plan === 'string' ? body.plan.trim().toLowerCase() : '';
-    if (typeof body?.period === 'string' && body.period.trim().length > 0) {
-      periodName = body.period.trim().toLowerCase();
-    }
+    planId = typeof body?.plan_id === 'string' ? body.plan_id.trim() : '';
     if (typeof body?.code === 'string' && body.code.trim().length > 0) {
       requestedCode = body.code.trim();
     }
   } catch {
-    return jsonResponse({ error: 'Send JSON with a plan field.' }, 400);
+    return jsonResponse({ error: 'Send JSON with a plan_id field.' }, 400);
   }
 
-  const plan = getPaidPlan(planName);
-  const period = getBillingPeriod(periodName);
-  if (plan == null || period == null) {
-    return jsonResponse({ error: 'Choose Pro or Elite and a period.' }, 400);
+  if (!planIdPattern.test(planId)) {
+    return jsonResponse({ error: 'Choose a plan.' }, 400);
   }
 
   // Amount comes from checkout_quote(), never from this request.
   const { data: quote, error: quoteError } = await supabase.rpc(
     'checkout_quote',
-    { p_plan: planName, p_code: requestedCode, p_period: periodName },
+    { p_plan_id: planId, p_code: requestedCode },
   );
 
   if (quoteError) {
@@ -88,8 +83,7 @@ Deno.serve(async (req) => {
       'Referral codes cannot be used on your own payment.',
       'You already used this code.',
       'That discount is too large for this plan.',
-      'Choose 1, 2, 3, or 4 years.',
-      'Choose Pro or Elite.',
+      'Choose a plan.',
       'Sign in to continue.',
     ];
     const message = known.find((item) => quoteError.message.includes(item));
@@ -112,7 +106,9 @@ Deno.serve(async (req) => {
     );
   }
 
-  const discountCode = typeof quote.code === 'string' ? quote.code : null;
+  const discountCode = typeof quote.discount_code === 'string'
+    ? quote.discount_code
+    : null;
   const percentOff = typeof quote.percent_off === 'number'
     ? quote.percent_off
     : null;
@@ -127,12 +123,11 @@ Deno.serve(async (req) => {
   }
 
   // receipt max 40 chars. Date.now() in base36 stays well under that.
-  const receipt = `m_${planName}_${Date.now().toString(36)}`;
+  const receipt = `m_${planId.slice(0, 8)}_${Date.now().toString(36)}`;
 
   const notes: Record<string, string> = {
     user_id: user.id,
-    plan: planName,
-    period: periodName,
+    plan_id: planId,
   };
   if (email) notes.email = email;
   if (phone) notes.phone = phone;
@@ -161,6 +156,17 @@ Deno.serve(async (req) => {
     );
   }
 
+  const planName = typeof quote.name === 'string' ? quote.name : 'Plan';
+  const durationLabel = typeof quote.duration_label === 'string' &&
+      quote.duration_label.length > 0
+    ? quote.duration_label
+    : typeof quote.duration_months === 'number'
+    ? `${quote.duration_months} months`
+    : '';
+  const description = [planName, durationLabel, percentOff ? `${percentOff}% off` : '']
+    .filter((part) => part.length > 0)
+    .join(' · ');
+
   return jsonResponse({
     keyId,
     orderId: razorpayBody.id,
@@ -169,11 +175,9 @@ Deno.serve(async (req) => {
     percentOff,
     code: discountCode,
     currency: 'INR',
-    plan: planName,
-    label: plan.label,
-    description: percentOff
-      ? `${plan.label} · ${period.label} · ${percentOff}% off`
-      : `${plan.label} · ${period.label}`,
+    plan_id: planId,
+    label: planName,
+    description,
     name: 'Medico',
     prefillEmail: email,
     prefillPhone: phone,

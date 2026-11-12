@@ -2,11 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:medico/core/utils/result.dart';
 import 'package:medico/features/profile/data/checkout_launcher.dart';
-import 'package:medico/features/profile/domain/billing_period.dart';
-import 'package:medico/features/profile/domain/plan_tier.dart';
 
 void main() {
-  test('openCheckout appends the plan query param', () async {
+  const planId = '11111111-1111-1111-1111-111111111111';
+
+  test('openCheckout appends the plan id', () async {
     late Uri launched;
     final launcher = CheckoutLauncher(
       checkoutUri: Uri.parse('https://checkout.test/pay'),
@@ -16,13 +16,13 @@ void main() {
       },
     );
 
-    final result = await launcher.openCheckout(plan: PlanTier.elite);
+    final result = await launcher.openCheckout(planId: planId);
 
     expect(result, isA<Success<void>>());
     expect(launched.scheme, 'https');
     expect(launched.host, 'checkout.test');
-    expect(launched.queryParameters['plan'], 'elite');
-    expect(launched.queryParameters['period'], 'y1');
+    expect(launched.queryParameters['plan'], planId);
+    expect(launched.queryParameters.containsKey('period'), isFalse);
   });
 
   test('openCheckout keeps existing query params', () async {
@@ -35,10 +35,10 @@ void main() {
       },
     );
 
-    await launcher.openCheckout(plan: PlanTier.pro);
+    await launcher.openCheckout(planId: planId);
 
     expect(launched.queryParameters['src'], 'app');
-    expect(launched.queryParameters['plan'], 'pro');
+    expect(launched.queryParameters['plan'], planId);
     expect(launched.queryParameters.containsKey('phone'), isFalse);
   });
 
@@ -53,14 +53,13 @@ void main() {
       },
     );
 
-    await launcher.openCheckout(plan: PlanTier.pro);
+    await launcher.openCheckout(planId: planId);
 
-    expect(launched.queryParameters['plan'], 'pro');
+    expect(launched.queryParameters['plan'], planId);
     expect(launched.queryParameters['phone'], '+919876543210');
-    expect(launched.queryParameters['period'], 'y1');
   });
 
-  test('openCheckout passes the period and coupon', () async {
+  test('openCheckout passes the coupon', () async {
     late Uri launched;
     final launcher = CheckoutLauncher(
       checkoutUri: Uri.parse('https://checkout.test/pay'),
@@ -70,18 +69,14 @@ void main() {
       },
     );
 
-    await launcher.openCheckout(
-      plan: PlanTier.pro,
-      period: BillingPeriod.y3,
-      coupon: '  campus20  ',
-    );
+    await launcher.openCheckout(planId: planId, coupon: '  campus20  ');
 
-    expect(launched.queryParameters['plan'], 'pro');
-    expect(launched.queryParameters['period'], 'y3');
+    expect(launched.queryParameters['plan'], planId);
     expect(launched.queryParameters['code'], 'campus20');
+    expect(launched.queryParameters.containsKey('period'), isFalse);
   });
 
-  test('openCheckout refuses the free plan', () async {
+  test('openCheckout refuses a blank plan id', () async {
     var launched = false;
     final launcher = CheckoutLauncher(
       checkoutUri: Uri.parse('https://checkout.test/pay'),
@@ -91,7 +86,7 @@ void main() {
       },
     );
 
-    final result = await launcher.openCheckout(plan: PlanTier.free);
+    final result = await launcher.openCheckout(planId: '  ');
 
     expect(launched, isFalse);
     expect(result, isA<Failure<void>>());
@@ -103,7 +98,7 @@ void main() {
       launch: (_) async => true,
     );
 
-    final result = await launcher.openCheckout(plan: PlanTier.pro);
+    final result = await launcher.openCheckout(planId: planId);
 
     expect(result, isA<Failure<void>>());
     expect((result as Failure).message, contains('not set up'));
@@ -115,7 +110,7 @@ void main() {
       launch: (_) async => false,
     );
 
-    final result = await launcher.openCheckout(plan: PlanTier.pro);
+    final result = await launcher.openCheckout(planId: planId);
 
     expect(result, isA<Failure<void>>());
   });

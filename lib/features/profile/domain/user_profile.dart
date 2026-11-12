@@ -8,6 +8,7 @@ class UserProfile {
     this.fullName,
     this.phone,
     required this.plan,
+    this.planId,
     this.planStartedAt,
     this.planExpiresAt,
     this.planSuspendedAt,
@@ -28,7 +29,10 @@ class UserProfile {
   final String? phone;
 
   /// Plan stored on the row — may still say `pro`/`elite` after expiry.
+  ///
+  /// Custom plans are mirrored as Pro on this enum. [planId] is the real row.
   final PlanTier plan;
+  final String? planId;
   final DateTime? planStartedAt;
   final DateTime? planExpiresAt;
 
@@ -72,6 +76,7 @@ class UserProfile {
       fullName: json[ProfileColumns.fullName] as String?,
       phone: json[ProfileColumns.phone] as String?,
       plan: PlanTier.fromString(json[ProfileColumns.plan] as String),
+      planId: json[ProfileColumns.planId] as String?,
       planStartedAt: _parseDate(json[ProfileColumns.planStartedAt]),
       planExpiresAt: _parseDate(json[ProfileColumns.planExpiresAt]),
       planSuspendedAt: _parseDate(json[ProfileColumns.planSuspendedAt]),

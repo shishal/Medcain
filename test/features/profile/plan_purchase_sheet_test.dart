@@ -1,24 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:medico/features/profile/domain/billing_period.dart';
-import 'package:medico/features/profile/domain/plan_tier.dart';
+import 'package:medico/features/profile/domain/plan_offer.dart';
 import 'package:medico/features/profile/presentation/widgets/plan_purchase_sheet.dart';
 
 void main() {
-  testWidgets('purchase sheet asks for a period and coupon, then hands off', (
+  testWidgets('purchase sheet shows the plan price and hands off the coupon', (
     tester,
   ) async {
-    BillingPeriod? chosen;
     String? coupon;
+    const plan = PlanOffer(
+      id: 'elite-id',
+      code: 'elite',
+      name: 'Elite',
+      benefits: ['Two phones'],
+      amountPaise: 299900,
+      durationMonths: 12,
+      durationLabel: '1 year',
+      maxRegisteredDevices: 2,
+      promoHeadline: 'Early bird',
+      promoDetail: 'Use Early30',
+      featuredDiscountCode: 'EARLY30',
+      isPublic: true,
+      isActive: true,
+      sortOrder: 2,
+      contentDepth: 'explanation',
+      accessMode: 'filtered',
+      allowPractice: true,
+      allowTutorMode: true,
+      allowExamMode: true,
+      allowTimerToggle: true,
+      allowTagFilter: true,
+      allowDifficultyFilter: true,
+      allowNegativeMarkingToggle: true,
+    );
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: PlanPurchaseSheet(
-            plan: PlanTier.elite,
-            onPay: (period, code) async {
-              chosen = period;
+            plan: plan,
+            onPay: (code) async {
               coupon = code;
               return true;
             },
@@ -27,19 +49,17 @@ void main() {
       ),
     );
 
-    expect(find.text('1 year'), findsOneWidget);
-    expect(find.text('2 years + 1 month extra'), findsOneWidget);
-    expect(find.text('3 years + 2 months extra'), findsOneWidget);
-    expect(find.text('4 years + 3 months extra'), findsOneWidget);
-    expect(find.textContaining('₹'), findsNothing);
+    expect(find.text('Purchase Elite'), findsOneWidget);
+    expect(find.textContaining('₹2999'), findsOneWidget);
+    expect(find.textContaining('1 year'), findsOneWidget);
+    expect(find.textContaining('Early bird'), findsOneWidget);
+    expect(find.text('1 year'), findsNothing);
+    expect(find.text('3 years + 2 months extra'), findsNothing);
 
-    await tester.tap(find.text('3 years + 2 months extra'));
-    await tester.pump();
     await tester.enterText(find.byType(TextField), 'campus20');
-    await tester.tap(find.text('Pay on website'));
+    await tester.tap(find.text('Continue in browser'));
     await tester.pump();
 
-    expect(chosen, BillingPeriod.y3);
     expect(coupon, 'campus20');
   });
 }

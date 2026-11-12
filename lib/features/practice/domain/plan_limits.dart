@@ -1,7 +1,7 @@
 import '../../../core/supabase/tables.dart';
 import '../../profile/domain/plan_tier.dart';
 
-/// Row from `plan_limits` — UI reads this so caps aren't hardcoded.
+/// Practice caps from the current `plans` row. The UI reads this so caps aren't hardcoded.
 ///
 /// Enforcement still happens in `create_practice_session()`; this is only
 /// so the builder can show and respect the same numbers.
@@ -15,6 +15,9 @@ class PlanLimits {
     required this.allowTagFilter,
     required this.allowDifficultyFilter,
     required this.allowNegativeMarkingToggle,
+    this.allowPractice = true,
+    this.allowTutorMode = true,
+    this.allowExamMode = true,
   });
 
   final PlanTier plan;
@@ -27,6 +30,13 @@ class PlanLimits {
   final bool allowTagFilter;
   final bool allowDifficultyFilter;
   final bool allowNegativeMarkingToggle;
+  final bool allowPractice;
+  final bool allowTutorMode;
+  final bool allowExamMode;
+
+  /// Slider ceiling when the plan has no session cap. The server does not
+  /// apply this number.
+  static const unlimitedSliderMax = 100;
 
   factory PlanLimits.fromJson(Map<String, dynamic> json) {
     return PlanLimits(
@@ -46,6 +56,29 @@ class PlanLimits {
           json[PlanLimitsColumns.allowDifficultyFilter] as bool? ?? true,
       allowNegativeMarkingToggle:
           json[PlanLimitsColumns.allowNegativeMarkingToggle] as bool? ?? true,
+    );
+  }
+
+  /// Practice caps from a `plans` row (`current_plan_detail`).
+  factory PlanLimits.fromPlan(Map<String, dynamic> json) {
+    final sessionCap = json['max_practice_session_questions'];
+    return PlanLimits(
+      plan: PlanTier.fromString(json['code'] as String? ?? 'free'),
+      maxPracticeSessionQuestions: sessionCap == null
+          ? unlimitedSliderMax
+          : _asInt(sessionCap),
+      dailyPracticeQuestionQuota: _asNullableInt(
+        json['daily_practice_question_quota'],
+      ),
+      allowFullExplanation: json['content_depth'] == 'explanation',
+      allowTimerToggle: json['allow_timer_toggle'] == true,
+      allowTagFilter: json['allow_tag_filter'] == true,
+      allowDifficultyFilter: json['allow_difficulty_filter'] == true,
+      allowNegativeMarkingToggle:
+          json['allow_negative_marking_toggle'] == true,
+      allowPractice: json['allow_practice'] == true,
+      allowTutorMode: json['allow_tutor_mode'] == true,
+      allowExamMode: json['allow_exam_mode'] == true,
     );
   }
 

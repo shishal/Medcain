@@ -111,17 +111,26 @@ class ResultsRepository {
           .select(
             '${TestQuestionColumns.questionId},'
             '${TestQuestionColumns.orderIndex},'
-            '${TestQuestionColumns.sectionNumber},'
-            '${TestQuestionColumns.questionEmbed}:${Tables.questions}('
-            '$_questionColumns'
-            ')',
+            '${TestQuestionColumns.sectionNumber}',
           )
           .eq(TestQuestionColumns.testId, testId)
           .order(TestQuestionColumns.orderIndex);
 
-      var slots = (questionRows as List<dynamic>)
-          .cast<Map<String, dynamic>>()
-          .map(reviewSlotFromJoinJson)
+      final slotRows = (questionRows as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+      final bodies = await _listingById([
+        for (final row in slotRows)
+          if (row[TestQuestionColumns.questionId] is String)
+            row[TestQuestionColumns.questionId] as String,
+      ]);
+      var slots = [
+        for (final row in slotRows)
+          reviewSlotFromJoinJson({
+            ...row,
+            TestQuestionColumns.questionEmbed:
+                bodies[row[TestQuestionColumns.questionId]],
+          }),
+      ]
           // whereType drops nulls (malformed rows) without a crash.
           .whereType<ReviewSlot>()
           .toList();
@@ -179,7 +188,7 @@ class ResultsRepository {
     final questionById = <String, PlayerQuestion>{};
     if (ids.isNotEmpty) {
       final rows = await _client
-          .from(Tables.questions)
+          .from(Tables.questionListings)
           .select(_questionColumns)
           .inFilter(QuestionColumns.id, ids);
 
@@ -204,6 +213,21 @@ class ResultsRepository {
           question: questionById[ids[i]],
         ),
     ];
+  }
+
+  Future<Map<String, Map<String, dynamic>>> _listingById(
+    List<String> ids,
+  ) async {
+    if (ids.isEmpty) return const {};
+    final rows = await _client
+        .from(Tables.questionListings)
+        .select(_questionColumns)
+        .inFilter(QuestionColumns.id, ids);
+    return {
+      for (final row in (rows as List<dynamic>).cast<Map<String, dynamic>>())
+        if (row[QuestionColumns.id] is String)
+          row[QuestionColumns.id] as String: row,
+    };
   }
 
   static const _questionColumns =

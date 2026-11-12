@@ -9,21 +9,20 @@ import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
 import '../../data/checkout_env.dart';
 import '../../data/checkout_launcher.dart';
-import '../../domain/billing_period.dart';
-import '../../domain/plan_offering.dart';
+import '../../domain/plan_offer.dart';
 import '../../domain/plan_tier.dart';
-import '../providers/current_plan_provider.dart';
-import '../providers/user_profile_provider.dart';
+import '../providers/public_plans_provider.dart';
 import '../widgets/plan_comparison_card.dart';
 import '../widgets/plan_purchase_sheet.dart';
 
-/// Plan comparison + a link out to web checkout (Phase 7.1).
+/// Plan comparison + a link out to web checkout.
 ///
 /// Payment never happens in this app — the CTA opens the device browser.
 class UpgradePromptScreen extends ConsumerStatefulWidget {
   const UpgradePromptScreen({super.key, this.requiredPlan = PlanTier.pro});
 
-  /// Plan needed to unlock the content the user tapped, if they came from a lock.
+  /// Kept so older lock routes still open this screen. The list itself comes
+  /// from the plans table, not from this tier.
   final PlanTier requiredPlan;
 
   @override
@@ -32,9 +31,9 @@ class UpgradePromptScreen extends ConsumerStatefulWidget {
 }
 
 class _UpgradePromptScreenState extends ConsumerState<UpgradePromptScreen> {
-  PlanTier? _openingPlan;
+  String? _openingPlanId;
 
-  Future<void> _openPurchase(PlanTier plan) async {
+  Future<void> _openPurchase(PlanOffer plan) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -42,38 +41,33 @@ class _UpgradePromptScreenState extends ConsumerState<UpgradePromptScreen> {
       builder: (context) {
         return PlanPurchaseSheet(
           plan: plan,
-          onPay: (period, coupon) => _openCheckout(
-            plan: plan,
-            period: period,
-            coupon: coupon,
-          ),
+          onPay: (coupon) => _openCheckout(plan: plan, coupon: coupon),
         );
       },
     );
   }
 
   Future<bool> _openCheckout({
-    required PlanTier plan,
-    required BillingPeriod period,
+    required PlanOffer plan,
     required String coupon,
   }) async {
-    setState(() => _openingPlan = plan);
+    setState(() => _openingPlanId = plan.id);
 
     final result = await ref.read(checkoutLauncherProvider).openCheckout(
-          plan: plan,
-          period: period,
-          coupon: coupon,
-        );
+      planId: plan.id,
+      coupon: coupon,
+    );
 
     if (!mounted) return false;
-    setState(() => _openingPlan = null);
+    setState(() => _openingPlanId = null);
 
     switch (result) {
       case Success():
         return true;
       case Failure(:final message):
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
         return false;
     }
   }
@@ -82,11 +76,9 @@ class _UpgradePromptScreenState extends ConsumerState<UpgradePromptScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final planAsync = ref.watch(currentPlanProvider);
-    final currentPlan = planAsync.value;
-    final required = widget.requiredPlan == PlanTier.free
-        ? null
-        : widget.requiredPlan;
+    final plansAsync = ref.watch(publicPlansProvider);
+    final currentAsync = ref.watch(effectivePlanProvider);
+    final currentId = currentAsync.asData?.value.id;
 
     return Scaffold(
       appBar: AppBar(
@@ -102,50 +94,49 @@ class _UpgradePromptScreenState extends ConsumerState<UpgradePromptScreen> {
           },
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(Spacing.lg),
-        children: [
-          Text(
-            required == null
-                ? 'Compare plans'
-                : 'Upgrade to ${required.label} to unlock this',
-            style: textTheme.headlineSmall,
+      body: plansAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Padding(
+          padding: const EdgeInsets.all(Spacing.lg),
+          child: InlineErrorMessage(
+            message: UserFacingError.display(error),
+            onRetry: () => ref.invalidate(publicPlansProvider),
           ),
-          const SizedBox(height: Spacing.sm),
-          Text(
-            CheckoutEnv.webCheckoutEnabled
-                ? 'You will finish payment on our website in your browser. '
-                    'This app never takes a card or shows a buy button.'
-                : 'Paid checkout is paused during this beta. '
-                    'You can keep using the Free plan.',
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: Spacing.lg),
-          if (planAsync.hasError) ...[
-            InlineErrorMessage(
-              message: UserFacingError.display(planAsync.error!),
-              onRetry: () => ref.read(userProfileProvider.notifier).refresh(),
-            ),
-            const SizedBox(height: Spacing.md),
-          ],
-          for (final offering in PlanOffering.comparison) ...[
-            PlanComparisonCard(
-              offering: offering,
-              isCurrent: currentPlan == offering.tier,
-              isRequired: required == offering.tier,
-              isOpening: _openingPlan == offering.tier,
-              onContinueInBrowser:
-                  !CheckoutEnv.webCheckoutEnabled ||
-                      offering.tier == PlanTier.free ||
-                      currentPlan == offering.tier
-                  ? null
-                  : () => _openPurchase(offering.tier),
-            ),
-            const SizedBox(height: Spacing.md),
-          ],
-        ],
+        ),
+        data: (plans) {
+          return ListView(
+            padding: const EdgeInsets.all(Spacing.lg),
+            children: [
+              Text('Compare plans', style: textTheme.headlineSmall),
+              const SizedBox(height: Spacing.sm),
+              Text(
+                CheckoutEnv.webCheckoutEnabled
+                    ? 'You will finish payment on our website in your browser. '
+                          'This app never takes a card.'
+                    : 'Paid checkout is paused during this beta. '
+                          'You can keep using the Free plan.',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: Spacing.lg),
+              for (final offer in plans) ...[
+                PlanComparisonCard(
+                  offer: offer,
+                  isCurrent: currentId == offer.id,
+                  isOpening: _openingPlanId == offer.id,
+                  onContinueInBrowser:
+                      !CheckoutEnv.webCheckoutEnabled ||
+                          !offer.isPurchasable ||
+                          currentId == offer.id
+                      ? null
+                      : () => _openPurchase(offer),
+                ),
+                const SizedBox(height: Spacing.md),
+              ],
+            ],
+          );
+        },
       ),
     );
   }

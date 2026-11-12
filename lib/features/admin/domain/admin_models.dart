@@ -8,6 +8,7 @@ class AdminUser {
     this.fullName,
     this.phone,
     required this.plan,
+    this.planId,
     this.planExpiresAt,
     this.planSuspendedAt,
     this.blockedAt,
@@ -27,6 +28,7 @@ class AdminUser {
   final String? fullName;
   final String? phone;
   final String plan;
+  final String? planId;
   final DateTime? planExpiresAt;
   final DateTime? planSuspendedAt;
   final DateTime? blockedAt;
@@ -62,6 +64,7 @@ class AdminUser {
       fullName: json['full_name'] as String?,
       phone: json['phone'] as String?,
       plan: json['plan'] as String? ?? 'free',
+      planId: json['plan_id'] as String?,
       planExpiresAt: _date(json['plan_expires_at']),
       planSuspendedAt: _date(json['plan_suspended_at']),
       blockedAt: _date(json['blocked_at']),
@@ -324,6 +327,7 @@ class AdminQuestionInput {
       QuestionColumns.marks: marks,
       QuestionColumns.difficulty: difficulty,
       QuestionColumns.requiredPlan: requiredPlan,
+      'is_preview': requiredPlan == 'free',
       QuestionColumns.isActive: isActive,
       QuestionColumns.optionA: optionA,
       QuestionColumns.optionB: optionB,
@@ -453,12 +457,6 @@ const adminDifficulties = <(String, String)>[
   ('must', 'Must'),
   ('should', 'Should'),
   ('could', 'Could'),
-];
-
-const adminPlans = <(String, String)>[
-  ('free', 'Free'),
-  ('pro', 'Pro'),
-  ('elite', 'Elite'),
 ];
 
 const adminAnnouncementCategories = <(String, String)>[

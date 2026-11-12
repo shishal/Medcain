@@ -126,30 +126,29 @@ class TestsRepository {
       final questionRows = await _client
           .from(Tables.testQuestions)
           .select(
+            '${TestQuestionColumns.questionId},'
             '${TestQuestionColumns.orderIndex},'
-            '${TestQuestionColumns.sectionNumber},'
-            '${TestQuestionColumns.questionEmbed}:${Tables.questions}('
-            '${QuestionColumns.id},'
-            '${QuestionColumns.questionText},'
-            '${QuestionColumns.optionA},'
-            '${QuestionColumns.optionB},'
-            '${QuestionColumns.optionC},'
-            '${QuestionColumns.optionD},'
-            '${QuestionColumns.correctOption},'
-            '${QuestionColumns.explanationText},'
-            '${QuestionColumns.explanationDeep},'
-            '${QuestionColumns.explanationVideoUrl},'
-            '${QuestionColumns.imageUrl}'
-            ')',
+            '${TestQuestionColumns.sectionNumber}',
           )
           .eq(TestQuestionColumns.testId, testId)
           .order(TestQuestionColumns.orderIndex);
 
-      final questions = (questionRows as List<dynamic>)
-          .cast<Map<String, dynamic>>()
-          .where((row) => row[TestQuestionColumns.questionEmbed] != null)
-          .map(PlayerQuestion.fromJoinJson)
-          .toList();
+      final slots = (questionRows as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+      final bodies = await _listingById([
+        for (final row in slots)
+          if (row[TestQuestionColumns.questionId] is String)
+            row[TestQuestionColumns.questionId] as String,
+      ]);
+      final questions = [
+        for (final row in slots)
+          if (bodies[row[TestQuestionColumns.questionId]] != null)
+            PlayerQuestion.fromJoinJson({
+              ...row,
+              TestQuestionColumns.questionEmbed:
+                  bodies[row[TestQuestionColumns.questionId]],
+            }),
+      ];
 
       if (questions.isEmpty) {
         return const Failure('Could not load questions for this test.');
@@ -166,6 +165,34 @@ class TestsRepository {
         ),
       );
     }
+  }
+
+  /// Question bodies through `question_listings`, which redacts by plan.
+  Future<Map<String, Map<String, dynamic>>> _listingById(
+    List<String> ids,
+  ) async {
+    if (ids.isEmpty) return const {};
+    final rows = await _client
+        .from(Tables.questionListings)
+        .select(
+          '${QuestionColumns.id},'
+          '${QuestionColumns.questionText},'
+          '${QuestionColumns.optionA},'
+          '${QuestionColumns.optionB},'
+          '${QuestionColumns.optionC},'
+          '${QuestionColumns.optionD},'
+          '${QuestionColumns.correctOption},'
+          '${QuestionColumns.explanationText},'
+          '${QuestionColumns.explanationDeep},'
+          '${QuestionColumns.explanationVideoUrl},'
+          '${QuestionColumns.imageUrl}',
+        )
+        .inFilter(QuestionColumns.id, ids);
+    return {
+      for (final row in (rows as List<dynamic>).cast<Map<String, dynamic>>())
+        if (row[QuestionColumns.id] is String)
+          row[QuestionColumns.id] as String: row,
+    };
   }
 
   /// Existing in-progress attempt for this test, or null if none.

@@ -53,26 +53,78 @@ class BookmarksRepository {
       final rows = await _client
           .from(Tables.bookmarks)
           .select(
-            '${BookmarkColumns.questionId},'
-            '${BookmarkColumns.createdAt},'
-            '${BookmarkColumns.questionEmbed}:${Tables.questions}('
-            '${QuestionColumns.id},'
-            '${QuestionColumns.questionText},'
-            '${QuestionColumns.topicEmbed}:${Tables.topics}('
-            '${TopicColumns.name},'
-            '${TopicColumns.subjectEmbed}:${Tables.subjects}('
-            '${SubjectColumns.name}'
-            ')'
-            ')'
-            ')',
+            '${BookmarkColumns.questionId},${BookmarkColumns.createdAt}',
           )
           .eq(BookmarkColumns.userId, userId)
           .order(BookmarkColumns.createdAt, ascending: false);
 
-      // `?item` includes the value only when fromJson succeeded (non-null).
+      final bookmarks = (rows as List<dynamic>).cast<Map<String, dynamic>>();
+      final questionIds = [
+        for (final row in bookmarks)
+          if (row[BookmarkColumns.questionId] is String)
+            row[BookmarkColumns.questionId] as String,
+      ];
+      final listingRows = questionIds.isEmpty
+          ? const <Map<String, dynamic>>[]
+          : (await _client
+                    .from(Tables.questionListings)
+                    .select(
+                      '${QuestionColumns.id},${QuestionColumns.questionText},'
+                      '${QuestionColumns.topicId}',
+                    )
+                    .inFilter(QuestionColumns.id, questionIds)
+                as List<dynamic>)
+              .cast<Map<String, dynamic>>();
+      final listingById = {
+        for (final row in listingRows)
+          if (row[QuestionColumns.id] is String)
+            row[QuestionColumns.id] as String: row,
+      };
+      final topicIds = {
+        for (final row in listingRows)
+          if (row[QuestionColumns.topicId] is String)
+            row[QuestionColumns.topicId] as String,
+      };
+      final topicRows = topicIds.isEmpty
+          ? const <Map<String, dynamic>>[]
+          : (await _client
+                    .from(Tables.topics)
+                    .select(
+                      '${TopicColumns.id},${TopicColumns.name},'
+                      '${TopicColumns.subjectId}',
+                    )
+                    .inFilter(TopicColumns.id, topicIds.toList())
+                as List<dynamic>)
+              .cast<Map<String, dynamic>>();
+      final subjectIds = {
+        for (final row in topicRows)
+          if (row[TopicColumns.subjectId] is String)
+            row[TopicColumns.subjectId] as String,
+      };
+      final subjectRows = subjectIds.isEmpty
+          ? const <Map<String, dynamic>>[]
+          : (await _client
+                    .from(Tables.subjects)
+                    .select('${SubjectColumns.id},${SubjectColumns.name}')
+                    .inFilter(SubjectColumns.id, subjectIds.toList())
+                as List<dynamic>)
+              .cast<Map<String, dynamic>>();
+      final subjectName = {
+        for (final row in subjectRows)
+          if (row[SubjectColumns.id] is String)
+            row[SubjectColumns.id] as String:
+                row[SubjectColumns.name] as String? ?? '',
+      };
+      final topicById = {
+        for (final row in topicRows)
+          if (row[TopicColumns.id] is String)
+            row[TopicColumns.id] as String: row,
+      };
+
       return Success([
-        for (final row in (rows as List<dynamic>).cast<Map<String, dynamic>>())
-          ?BookmarkedQuestion.fromJson(row),
+        for (final row in bookmarks)
+          if (row[BookmarkColumns.questionId] is String)
+            ?_bookmarked(row, listingById, topicById, subjectName),
       ]);
     } catch (e) {
       return Failure(
@@ -263,6 +315,38 @@ class BookmarksRepository {
     }
     return 'Lesson';
   }
+}
+
+BookmarkedQuestion? _bookmarked(
+  Map<String, dynamic> row,
+  Map<String, Map<String, dynamic>> listingById,
+  Map<String, Map<String, dynamic>> topicById,
+  Map<String, String> subjectName,
+) {
+  final id = row[BookmarkColumns.questionId] as String?;
+  if (id == null) return null;
+  final listing = listingById[id];
+  final topicId = listing?[QuestionColumns.topicId] as String?;
+  final topic = topicId == null ? null : topicById[topicId];
+  final subjectId = topic?[TopicColumns.subjectId] as String?;
+  return BookmarkedQuestion.fromJson({
+    BookmarkColumns.questionId: id,
+    BookmarkColumns.createdAt: row[BookmarkColumns.createdAt],
+    BookmarkColumns.questionEmbed: listing == null
+        ? null
+        : {
+            QuestionColumns.id: id,
+            QuestionColumns.questionText: listing[QuestionColumns.questionText],
+            QuestionColumns.topicEmbed: topic == null
+                ? null
+                : {
+                    TopicColumns.name: topic[TopicColumns.name],
+                    TopicColumns.subjectEmbed: {
+                      SubjectColumns.name: subjectName[subjectId],
+                    },
+                  },
+          },
+  });
 }
 
 @Riverpod(keepAlive: true)

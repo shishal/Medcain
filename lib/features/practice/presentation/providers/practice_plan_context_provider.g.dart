@@ -8,14 +8,14 @@ part of 'practice_plan_context_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Current plan's `plan_limits` row plus today's practice usage.
+/// Current plan's practice caps plus today's practice usage.
 ///
 /// Invalidate after a successful session create so the remaining quota updates.
 
 @ProviderFor(PracticePlanContextNotifier)
 final practicePlanContextProvider = PracticePlanContextNotifierProvider._();
 
-/// Current plan's `plan_limits` row plus today's practice usage.
+/// Current plan's practice caps plus today's practice usage.
 ///
 /// Invalidate after a successful session create so the remaining quota updates.
 final class PracticePlanContextNotifierProvider
@@ -24,7 +24,7 @@ final class PracticePlanContextNotifierProvider
           PracticePlanContextNotifier,
           PracticePlanContext
         > {
-  /// Current plan's `plan_limits` row plus today's practice usage.
+  /// Current plan's practice caps plus today's practice usage.
   ///
   /// Invalidate after a successful session create so the remaining quota updates.
   PracticePlanContextNotifierProvider._()
@@ -49,7 +49,7 @@ final class PracticePlanContextNotifierProvider
 String _$practicePlanContextNotifierHash() =>
     r'd0b4229da6680c15f25d6c34ae52d35f1dc01bec';
 
-/// Current plan's `plan_limits` row plus today's practice usage.
+/// Current plan's practice caps plus today's practice usage.
 ///
 /// Invalidate after a successful session create so the remaining quota updates.
 

@@ -51,6 +51,29 @@ class AdminRepository {
     );
   }
 
+  /// Each row is id, label, and whether the plan can be newly assigned.
+  Future<Result<List<(String, String, bool)>>> listAssignablePlans() async {
+    try {
+      final raw = await _client.rpc(RpcFunctions.adminListPlans);
+      if (raw is! List) return const Success([]);
+      return Success([
+        for (final item in raw)
+          if (item is Map && item['id'] is String)
+            (
+              item['id'] as String,
+              item['is_active'] == true
+                  ? (item['name'] as String? ?? 'Plan')
+                  : '${item['name'] ?? 'Plan'} (archived)',
+              item['is_active'] == true,
+            ),
+      ]);
+    } catch (e) {
+      return Failure(
+        UserFacingError.from(e, fallback: 'Could not load plans.'),
+      );
+    }
+  }
+
   Future<Result<AdminUser>> setPlan({
     required String userId,
     required String plan,
@@ -60,7 +83,7 @@ class AdminRepository {
       RpcFunctions.adminSetPlan,
       {
         AdminRpcParams.userId: userId,
-        AdminRpcParams.plan: plan,
+        AdminRpcParams.planId: plan,
         AdminRpcParams.expiresAt: expiresAt?.toUtc().toIso8601String(),
       },
       AdminUser.fromJson,

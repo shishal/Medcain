@@ -1,25 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/spacing.dart';
-import '../../domain/plan_offering.dart';
+import '../../domain/plan_offer.dart';
 
-/// One plan column on the upgrade screen. Checkout CTAs live here as
-/// "Continue in browser" — never a Buy/price action inside the app.
+/// One plan on the upgrade screen. Checkout CTAs live here as
+/// "Purchase …" — the charge happens in the browser, not in the app.
 class PlanComparisonCard extends StatelessWidget {
   const PlanComparisonCard({
     super.key,
-    required this.offering,
+    required this.offer,
     required this.isCurrent,
-    required this.isRequired,
     this.onContinueInBrowser,
     this.isOpening = false,
   });
 
-  final PlanOffering offering;
+  final PlanOffer offer;
   final bool isCurrent;
-  final bool isRequired;
 
-  /// Null on Free, or when this card is already the user's current plan.
+  /// Null when this plan is not for sale, or it is already current.
   final VoidCallback? onContinueInBrowser;
   final bool isOpening;
 
@@ -27,10 +25,10 @@ class PlanComparisonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final highlighted = isRequired || isCurrent;
+    final promo = offer.promoLine;
 
     return Card(
-      color: highlighted
+      color: isCurrent
           ? colorScheme.primaryContainer.withValues(alpha: 0.35)
           : null,
       child: Padding(
@@ -40,56 +38,43 @@ class PlanComparisonCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(offering.tier.label, style: textTheme.titleLarge),
-                ),
-                if (isCurrent)
-                  Chip(
-                    label: const Text('Current'),
+                Expanded(child: Text(offer.name, style: textTheme.titleLarge)),
+                if (offer.amountPaise > 0)
+                  Text(offer.priceLabel, style: textTheme.titleMedium),
+                if (isCurrent) ...[
+                  const SizedBox(width: Spacing.sm),
+                  const Chip(
+                    label: Text('Current'),
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                   ),
-                if (isRequired && !isCurrent)
-                  Chip(
-                    label: const Text('Needed'),
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    backgroundColor: colorScheme.primaryContainer,
-                  ),
+                ],
               ],
             ),
             const SizedBox(height: Spacing.xs),
             Text(
-              offering.tagline,
+              [
+                if ((offer.tagline ?? '').trim().isNotEmpty) offer.tagline!.trim(),
+                if (offer.isPurchasable) offer.durationText,
+              ].join(' · '),
               style: textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
+            if (promo != null) ...[
+              const SizedBox(height: Spacing.sm),
+              Text(promo, style: textTheme.titleSmall),
+            ],
             const SizedBox(height: Spacing.md),
-            for (final feature in offering.features)
+            for (final feature in offer.benefits)
               Padding(
                 padding: const EdgeInsets.only(bottom: Spacing.sm),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      feature.included ? Icons.check : Icons.close,
-                      size: 20,
-                      color: feature.included
-                          ? colorScheme.primary
-                          : colorScheme.outline,
-                    ),
+                    Icon(Icons.check, size: 20, color: colorScheme.primary),
                     const SizedBox(width: Spacing.sm),
-                    Expanded(
-                      child: Text(
-                        feature.label,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: feature.included
-                              ? null
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
+                    Expanded(child: Text(feature, style: textTheme.bodyMedium)),
                   ],
                 ),
               ),
@@ -103,7 +88,7 @@ class PlanComparisonCard extends StatelessWidget {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text('Purchase ${offering.tier.label}'),
+                    : Text('Purchase ${offer.name}'),
               ),
             ],
           ],

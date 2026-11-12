@@ -2,8 +2,7 @@
   const panel = document.getElementById('panel');
   const params = new URLSearchParams(window.location.search);
   let prefilledPhone = params.get('phone') || '';
-  const requestedPlan = (params.get('plan') || 'pro').toLowerCase();
-  const requestedPeriod = (params.get('period') || 'y1').toLowerCase();
+  const requestedPlan = (params.get('plan') || '').trim().toLowerCase();
   const requestedCode = params.get('code') || '';
 
   const config = window.CHECKOUT_CONFIG;
@@ -27,15 +26,10 @@
     config.supabaseAnonKey,
   );
 
-  const periods = window.BILLING_PERIODS || {};
-  let selectedPlan =
-    requestedPlan === 'elite' || requestedPlan === 'pro' ? requestedPlan : 'pro';
-  let selectedPeriod = Object.prototype.hasOwnProperty.call(periods, requestedPeriod)
-    ? requestedPeriod
-    : 'y1';
+  let selectedPlanId = '';
   let busy = false;
-  // List prices from paid_plan_catalog, keyed plan → period → paise.
-  let catalogByPlan = null;
+  // Public paid plans from the plans table. The page never invents a price.
+  let catalog = [];
   // The server prices the order. These only remember what the student typed
   // and the last quote checkout_quote() returned.
   let draftCode = requestedCode;
@@ -49,35 +43,38 @@
 
   async function loadCatalog() {
     const { data, error } = await supabase
-      .from('paid_plan_catalog')
-      .select('plan, period, amount_paise');
+      .from('plans')
+      .select(
+        'id, code, name, tagline, benefits, amount_paise, duration_months, duration_label, promo_headline, promo_detail, featured_discount_code, sort_order',
+      )
+      .eq('is_public', true)
+      .eq('is_active', true)
+      .order('sort_order');
     if (error || !Array.isArray(data)) return null;
-    const byPlan = { pro: {}, elite: {} };
-    for (const row of data) {
-      const paise = row && row.amount_paise;
-      const period = row && row.period;
-      if (
-        row &&
-        (row.plan === 'pro' || row.plan === 'elite') &&
-        Object.prototype.hasOwnProperty.call(periods, period) &&
-        Number.isInteger(paise) &&
-        paise >= 100
-      ) {
-        byPlan[row.plan][period] = paise;
-      }
-    }
-    for (const plan of ['pro', 'elite']) {
-      for (const period of Object.keys(periods)) {
-        if (!Number.isInteger(byPlan[plan][period])) return null;
-      }
-    }
-    return byPlan;
+    const rows = data.filter((row) => {
+      return row &&
+        typeof row.id === 'string' &&
+        Number.isInteger(row.amount_paise) &&
+        row.amount_paise >= 100 &&
+        Number.isInteger(row.duration_months) &&
+        row.duration_months >= 1;
+    });
+    return rows.length ? rows : null;
   }
 
-  function listPaise(plan, period) {
-    if (!catalogByPlan || !catalogByPlan[plan]) return null;
-    const paise = catalogByPlan[plan][period];
-    return Number.isInteger(paise) ? paise : null;
+  function selectedPlan() {
+    return catalog.find((row) => row.id === selectedPlanId) || null;
+  }
+
+  function chooseInitialPlan() {
+    const match = catalog.find((row) => {
+      return row.id === requestedPlan || String(row.code || '').toLowerCase() === requestedPlan;
+    });
+    selectedPlanId = (match || catalog[0]).id;
+    const plan = selectedPlan();
+    if (!draftCode && plan && plan.featured_discount_code) {
+      draftCode = plan.featured_discount_code;
+    }
   }
 
   function formatInr(paise) {
@@ -97,7 +94,7 @@
       'Referral codes cannot be used on your own payment.',
       'You already used this code.',
       'That discount is too large for this plan.',
-      'Choose 1, 2, 3, or 4 years.',
+      'Choose a plan.',
       'Sign in to continue.',
     ].find((item) => raw.includes(item));
     if (known) return known;
@@ -261,42 +258,39 @@
     }
   }
 
+  function durationText(plan) {
+    if (plan.duration_label) return plan.duration_label;
+    if (plan.duration_months) return `${plan.duration_months} months`;
+    return '';
+  }
+
   function renderPlans(user) {
-    const plans = window.PAID_PLANS;
-    if (!catalogByPlan) {
+    const current = selectedPlan();
+    if (!catalog.length || !current) {
       panel.innerHTML =
         '<p class="error">Prices are unavailable right now. Reload the page and try again.</p>';
       return;
     }
 
-    const planCards = Object.entries(plans)
-      .map(([id, plan]) => {
-        const selected = id === selectedPlan ? ' selected' : '';
+    const planCards = catalog
+      .map((plan) => {
+        const selected = plan.id === selectedPlanId ? ' selected' : '';
+        const promo = plan.promo_headline
+          ? `<p class="success">${escapeHtml(plan.promo_headline)}${plan.promo_detail ? ` · ${escapeHtml(plan.promo_detail)}` : ''}</p>`
+          : '';
+        const benefits = Array.isArray(plan.benefits)
+          ? plan.benefits.map((line) => `<p class="muted">${escapeHtml(line)}</p>`).join('')
+          : '';
         return `
           <div class="card${selected}">
-            <button class="plan-pick" type="button" data-plan="${id}">
+            <button class="plan-pick" type="button" data-plan="${escapeHtml(plan.id)}">
               <div class="row">
-                <strong>${escapeHtml(plan.label)}</strong>
+                <strong>${escapeHtml(plan.name)}</strong>
+                <span class="price">${formatInr(plan.amount_paise)}</span>
               </div>
-              <p class="muted">${escapeHtml(plan.tagline)}</p>
-            </button>
-          </div>
-        `;
-      })
-      .join('');
-
-    const periodCards = Object.entries(periods)
-      .map(([id, period]) => {
-        const paise = listPaise(selectedPlan, id);
-        if (!Number.isInteger(paise)) return '';
-        const selected = id === selectedPeriod ? ' selected' : '';
-        return `
-          <div class="card${selected}">
-            <button class="plan-pick" type="button" data-period="${id}">
-              <div class="row">
-                <strong>${escapeHtml(period.label)}</strong>
-                <span class="price">${formatInr(paise)}</span>
-              </div>
+              <p class="muted">${escapeHtml(durationText(plan))}${plan.tagline ? ` · ${escapeHtml(plan.tagline)}` : ''}</p>
+              ${benefits}
+              ${promo}
             </button>
           </div>
         `;
@@ -305,7 +299,7 @@
 
     const payLabel = appliedQuote
       ? `Pay ${formatInr(appliedQuote.amount_paise)}`
-      : 'Pay with Razorpay';
+      : `Pay ${formatInr(current.amount_paise)}`;
     const discountHtml = discountError
       ? `<p class="error">${escapeHtml(discountError)}</p>`
       : appliedQuote
@@ -314,10 +308,7 @@
 
     panel.innerHTML = `
       <p class="muted">Signed in as ${escapeHtml(accountLabel(user))}</p>
-      <p class="muted">Pro and Elite include the same questions and answers. Pro is 1 registered device. Elite is 2.</p>
       ${planCards}
-      <p class="muted">How long</p>
-      ${periodCards}
       <label for="code">Discount or referral code</label>
       <input id="code" name="code" type="text" maxlength="20" autocomplete="off" spellcheck="false" />
       <button class="ghost" id="apply-code" type="button">Apply code</button>
@@ -329,19 +320,10 @@
 
     panel.querySelectorAll('[data-plan]').forEach((button) => {
       button.addEventListener('click', () => {
-        draftCode = panel.querySelector('#code').value.trim();
-        selectedPlan = button.getAttribute('data-plan');
-        appliedQuote = null;
-        discountError = '';
-        renderPlans(user);
-        if (draftCode) applyCode(user);
-      });
-    });
-
-    panel.querySelectorAll('[data-period]').forEach((button) => {
-      button.addEventListener('click', () => {
-        draftCode = panel.querySelector('#code').value.trim();
-        selectedPeriod = button.getAttribute('data-period');
+        const typed = panel.querySelector('#code').value.trim();
+        selectedPlanId = button.getAttribute('data-plan');
+        const next = selectedPlan();
+        draftCode = typed || (next && next.featured_discount_code) || '';
         appliedQuote = null;
         discountError = '';
         renderPlans(user);
@@ -381,9 +363,8 @@
     }
 
     const { data, error } = await supabase.rpc('checkout_quote', {
-      p_plan: selectedPlan,
+      p_plan_id: selectedPlanId,
       p_code: draftCode,
-      p_period: selectedPeriod,
     });
     if (seq !== quoteSeq) return;
 
@@ -394,7 +375,7 @@
     }
 
     appliedQuote = data;
-    draftCode = data.code || draftCode;
+    draftCode = data.discount_code || draftCode;
     renderPlans(user);
   }
 
@@ -412,8 +393,7 @@
       'create-razorpay-order',
       {
         body: {
-          plan: selectedPlan,
-          period: selectedPeriod,
+          plan_id: selectedPlanId,
           code: draftCode || null,
         },
       },
@@ -486,9 +466,10 @@
       renderLogin();
       return;
     }
-    catalogByPlan = await loadCatalog();
+    catalog = (await loadCatalog()) || [];
+    if (catalog.length) chooseInitialPlan();
     renderPlans(user);
-    if (!autoApplied && draftCode && catalogByPlan) {
+    if (!autoApplied && draftCode && selectedPlan()) {
       autoApplied = true;
       await applyCode(user);
     }

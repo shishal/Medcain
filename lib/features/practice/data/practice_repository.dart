@@ -5,7 +5,6 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/supabase/tables.dart';
 import '../../../core/utils/result.dart';
 import '../../../core/utils/user_facing_error.dart';
-import '../../profile/domain/plan_tier.dart';
 import '../domain/created_practice_session.dart';
 import '../domain/plan_limits.dart';
 import '../domain/practice_builder_draft.dart';
@@ -91,18 +90,18 @@ class PracticeRepository {
     }
   }
 
-  Future<Result<PracticePlanContext>> fetchPlanContext(PlanTier plan) async {
+  Future<Result<PracticePlanContext>> fetchPlanContext() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
       return const Failure('Not signed in.');
     }
 
     try {
-      final limitsRow = await _client
-          .from(Tables.planLimits)
-          .select()
-          .eq(PlanLimitsColumns.plan, plan.name)
-          .single();
+      final limitsRaw = await _client.rpc(RpcFunctions.currentPlanDetail);
+      if (limitsRaw is! Map) {
+        return const Failure('Could not load your plan limits. Please try again.');
+      }
+      final limitsRow = Map<String, dynamic>.from(limitsRaw);
 
       final usageRows = await _client
           .from(Tables.dailyPracticeUsage)
@@ -119,7 +118,7 @@ class PracticeRepository {
 
       return Success(
         PracticePlanContext(
-          limits: PlanLimits.fromJson(limitsRow),
+          limits: PlanLimits.fromPlan(limitsRow),
           questionsUsedToday: used,
         ),
       );

@@ -20,7 +20,7 @@ const capturedBody = JSON.stringify({
         order_id: 'order_test123',
         notes: {
           user_id: '11111111-1111-1111-1111-111111111111',
-          plan: 'pro',
+          plan_id: '22222222-2222-2222-2222-222222222222',
           email: 'a@b.c',
         },
       },
@@ -69,14 +69,14 @@ Deno.test('parses payment.captured and forwards the amount', () => {
   if (parsed.kind !== 'captured') {
     throw new Error(`expected captured, got ${JSON.stringify(parsed)}`);
   }
-  if (parsed.payment.plan !== 'pro' || parsed.payment.amountPaise !== 149900) {
-    throw new Error('pro payment fields did not match');
+  if (
+    parsed.payment.planId !== '22222222-2222-2222-2222-222222222222' ||
+    parsed.payment.amountPaise !== 149900
+  ) {
+    throw new Error('plan payment fields did not match');
   }
   if (parsed.payment.discountCode !== null) {
     throw new Error('list-price payment must not carry a discount code');
-  }
-  if (parsed.payment.period !== null) {
-    throw new Error('a missing period is forwarded for the database to match');
   }
 });
 
@@ -112,15 +112,15 @@ Deno.test('ignores order.paid so the same payment is not applied twice', () => {
   }
 });
 
-Deno.test('forwards any positive amount for a known plan', () => {
-  // paid_plan_catalog is the price check. This parser must not reject a
-  // paise value just because it differs from the seed in paid_plans.ts.
+Deno.test('forwards any positive amount for a plan id', () => {
+  // The plan row is the price check. This parser must not reject a paise
+  // value just because it differs from a seed price.
   const body = JSON.parse(capturedBody);
-  body.payload.payment.entity.notes.plan = 'elite';
   body.payload.payment.entity.amount = 1;
   const parsed = parseWebhookEvent(body);
-  if (parsed.kind !== 'captured' || parsed.payment.plan !== 'elite') {
-    throw new Error(`expected captured elite, got ${JSON.stringify(parsed)}`);
+  if (parsed.kind !== 'captured' || parsed.payment.planId !==
+    '22222222-2222-2222-2222-222222222222') {
+    throw new Error(`expected captured plan, got ${JSON.stringify(parsed)}`);
   }
   if (parsed.payment.amountPaise !== 1) {
     throw new Error('amount must be forwarded to apply_razorpay_payment');
@@ -136,20 +136,11 @@ Deno.test('rejects a non-uuid user_id', () => {
   }
 });
 
-Deno.test('forwards a known billing period', () => {
+Deno.test('rejects a missing plan id', () => {
   const body = JSON.parse(capturedBody);
-  body.payload.payment.entity.notes.period = 'y3';
-  const parsed = parseWebhookEvent(body);
-  if (parsed.kind !== 'captured' || parsed.payment.period !== 'y3') {
-    throw new Error(`expected period y3, got ${JSON.stringify(parsed)}`);
-  }
-});
-
-Deno.test('rejects an unknown billing period', () => {
-  const body = JSON.parse(capturedBody);
-  body.payload.payment.entity.notes.period = 'lifetime';
+  delete body.payload.payment.entity.notes.plan_id;
   const parsed = parseWebhookEvent(body);
   if (parsed.kind !== 'invalid') {
-    throw new Error('unknown period must be invalid');
+    throw new Error('missing plan_id must be invalid');
   }
 });

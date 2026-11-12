@@ -5,6 +5,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/supabase/tables.dart';
 import '../../../core/utils/result.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../domain/plan_offer.dart';
 import '../domain/plan_tier.dart';
 import '../domain/referral_code.dart';
 import '../domain/user_profile.dart';
@@ -64,6 +65,52 @@ class ProfileRepository {
       }
 
       return Success(PlanTier.fromString(raw));
+    } catch (e) {
+      return Failure(
+        UserFacingError.from(
+          e,
+          fallback: 'Could not load your plan. Please try again.',
+        ),
+      );
+    }
+  }
+
+  /// Public plans for the paywall. Inactive or hidden rows stay out.
+  Future<Result<List<PlanOffer>>> fetchPublicPlans() async {
+    if (_client.auth.currentUser == null) {
+      return const Failure('Not signed in.');
+    }
+    try {
+      final rows = await _client
+          .from(Tables.plans)
+          .select()
+          .eq('is_public', true)
+          .eq('is_active', true)
+          .order('sort_order');
+      return Success(
+        (rows as List<dynamic>)
+            .cast<Map<String, dynamic>>()
+            .map(PlanOffer.fromJson)
+            .toList(),
+      );
+    } catch (e) {
+      return Failure(
+        UserFacingError.from(e, fallback: 'Could not load plans.'),
+      );
+    }
+  }
+
+  /// Effective plan row, including expiry and suspension, from Postgres.
+  Future<Result<PlanOffer>> fetchEffectivePlan() async {
+    if (_client.auth.currentUser == null) {
+      return const Failure('Not signed in.');
+    }
+    try {
+      final raw = await _client.rpc(RpcFunctions.currentPlanDetail);
+      if (raw is! Map) {
+        return const Failure('Could not load your plan. Please try again.');
+      }
+      return Success(PlanOffer.fromJson(Map<String, dynamic>.from(raw)));
     } catch (e) {
       return Failure(
         UserFacingError.from(

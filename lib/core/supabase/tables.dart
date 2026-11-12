@@ -10,6 +10,8 @@ abstract final class Tables {
   static const tags = 'tags';
   static const questionTags = 'question_tags';
   static const planLimits = 'plan_limits';
+  static const plans = 'plans';
+  static const lessonAccess = 'lesson_access';
   static const dailyPracticeUsage = 'daily_practice_usage';
   static const attempts = 'attempts';
   static const attemptAnswers = 'attempt_answers';
@@ -42,6 +44,7 @@ abstract final class ProfileColumns {
   static const fullName = 'full_name';
   static const phone = 'phone';
   static const plan = 'plan';
+  static const planId = 'plan_id';
   static const planStartedAt = 'plan_started_at';
   static const planExpiresAt = 'plan_expires_at';
   static const planSuspendedAt = 'plan_suspended_at';
@@ -117,6 +120,11 @@ abstract final class QuestionColumns {
   static const hasDirectAnswer = 'has_direct_answer';
   static const hasExplanation = 'has_explanation';
   static const publicCode = 'public_code';
+  static const isLocked = 'is_locked';
+  static const isPreview = 'is_preview';
+  static const sampleAnswer = 'sample_answer';
+  static const answersVisible = 'answers_visible';
+  static const explanationVisible = 'explanation_visible';
 
   /// PostgREST embed alias: `topic:topics(...)`.
   static const topicEmbed = 'topic';
@@ -233,6 +241,7 @@ abstract final class DiscountCodeColumns {
 
 abstract final class RpcFunctions {
   static const currentPlan = 'current_plan';
+  static const currentPlanDetail = 'current_plan_detail';
   static const claimActiveDevice = 'claim_active_device';
   static const assertActiveDevice = 'assert_active_device';
   static const createPracticeSession = 'create_practice_session';
@@ -249,6 +258,7 @@ abstract final class RpcFunctions {
   static const adminGetUser = 'admin_get_user';
   static const adminUpdateProfile = 'admin_update_profile';
   static const adminSetPlan = 'admin_set_plan';
+  static const adminListPlans = 'admin_list_plans';
   static const adminClearDeviceSuspension = 'admin_clear_device_suspension';
   static const adminSetBlocked = 'admin_set_blocked';
   static const adminListAnnouncements = 'admin_list_announcements';
@@ -279,6 +289,7 @@ abstract final class AdminRpcParams {
   static const batchYear = 'p_batch_year';
   static const mbbsPhaseId = 'p_mbbs_phase_id';
   static const plan = 'p_plan';
+  static const planId = 'p_plan_id';
   static const expiresAt = 'p_expires_at';
   static const blocked = 'p_blocked';
   static const reason = 'p_reason';

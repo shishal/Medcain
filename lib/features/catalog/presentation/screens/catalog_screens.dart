@@ -83,7 +83,6 @@ class TopicLessonsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lessons = ref.watch(topicLessonsProvider(topicId));
-    final plan = ref.watch(currentPlanProvider).value ?? PlanTier.free;
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: lessons.when(
@@ -104,7 +103,7 @@ class TopicLessonsScreen extends ConsumerWidget {
             separatorBuilder: (_, _) => const SizedBox(height: Spacing.sm),
             itemBuilder: (context, i) {
               final lesson = items[i];
-              final locked = !plan.covers(lesson.requiredPlan);
+              final locked = !lesson.isOpen;
               return CatalogRowCard(
                 title: lesson.name,
                 index: i,
@@ -113,7 +112,7 @@ class TopicLessonsScreen extends ConsumerWidget {
                 ),
                 onTap: () {
                   if (locked) {
-                    context.push(AppRoutes.upgradePath(lesson.requiredPlan));
+                    context.push(AppRoutes.upgrade);
                     return;
                   }
                   context.push(AppRoutes.lessonPath(lesson.id, lesson.name));
@@ -162,15 +161,15 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
   /// version ran on every rebuild and queued a fresh redirect each time. And
   /// it must wait for a *known* plan: treating "still loading" as Free would
   /// eject a paying student from a lesson they own.
-  void _gateOnPlan(CatalogLesson? lesson, PlanTier? plan) {
-    if (_redirectedToUpgrade || lesson == null || plan == null) return;
-    if (plan.covers(lesson.requiredPlan)) return;
+  void _gateOnPlan(CatalogLesson? lesson) {
+    if (_redirectedToUpgrade || lesson == null) return;
+    if (lesson.isOpen) return;
 
     _redirectedToUpgrade = true;
     // Navigation cannot run while this widget is still building.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.pushReplacement(AppRoutes.upgradePath(lesson.requiredPlan));
+      context.pushReplacement(AppRoutes.upgrade);
     });
   }
 
@@ -191,10 +190,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
         const <ResourceLink>[];
     final knownPlan = ref.watch(currentPlanProvider).value;
     final plan = knownPlan ?? PlanTier.free;
-    _gateOnPlan(
-      ref.watch(lessonDetailProvider(widget.lessonId)).value,
-      knownPlan,
-    );
+    _gateOnPlan(ref.watch(lessonDetailProvider(widget.lessonId)).value);
 
     return Scaffold(
       appBar: AppBar(

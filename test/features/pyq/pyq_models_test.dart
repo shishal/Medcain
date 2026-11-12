@@ -72,8 +72,8 @@ void main() {
     expect(teaser.questionText, '');
     expect(teaser.requiredPlan, PlanTier.pro);
     expect(teaser.isLockedFor(PlanTier.free), isTrue);
-    expect(teaser.isLockedFor(PlanTier.pro), isFalse);
-    expect(teaser.isLockedFor(PlanTier.elite), isFalse);
+    expect(teaser.isLockedFor(PlanTier.pro), isTrue);
+    expect(teaser.isLockedFor(PlanTier.elite), isTrue);
     expect(teaser.isLockedFor(null), isTrue);
   });
 

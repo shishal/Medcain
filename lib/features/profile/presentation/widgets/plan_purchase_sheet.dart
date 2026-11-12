@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/spacing.dart';
-import '../../domain/billing_period.dart';
-import '../../domain/plan_tier.dart';
+import '../../domain/plan_offer.dart';
 
-/// Period and coupon, then a handoff to the website. No price and no card
-/// form — Razorpay runs on the checkout page.
+/// Coupon, then a handoff to the website. No card form — Razorpay runs there.
 class PlanPurchaseSheet extends StatefulWidget {
   const PlanPurchaseSheet({
     super.key,
@@ -13,19 +11,26 @@ class PlanPurchaseSheet extends StatefulWidget {
     required this.onPay,
   });
 
-  final PlanTier plan;
+  final PlanOffer plan;
 
   /// Returns true when the browser opened. The sheet closes itself then.
-  final Future<bool> Function(BillingPeriod period, String coupon) onPay;
+  final Future<bool> Function(String coupon) onPay;
 
   @override
   State<PlanPurchaseSheet> createState() => _PlanPurchaseSheetState();
 }
 
 class _PlanPurchaseSheetState extends State<PlanPurchaseSheet> {
-  BillingPeriod _period = BillingPeriod.y1;
-  final _coupon = TextEditingController();
+  late final TextEditingController _coupon;
   var _opening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _coupon = TextEditingController(
+      text: widget.plan.featuredDiscountCode ?? '',
+    );
+  }
 
   @override
   void dispose() {
@@ -35,7 +40,7 @@ class _PlanPurchaseSheetState extends State<PlanPurchaseSheet> {
 
   Future<void> _pay() async {
     setState(() => _opening = true);
-    final opened = await widget.onPay(_period, _coupon.text);
+    final opened = await widget.onPay(_coupon.text);
     if (!mounted) return;
     setState(() => _opening = false);
     if (opened) Navigator.of(context).pop();
@@ -45,6 +50,7 @@ class _PlanPurchaseSheetState extends State<PlanPurchaseSheet> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final promo = widget.plan.promoLine;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -57,53 +63,30 @@ class _PlanPurchaseSheetState extends State<PlanPurchaseSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Purchase ${widget.plan.label}', style: textTheme.titleLarge),
+          Text('Purchase ${widget.plan.name}', style: textTheme.titleLarge),
           const SizedBox(height: Spacing.xs),
           Text(
-            'Choose how long, then pay on the website. A coupon takes a percent off that price.',
+            '${widget.plan.priceLabel} · ${widget.plan.durationText}. '
+            'You pay on the website. A coupon takes a percent off that price.',
             style: textTheme.bodyMedium,
           ),
+          if (promo != null) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(promo, style: textTheme.titleSmall),
+          ],
           const SizedBox(height: Spacing.md),
-          RadioGroup<BillingPeriod>(
-            groupValue: _period,
-            onChanged: _opening
-                ? (_) {}
-                : (value) {
-                    if (value == null) return;
-                    setState(() => _period = value);
-                  },
-            child: Column(
-              children: [
-                for (final period in BillingPeriod.values)
-                  RadioListTile<BillingPeriod>(
-                    value: period,
-                    title: Text(period.label),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Spacing.sm),
           TextField(
             controller: _coupon,
-            enabled: !_opening,
             textCapitalization: TextCapitalization.characters,
-            autocorrect: false,
             decoration: const InputDecoration(
               labelText: 'Discount coupon',
               hintText: 'Optional',
             ),
           ),
-          const SizedBox(height: Spacing.md),
+          const SizedBox(height: Spacing.lg),
           FilledButton(
             onPressed: _opening ? null : _pay,
-            child: _opening
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Pay on website'),
+            child: Text(_opening ? 'Opening…' : 'Continue in browser'),
           ),
         ],
       ),

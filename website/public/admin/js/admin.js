@@ -68,6 +68,7 @@
     user: renderUser,
     announcements: renderAnnouncements,
     pricing: renderPricing,
+    plans: renderPlans,
     coupons: renderCoupons,
     backup: renderBackup,
   };
@@ -420,7 +421,8 @@
         <a class="tile" href="/admin/catalog/"><strong>Catalog</strong><span>Universities, colleges, subjects</span></a>
         <a class="tile" href="/admin/users/"><strong>Users</strong><span>Profile, plan, block, admin</span></a>
         <a class="tile" href="/admin/announcements/"><strong>Announcements</strong><span>In-app inbox on Home</span></a>
-        <a class="tile" href="/admin/pricing/"><strong>Pricing</strong><span>Pro and Elite list prices</span></a>
+        <a class="tile" href="/admin/plans/"><strong>Plans</strong><span>Price, access, devices, and promos</span></a>
+        <a class="tile" href="/admin/pricing/"><strong>Pricing</strong><span>Older period prices, no longer used at checkout</span></a>
         <a class="tile" href="/admin/coupons/"><strong>Coupons</strong><span>Percent-off codes</span></a>
         <a class="tile" href="/admin/backup/"><strong>Backup</strong><span>Download or restore the database</span></a>
       </div>
@@ -677,7 +679,7 @@
             ${markdownControl('question_text', 'Question', q.question_text || '')}
             ${field('Marks', inputControl('marks', q.marks ?? '', 'inputmode="decimal"'))}
             ${field('Difficulty', selectControl('difficulty', DIFFICULTIES, q.difficulty || 'should'))}
-            ${field('Plan required', selectControl('required_plan', PLANS, q.required_plan || 'free'))}
+            <div class="span-2">${checkControl('is_preview', 'Free preview — every plan can open this question', q.is_preview === true || q.required_plan === 'free')}</div>
             <div class="span-2">${checkControl('is_active', 'Visible to students', q.is_active !== false)}</div>
             ${field('Chapter', inputControl('chapter_name', q.chapter_name || ''))}
             ${field('Topic', inputControl('topic_name', q.topic_name || '', 'placeholder="Needs a chapter"'))}
@@ -819,7 +821,7 @@
             question_text: document.getElementById('question_text').value,
             marks: val('marks') === '' ? null : val('marks'),
             difficulty: val('difficulty'),
-            required_plan: val('required_plan'),
+            is_preview: checked('is_preview'),
             is_active: checked('is_active'),
             chapter_name: val('chapter_name'),
             topic_name: val('topic_name'),
@@ -1150,6 +1152,13 @@
       return;
     }
     let user = await rpc('admin_get_user', { p_user_id: userId });
+    const planRows = await rpc('admin_list_plans');
+    const planPairs = (planRows || [])
+      .filter((item) => item.is_active || item.id === user.plan_id)
+      .map((item) => [
+        item.id,
+        item.is_active ? item.name : `${item.name} (archived)`,
+      ]);
     const [universities, phases, session] = await Promise.all([
       rpc('admin_list_universities'),
       rpc('admin_list_phases'),
@@ -1202,7 +1211,7 @@
         </form>
         <form class="card" data-form="plan">
           <h2>Plan</h2>
-          ${field('Plan', selectControl('plan', PLANS, user.plan || 'free'))}
+          ${field('Plan', selectControl('plan_id', planPairs, user.plan_id || ''))}
           ${field('Expiry', `<input id="plan_expires" type="date" value="${esc(toDateInput(user.plan_expires_at))}" />`)}
           <p class="hint">Leave the date empty to clear the expiry. The day ends at 23:59. Saving a plan with fewer phones signs out the extra ones, unless the device limit below is higher.</p>
           <button class="btn btn-primary" type="submit">Save plan</button>
@@ -1297,7 +1306,7 @@
         if (formName === 'plan') {
           user = await rpc('admin_set_plan', {
             p_user_id: userId,
-            p_plan: val('plan'),
+            p_plan_id: val('plan_id'),
             p_expires_at: endOfLocalDay(val('plan_expires')),
           });
           await draw();
@@ -1445,49 +1454,276 @@
     draw();
   }
 
+  async function renderPlans() {
+    let rows = await rpc('admin_list_plans');
+    const requested = queryParam('id');
+    let current = (rows || []).find((item) => item.id === requested) || null;
+
+    function yearsText(plan) {
+      return (plan.exam_years || []).join(', ');
+    }
+
+    function checkedKind(plan, kind) {
+      return (plan.allowed_kinds || []).includes(kind);
+    }
+
+    function checkedExam(plan, type) {
+      return (plan.allowed_exam_types || []).includes(type);
+    }
+
+    function checkedYear(plan, year) {
+      return (plan.mbbs_years || []).includes(year);
+    }
+
+    function draw() {
+      const plan = current || {
+        code: '',
+        name: '',
+        tagline: '',
+        benefits: [],
+        amount_paise: 0,
+        duration_months: '',
+        duration_label: '',
+        max_registered_devices: 1,
+        promo_headline: '',
+        promo_detail: '',
+        featured_discount_code: '',
+        is_public: false,
+        is_active: true,
+        sort_order: (rows || []).length,
+        content_depth: 'explanation',
+        access_mode: 'filtered',
+        allowed_kinds: ['mcq', 'pyq_theory'],
+        university_scope: 'all',
+        allowed_exam_types: ['prof', 'supply', 'pre_prof', 'internal'],
+        mbbs_year_scope: 'all',
+        mbbs_years: [],
+        exam_year_scope: 'all',
+        exam_years: [],
+        include_untagged: true,
+        tease_locked_questions: false,
+        allow_practice: true,
+        allow_tutor_mode: true,
+        allow_exam_mode: true,
+        max_practice_session_questions: '',
+        daily_practice_question_quota: '',
+        allow_timer_toggle: true,
+        allow_tag_filter: true,
+        allow_difficulty_filter: true,
+        allow_negative_marking_toggle: true,
+      };
+      const rupees = plan.amount_paise ? rupeesFromPaise(plan.amount_paise) : '0';
+      app.innerHTML = `
+        <div id="msg"></div>
+        <p class="lede">Each plan is one price and one duration. Duplicate a plan when you want another length. Checkout uses this page, not the old period prices.</p>
+        <form class="card" data-form="plan">
+          <h2>${plan.id ? 'Edit plan' : 'New plan'}</h2>
+          <h3>Basics</h3>
+          <div class="form-grid">
+            ${field('Code', inputControl('code', plan.code || '', 'required'))}
+            ${field('Name', inputControl('name', plan.name || '', 'required'))}
+            ${field('Tagline', inputControl('tagline', plan.tagline || ''))}
+            ${field('Sort order', inputControl('sort_order', plan.sort_order ?? 0, 'inputmode="numeric"'))}
+            <div class="span-2">${checkControl('is_public', 'Show on the paywall', plan.is_public === true)}</div>
+            <div class="span-2">${checkControl('is_active', 'Active (can be assigned or bought)', plan.is_active !== false)}</div>
+            ${field('Benefits, one per line', areaControl('benefits', (plan.benefits || []).join('\n'), 5))}
+          </div>
+          <h3>Price and duration</h3>
+          <div class="form-grid">
+            ${field('Price (₹)', inputControl('price_rupees', rupees, 'inputmode="decimal"'))}
+            ${field('Duration (months)', inputControl('duration_months', plan.duration_months ?? '', 'inputmode="numeric"'))}
+            ${field('Duration label', inputControl('duration_label', plan.duration_label || '', 'placeholder="1 year"'))}
+            ${field('Devices', inputControl('max_registered_devices', plan.max_registered_devices || 1, 'inputmode="numeric"'))}
+          </div>
+          <p class="hint">₹0 is not for sale and does not expire. A paid plan needs at least ₹1 and at least 1 month.</p>
+          <h3>Paywall and promo</h3>
+          <div class="form-grid">
+            ${field('Promo headline', inputControl('promo_headline', plan.promo_headline || '', 'placeholder="Early bird: 30% off"'))}
+            ${field('Promo detail', inputControl('promo_detail', plan.promo_detail || '', 'placeholder="Use code Early30"'))}
+            ${field('Featured code', inputControl('featured_discount_code', plan.featured_discount_code || ''))}
+          </div>
+          <p class="hint">The code must already exist under Coupons, be active, and not be someone’s referral code. The percent still comes from that coupon.</p>
+          <h3>Question access</h3>
+          <div class="form-grid">
+            ${field('Access', selectControl('access_mode', [['preview_only', 'Preview questions only'], ['filtered', 'A slice of the bank']], plan.access_mode || 'filtered'))}
+            ${field('Depth', selectControl('content_depth', [['stem', 'Question only'], ['answer', 'Question and answer'], ['explanation', 'Answer and explanation']], plan.content_depth || 'explanation'))}
+            ${field('University', selectControl('university_scope', [['all', 'All universities'], ['own', 'Own university only']], plan.university_scope || 'all'))}
+            ${field('MBBS years', selectControl('mbbs_year_scope', [['all', 'All years'], ['selected', 'Selected years']], plan.mbbs_year_scope || 'all'))}
+            ${field('Paper years', selectControl('exam_year_scope', [['all', 'All years'], ['latest', 'Latest year per subject'], ['selected', 'Selected years']], plan.exam_year_scope || 'all'))}
+            ${field('Paper years list', inputControl('exam_years', yearsText(plan), 'placeholder="2023, 2024"'))}
+          </div>
+          <div class="form-grid">
+            ${checkControl('kind_mcq', 'MCQ', checkedKind(plan, 'mcq'))}
+            ${checkControl('kind_pyq', 'Theory / PYP', checkedKind(plan, 'pyq_theory'))}
+            ${checkControl('exam_prof', 'Prof', checkedExam(plan, 'prof'))}
+            ${checkControl('exam_supply', 'Supply', checkedExam(plan, 'supply'))}
+            ${checkControl('exam_pre', 'Pre prof', checkedExam(plan, 'pre_prof'))}
+            ${checkControl('exam_internal', 'Internal', checkedExam(plan, 'internal'))}
+            ${checkControl('year1', '1st year', checkedYear(plan, 'year1'))}
+            ${checkControl('year2', '2nd year', checkedYear(plan, 'year2'))}
+            ${checkControl('year3', '3rd year', checkedYear(plan, 'year3'))}
+            ${checkControl('year4', 'Final year', checkedYear(plan, 'year4'))}
+            ${checkControl('include_untagged', 'Include questions with no paper', plan.include_untagged === true)}
+            ${checkControl('tease_locked_questions', 'Show locked cards outside this plan', plan.tease_locked_questions === true)}
+          </div>
+          <h3>Practice</h3>
+          <div class="form-grid">
+            ${checkControl('allow_practice', 'Practice sessions', plan.allow_practice === true)}
+            ${checkControl('allow_tutor_mode', 'Tutor mode', plan.allow_tutor_mode === true)}
+            ${checkControl('allow_exam_mode', 'Exam mode', plan.allow_exam_mode === true)}
+            ${field('Questions per session', inputControl('max_practice_session_questions', plan.max_practice_session_questions ?? '', 'placeholder="Empty = no cap"'))}
+            ${field('Questions per day', inputControl('daily_practice_question_quota', plan.daily_practice_question_quota ?? '', 'placeholder="Empty = no cap"'))}
+            ${checkControl('allow_timer_toggle', 'Student can turn the timer off', plan.allow_timer_toggle === true)}
+            ${checkControl('allow_tag_filter', 'Tag filter', plan.allow_tag_filter === true)}
+            ${checkControl('allow_difficulty_filter', 'Priority filter', plan.allow_difficulty_filter === true)}
+            ${checkControl('allow_negative_marking_toggle', 'Negative marking', plan.allow_negative_marking_toggle === true)}
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" type="submit">Save</button>
+            <button class="btn btn-ghost" type="button" data-action="new-plan">New</button>
+            ${plan.id ? '<button class="btn btn-ghost" type="button" data-action="duplicate-plan">Duplicate</button>' : ''}
+            ${plan.id && plan.code !== 'free' ? '<button class="btn btn-ghost" type="button" data-action="archive-plan">Archive</button>' : ''}
+          </div>
+        </form>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Name</th><th>Price</th><th>Duration</th><th>Devices</th><th>Status</th></tr></thead>
+          <tbody>${(rows || []).map((row) => `
+            <tr>
+              <td><a href="/admin/plans/?id=${esc(row.id)}">${esc(row.name)}</a></td>
+              <td>${row.amount_paise ? esc(rupeesFromPaise(row.amount_paise)) : 'Free'}</td>
+              <td>${esc(row.duration_label || row.duration_months || '—')}</td>
+              <td>${esc(row.max_registered_devices)}</td>
+              <td>${row.is_active ? (row.is_public ? 'Public' : 'Hidden') : 'Archived'}</td>
+            </tr>`).join('') || '<tr><td colspan="5">No plans yet.</td></tr>'}</tbody>
+        </table></div>
+      `;
+    }
+
+    function payload() {
+      const kinds = [];
+      if (checked('kind_mcq')) kinds.push('mcq');
+      if (checked('kind_pyq')) kinds.push('pyq_theory');
+      const exams = [];
+      if (checked('exam_prof')) exams.push('prof');
+      if (checked('exam_supply')) exams.push('supply');
+      if (checked('exam_pre')) exams.push('pre_prof');
+      if (checked('exam_internal')) exams.push('internal');
+      const years = [];
+      if (checked('year1')) years.push('year1');
+      if (checked('year2')) years.push('year2');
+      if (checked('year3')) years.push('year3');
+      if (checked('year4')) years.push('year4');
+      const paperYears = val('exam_years')
+        .split(/[^0-9]+/)
+        .filter(Boolean)
+        .map((item) => Number(item));
+      const price = paiseFromRupees(val('price_rupees'));
+      const body = {
+        code: val('code').trim().toLowerCase(),
+        name: val('name').trim(),
+        tagline: val('tagline'),
+        benefits: document.getElementById('benefits').value.split('\n'),
+        amount_paise: price || 0,
+        duration_months: val('duration_months'),
+        duration_label: val('duration_label'),
+        max_registered_devices: Number(val('max_registered_devices') || 1),
+        promo_headline: val('promo_headline'),
+        promo_detail: val('promo_detail'),
+        featured_discount_code: val('featured_discount_code'),
+        is_public: checked('is_public'),
+        is_active: checked('is_active'),
+        sort_order: Number(val('sort_order') || 0),
+        content_depth: val('content_depth'),
+        access_mode: val('access_mode'),
+        allowed_kinds: kinds,
+        university_scope: val('university_scope'),
+        allowed_exam_types: exams,
+        mbbs_year_scope: val('mbbs_year_scope'),
+        mbbs_years: years,
+        exam_year_scope: val('exam_year_scope'),
+        exam_years: paperYears,
+        include_untagged: checked('include_untagged'),
+        tease_locked_questions: checked('tease_locked_questions'),
+        allow_practice: checked('allow_practice'),
+        allow_tutor_mode: checked('allow_tutor_mode'),
+        allow_exam_mode: checked('allow_exam_mode'),
+        max_practice_session_questions: val('max_practice_session_questions'),
+        daily_practice_question_quota: val('daily_practice_question_quota'),
+        allow_timer_toggle: checked('allow_timer_toggle'),
+        allow_tag_filter: checked('allow_tag_filter'),
+        allow_difficulty_filter: checked('allow_difficulty_filter'),
+        allow_negative_marking_toggle: checked('allow_negative_marking_toggle'),
+      };
+      if (current && current.id && !current._duplicate) body.id = current.id;
+      return body;
+    }
+
+    handlers.change = null;
+    handlers.click = async (event) => {
+      const button = event.target.closest('[data-action]');
+      if (!button) return;
+      const action = button.getAttribute('data-action');
+      if (action === 'new-plan') {
+        current = null;
+        history.replaceState(null, '', '/admin/plans/');
+        draw();
+      }
+      if (action === 'duplicate-plan' && current) {
+        current = {
+          ...current,
+          id: null,
+          code: `${current.code}_copy`.slice(0, 40),
+          name: `${current.name} copy`,
+          is_public: false,
+          _duplicate: true,
+        };
+        history.replaceState(null, '', '/admin/plans/');
+        draw();
+      }
+      if (action === 'archive-plan' && current && current.id) {
+        if (!window.confirm('Hide this plan from new purchases? People already on it keep it until it expires.')) return;
+        try {
+          await rpc('admin_archive_plan', { p_plan_id: current.id });
+          rows = await rpc('admin_list_plans');
+          current = rows.find((item) => item.id === current.id) || null;
+          draw();
+          message('ok', 'Plan archived.');
+        } catch (error) {
+          message('error', errorText(error));
+        }
+      }
+    };
+    handlers.submit = async (event) => {
+      event.preventDefault();
+      try {
+        const price = paiseFromRupees(val('price_rupees'));
+        if (price === null || price < 0) {
+          message('error', 'Price must be a number of rupees.');
+          return;
+        }
+        const saved = await rpc('admin_save_plan', { p_body: payload() });
+        rows = await rpc('admin_list_plans');
+        current = rows.find((item) => item.id === (saved && saved.id)) || saved;
+        if (current && current.id) {
+          history.replaceState(null, '', `/admin/plans/?id=${encodeURIComponent(current.id)}`);
+        }
+        draw();
+        message('ok', 'Plan saved.');
+      } catch (error) {
+        message('error', errorText(error));
+      }
+    };
+    draw();
+  }
+
   async function renderPricing() {
-    const rows = await rpc('admin_list_plan_prices');
     app.innerHTML = `
       <div id="msg"></div>
-      <p class="lede">List price in rupees. The next checkout uses the saved price. The length of each period stays as it is.</p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Plan</th><th>Period</th><th>Months</th><th>Price (₹)</th><th></th></tr></thead>
-        <tbody>${(rows || []).map((row) => `
-          <tr>
-            <td>${esc(labelOf(PAID_PLANS, row.plan))}</td>
-            <td>${esc(PERIODS[row.period] || row.period)}</td>
-            <td>${esc(row.duration_months)}</td>
-            <td><input id="price-${esc(row.plan)}-${esc(row.period)}" inputmode="decimal" value="${esc(rupeesFromPaise(row.amount_paise))}" /></td>
-            <td><button class="btn btn-primary btn-small" type="button" data-action="save-price" data-plan="${esc(row.plan)}" data-period="${esc(row.period)}">Save</button></td>
-          </tr>`).join('')}</tbody>
-      </table></div>
+      <p class="lede">Checkout reads the price and duration from each plan. Edit them on <a href="/admin/plans/">Plans</a>.</p>
     `;
     handlers.submit = null;
     handlers.change = null;
-    handlers.click = async (event) => {
-      const button = event.target.closest('[data-action="save-price"]');
-      if (!button) return;
-      const plan = button.getAttribute('data-plan');
-      const period = button.getAttribute('data-period');
-      const paise = paiseFromRupees(val(`price-${plan}-${period}`));
-      if (paise === null || paise < 100) {
-        message('error', 'Price must be at least ₹1.');
-        return;
-      }
-      button.disabled = true;
-      try {
-        await rpc('admin_set_plan_price', {
-          p_plan: plan,
-          p_period: period,
-          p_amount_paise: paise,
-        });
-        message('ok', `${labelOf(PAID_PLANS, plan)} ${PERIODS[period] || period} saved.`);
-      } catch (error) {
-        message('error', errorText(error));
-      } finally {
-        button.disabled = false;
-      }
-    };
+    handlers.click = null;
   }
 
   async function renderCoupons() {

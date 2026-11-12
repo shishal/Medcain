@@ -108,7 +108,7 @@ class CatalogRepository {
           .eq(LessonColumns.topicId, topicId)
           .eq(LessonColumns.isActive, true)
           .order(LessonColumns.displayOrder);
-      return Success(_map(rows, CatalogLesson.fromJson));
+      return Success(await _withLessonAccess(_map(rows, CatalogLesson.fromJson)));
     } catch (e) {
       return Failure(
         UserFacingError.from(e, fallback: 'Could not load lessons.'),
@@ -157,7 +157,7 @@ class CatalogRepository {
           .select()
           .eq(LessonColumns.id, lessonId)
           .limit(1);
-      final list = _map(rows, CatalogLesson.fromJson);
+      final list = await _withLessonAccess(_map(rows, CatalogLesson.fromJson));
       return Success(list.isEmpty ? null : list.first);
     } catch (e) {
       return Failure(
@@ -247,6 +247,25 @@ class CatalogRepository {
         UserFacingError.from(e, fallback: 'Could not load catalog.'),
       );
     }
+  }
+
+  Future<List<CatalogLesson>> _withLessonAccess(
+    List<CatalogLesson> lessons,
+  ) async {
+    if (lessons.isEmpty) return lessons;
+    final rows = await _client
+        .from(Tables.lessonAccess)
+        .select('lesson_id, is_open')
+        .inFilter('lesson_id', [for (final lesson in lessons) lesson.id]);
+    final openById = {
+      for (final row in (rows as List<dynamic>).cast<Map<String, dynamic>>())
+        if (row['lesson_id'] is String)
+          row['lesson_id'] as String: row['is_open'] == true,
+    };
+    return [
+      for (final lesson in lessons)
+        lesson.copyWith(isOpen: openById[lesson.id] ?? false),
+    ];
   }
 
   static List<T> _map<T>(

@@ -510,13 +510,16 @@ class PyqRepository {
       String? correctOption;
       String? explanationText;
       String? explanationDeep;
+      String? sample;
+      var canReadSample = false;
       final qRows = await _client
-          .from(Tables.questions)
+          .from(Tables.questionListings)
           .select(
             '${QuestionColumns.optionA},${QuestionColumns.optionB},'
             '${QuestionColumns.optionC},${QuestionColumns.optionD},'
             '${QuestionColumns.correctOption},${QuestionColumns.explanationText},'
-            '${QuestionColumns.explanationDeep}',
+            '${QuestionColumns.explanationDeep},${QuestionColumns.sampleAnswer},'
+            '${QuestionColumns.answersVisible}',
           )
           .eq(QuestionColumns.id, questionId)
           .limit(1);
@@ -530,20 +533,8 @@ class PyqRepository {
         correctOption = q[QuestionColumns.correctOption] as String?;
         explanationText = q[QuestionColumns.explanationText] as String?;
         explanationDeep = q[QuestionColumns.explanationDeep] as String?;
-      }
-
-      String? sample;
-      final canReadSample = plan.rank >= PlanTier.pro.rank;
-      if (canReadSample) {
-        final sampleRows = await _client
-            .from(Tables.questionSampleAnswers)
-            .select(SampleAnswerColumns.body)
-            .eq(SampleAnswerColumns.questionId, questionId)
-            .limit(1);
-        final list = (sampleRows as List<dynamic>).cast<Map<String, dynamic>>();
-        if (list.isNotEmpty) {
-          sample = list.first[SampleAnswerColumns.body] as String?;
-        }
+        sample = q[QuestionColumns.sampleAnswer] as String?;
+        canReadSample = q[QuestionColumns.answersVisible] == true;
       }
 
       final userId = _client.auth.currentUser!.id;

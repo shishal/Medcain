@@ -1,5 +1,7 @@
 # Database Schema (Supabase / Postgres)
 
+Sections 1–12 describe earlier migrations and are kept as history. **Section 13 is the current plan and question-access model.** Apply migrations in filename order; do not paste the historical blocks over a database that already has them.
+
 Run these in the Supabase SQL editor in order. Each block is idempotent-ish (uses `if not exists` where sensible) but review before running against a live project.
 
 ## 1. Enums
@@ -959,7 +961,8 @@ That account signs in with WhatsApp and lands on `/admin`. A student JWT that ca
 |---|---|
 | Profile, plan, expiry, clear device suspension, device slots | `admin_update_profile`, `admin_set_plan`, `admin_clear_device_suspension`, `admin_set_device_limit`, `admin_release_device`, `admin_reset_devices` |
 | Password, email, block / unblock | Edge Function `admin-user-auth` (GoTrue ban + `profiles.blocked_at` + session revoke). New accounts have no password; email and password actions remain for older accounts that still have a real email. |
-| Questions, papers, free tier (`required_plan`) | `admin_save_question`, `admin_save_appearance`, `admin_delete_appearance` |
+| Questions, papers, free preview (`is_preview`) | `admin_save_question`, `admin_save_appearance`, `admin_delete_appearance` |
+| Plans (price, duration, entitlements) | `admin_list_plans`, `admin_save_plan`, `admin_archive_plan`. Assigning a user uses `admin_set_plan(user, plan_id, expires_at)`. |
 | In-app notification | `admin_upsert_announcement` |
 
 Every admin RPC calls `assert_admin()` and writes `admin_audit_log`. Password values are stripped if a client puts them in the audit detail.
@@ -975,3 +978,37 @@ Migration: `supabase/migrations/20261109230000_admin_backup.sql`. The website pa
 `admin_backup_manifest`, `admin_backup_schema`, and `admin_backup_rows` build a local JSON file: public tables (parents first), SQL function bodies, triggers, row-level security, grants, and auth users plus identities. Rows are JSON text so large numbers are not rounded in the browser. Edge Function source and dashboard secrets are not stored in Postgres, so they are not in the file.
 
 Restore stages chunks in `admin_restore_staging`, then `admin_restore_commit` replaces the listed tables in one transaction. A failed commit rolls back. The signed-in profile stays `is_admin`. Apply this migration before using the page.
+
+---
+
+## 13. Admin-defined plans
+
+Migration: `supabase/migrations/20261110120000_flexible_plans.sql`.
+
+`plans` is the subscription. `profiles.plan_id` points at it. `profiles.plan` remains the `free | pro | elite` enum as a mirror for older code: Free, Pro, and Elite keep their codes, and any other plan is stored as `pro`. Access does not use that enum. `current_plan_id()` returns the free plan when `plan_suspended_at` is set or `plan_expires_at` is in the past.
+
+Entitlement columns on `plans` (checked only in Postgres):
+
+- `content_depth`: `stem`, `answer`, or `explanation`
+- `access_mode`: `preview_only` or `filtered`
+- `allowed_kinds`, `university_scope` (`own` or `all`), `allowed_exam_types`
+- `mbbs_year_scope` plus `mbbs_years`, `exam_year_scope` (`all`, `latest`, `selected`) plus `exam_years`
+- `include_untagged`, `tease_locked_questions`
+- Practice: `allow_practice`, `allow_tutor_mode`, `allow_exam_mode`, `max_practice_session_questions`, `daily_practice_question_quota`, and the existing timer / tag / priority / negative-marking toggles
+- Commercial: `amount_paise` (0 means not for sale), `duration_months` (null means no expiry), `duration_label`, `max_registered_devices`, promo text, optional `featured_discount_code`
+
+`plan_allows_question(plan_id, question_id, user_id)` is the predicate for the reader, practice picking, and lesson resources. A question with several sittings matches when any sitting matches. `latest` is the newest `exam_year` per subject inside the other filters, computed at read time. `plan_allows_lesson` opens a lesson when its subject’s MBBS phase is in a filtered plan, or when `preview_only` and the lesson contains a preview question.
+
+Students have no `select` on `questions` or `question_sample_answers`. Reads go through `question_listings`, a `security_barrier` view:
+
+- In the slice, or a preview: text is present. The key and sample answer appear when depth is `answer` or `explanation`. Explanations appear only at `explanation`.
+- Outside the slice with tease on: the card remains, with null text, key, and explanation, and `is_locked` true.
+- Outside the slice with tease off: the row is omitted.
+
+`registered_device_limit(user_id)` is `greatest(1, plan device cap, profile raise)`. `claim_active_device` uses that one-argument function.
+
+`create_practice_session` loads the current plan, rejects practice when it is off or the depth is question-only, rejects a tutor or exam mode the plan does not allow, and picks MCQs that `plan_allows_question` accepts.
+
+Checkout is `checkout_quote(plan_id, code)` and `apply_razorpay_payment(..., plan_id, ...)`. The captured paise must match the plan amount or `discounted_amount_paise`. The payment sets `plan_id` and adds `duration_months` onto the later of now and the current expiry. Razorpay notes carry `plan_id` only. Orders created before this migration, with `notes.plan` and a period, are rejected; assign the plan from the user page instead.
+
+`plan_tier`, `plan_limits`, and `paid_plan_catalog` stay until a later migration. Checkout and the paywall do not read them.

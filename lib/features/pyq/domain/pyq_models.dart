@@ -120,8 +120,11 @@ class PyqTeaser {
   /// have so a Pro account does not flash a mask, and hide one the server
   /// already blanked.
   bool isLockedFor(PlanTier? plan) {
-    if (plan != null) return !plan.covers(requiredPlan);
-    return questionText.trim().isEmpty && requiredPlan != PlanTier.free;
+    // A blank stem was redacted by question_listings. That stays locked even
+    // when the stored rank would otherwise cover the question.
+    if (questionText.trim().isEmpty) return true;
+    if (plan == null) return false;
+    return !plan.covers(requiredPlan);
   }
 
   factory PyqTeaser.fromJson(Map<String, dynamic> json) {

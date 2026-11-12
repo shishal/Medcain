@@ -75,6 +75,8 @@ class PracticeBuilderForm extends StatelessWidget {
         const SizedBox(height: Spacing.lg),
         _FeedbackTimingSection(
           selected: draft.feedbackTiming,
+          allowTutor: _limits.allowTutorMode,
+          allowExam: _limits.allowExamMode,
           onSelected: (value) =>
               onChanged(draft.copyWith(feedbackTiming: value)),
         ),
@@ -364,15 +366,32 @@ class _QuestionCountSection extends StatelessWidget {
 class _FeedbackTimingSection extends StatelessWidget {
   const _FeedbackTimingSection({
     required this.selected,
+    required this.allowTutor,
+    required this.allowExam,
     required this.onSelected,
   });
 
   final FeedbackTiming selected;
+  final bool allowTutor;
+  final bool allowExam;
   final ValueChanged<FeedbackTiming> onSelected;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final modes = [
+      for (final timing in FeedbackTiming.values)
+        if ((timing == FeedbackTiming.immediate && allowTutor) ||
+            (timing == FeedbackTiming.onSubmit && allowExam))
+          timing,
+    ];
+    if (modes.isEmpty) {
+      return Text(
+        'Practice sessions are not included on this plan.',
+        style: textTheme.bodyMedium,
+      );
+    }
+    final shown = modes.contains(selected) ? selected : modes.first;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,10 +400,10 @@ class _FeedbackTimingSection extends StatelessWidget {
         const SizedBox(height: Spacing.sm),
         SegmentedButton<FeedbackTiming>(
           segments: [
-            for (final timing in FeedbackTiming.values)
+            for (final timing in modes)
               ButtonSegment(value: timing, label: Text(timing.label)),
           ],
-          selected: {selected},
+          selected: {shown},
           onSelectionChanged: (value) => onSelected(value.first),
         ),
         const SizedBox(height: Spacing.sm),

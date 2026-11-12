@@ -357,11 +357,16 @@ class _AdminQuestionScreenState extends ConsumerState<AdminQuestionScreen> {
             onChanged: (id) => setState(() => _difficulty = id ?? 'should'),
           ),
           const SizedBox(height: Spacing.sm),
-          AdminChoice(
-            label: 'Plan required',
-            value: _plan,
-            items: adminPlans,
-            onChanged: (id) => setState(() => _plan = id ?? 'free'),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Free preview'),
+            subtitle: const Text(
+              'Every plan can open this question. Other questions follow the plan.',
+            ),
+            value: _plan == 'free',
+            onChanged: _busy
+                ? null
+                : (value) => setState(() => _plan = value ? 'free' : 'pro'),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,

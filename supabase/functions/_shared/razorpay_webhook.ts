@@ -3,8 +3,6 @@
 /// Signature check uses the *raw* POST body (not re-serialized JSON). Razorpay
 /// signs with HMAC-SHA256; the hex digest is `X-Razorpay-Signature`.
 
-import { getPaidPlan, type BillingPeriodId, type PaidPlanId } from './paid_plans.ts';
-
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -12,11 +10,9 @@ export type CapturedPayment = {
   paymentId: string;
   orderId: string;
   userId: string;
-  plan: PaidPlanId;
+  planId: string;
   amountPaise: number;
   currency: string;
-  /** Null when the order was created before periods were stored on notes. */
-  period: BillingPeriodId | null;
   /** Null when the student paid the list price. */
   discountCode: string | null;
 };
@@ -125,14 +121,12 @@ export function parseWebhookEvent(body: unknown): ParseResult {
 
   const notes = asRecord(entity.notes) ?? {};
   const userId = asString(notes.user_id);
-  const planName = asString(notes.plan)?.trim().toLowerCase() ?? '';
+  const planId = asString(notes.plan_id)?.trim() ?? '';
   if (userId == null || !UUID_RE.test(userId)) {
     return { kind: 'invalid', reason: 'notes.user_id is not a uuid' };
   }
-
-  const catalog = getPaidPlan(planName);
-  if (catalog == null) {
-    return { kind: 'invalid', reason: 'notes.plan is not a paid plan' };
+  if (!UUID_RE.test(planId)) {
+    return { kind: 'invalid', reason: 'notes.plan_id is not a uuid' };
   }
 
   const amountPaise = asAmount(entity.amount);
@@ -140,14 +134,13 @@ export function parseWebhookEvent(body: unknown): ParseResult {
   if (amountPaise == null || currency == null) {
     return { kind: 'invalid', reason: 'missing amount or currency' };
   }
-  if (currency !== catalog.currency) {
+  if (currency !== 'INR') {
     return { kind: 'invalid', reason: 'amount does not match catalog' };
   }
 
   // The exact paise (list price, or list price minus a code's percent) is
-  // checked in apply_razorpay_payment(), which reads paid_plan_catalog.
+  // checked in apply_razorpay_payment(), which reads the plan row.
   // This layer only rejects a code that could not have come from our notes.
-  // Comparing the amount here would ignore a price changed in the database.
   const rawCode = asString(notes.discount_code);
   let discountCode: string | null = null;
   if (rawCode != null) {
@@ -157,25 +150,15 @@ export function parseWebhookEvent(body: unknown): ParseResult {
     }
   }
 
-  const rawPeriod = asString(notes.period)?.trim().toLowerCase() ?? null;
-  let period: BillingPeriodId | null = null;
-  if (rawPeriod != null) {
-    if (rawPeriod !== 'y1' && rawPeriod !== 'y2' && rawPeriod !== 'y3' && rawPeriod !== 'y4') {
-      return { kind: 'invalid', reason: 'notes.period is not a billing period' };
-    }
-    period = rawPeriod;
-  }
-
   return {
     kind: 'captured',
     payment: {
       paymentId,
       orderId,
       userId,
-      plan: planName as PaidPlanId,
+      planId,
       amountPaise,
       currency,
-      period,
       discountCode,
     },
   };

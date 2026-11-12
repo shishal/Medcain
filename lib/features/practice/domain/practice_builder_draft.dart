@@ -235,7 +235,16 @@ class PracticeBuilderDraft {
               ? ExplanationLevel.answerOnly
               : explanationLevel);
 
+    var timing = feedbackTiming;
+    if (timing == FeedbackTiming.immediate && !ctx.limits.allowTutorMode) {
+      timing = FeedbackTiming.onSubmit;
+    }
+    if (timing == FeedbackTiming.onSubmit && !ctx.limits.allowExamMode) {
+      timing = FeedbackTiming.immediate;
+    }
+
     return copyWith(
+      feedbackTiming: timing,
       selectedTagIds: ctx.limits.allowTagFilter ? selectedTagIds : const {},
       selectedDifficulties: const {},
       questionCount: count,

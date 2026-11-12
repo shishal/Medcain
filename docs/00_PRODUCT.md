@@ -46,7 +46,8 @@ university paper mixes many topics in one sitting — see
 
 - **Direct answer (DA)** is `sample_answer_text` for theory or MCQ. The PYQ
   reader opens with **DA** already expanded (tap again to collapse).
-  Pro-gated (separate table). Missing content shows “No direct answer yet”
+  The plan’s content depth decides whether the answer is included.
+  Missing content shows “No direct answer yet”
   — never invent text in the client. MCQ DA also shows the correct option.
 - **Explanation (EX)** is `explanation_text` plus textbook citations and
   “More on this topic” links, for either kind. Collapsed until **EX**. Do not
@@ -67,39 +68,42 @@ Topic → lesson is for grouping, not the first tap.
 
 ## Monetization
 
-Signup starts on **Free**. Free sees questions marked `required_plan = 'free'`.
-`current_plan()` is what the database uses for that gate.
+Signup starts on the **Free** plan. A plan is a row an admin creates on the
+website (`/admin/plans/`). Postgres decides what that row can open. The app
+shows the row and never sends a price, a duration, or a content decision.
 
-**Pro** and **Elite** both include every question, every year, and every
-subject, with answers. The only difference is registered devices:
+Each plan has one price and one duration. “Pro for 1 year” and “Pro for 2
+years” are two plans. The editor can duplicate a plan so the access block
+does not have to be retyped. Seeded sellable plans use the old 1-year prices
+only: Pro ₹1,499 / 12 months / 1 phone, Elite ₹2,999 / 12 months / 2 phones.
+A price of ₹0 is not for sale and does not expire.
 
-| Plan | Library | Registered devices |
-|---|---|---|
-| Free | Questions marked free | 1 |
-| Pro | All questions, years, subjects, and answers | 1 |
-| Elite | Same as Pro | 2 |
+What a plan includes:
+
+- **Depth:** question text only, text plus the answer, or the answer plus the explanation. Reading and practice share that depth.
+- **Slice:** preview questions only, or a filter on kind (MCQ, theory), exam type, the student’s university or every university, MBBS course years, and past-paper years (all, latest per subject, or a list). A question with several sittings is included when any sitting matches.
+- **Tease:** Free shows a locked card with empty text for everything else. A narrow plan leaves those rows out.
+- **Practice:** tutor mode, exam mode, questions per session, and questions per day. Empty caps mean no cap.
+
+`questions.is_preview` marks a free preview. `profiles.plan_id` is the subscription. `plan_expires_at` stays on the profile. An inactive plan cannot be bought, and people already on it keep it until it expires.
+
+| Seeded plan | Library | Practice | Devices |
+|---|---|---|---|
+| Free | Preview questions, with explanations | 10 per session, 20 per day | 1 |
+| Pro | Every question, every university, answers and explanations | 50 per session, no daily cap | 1 |
+| Elite | Same as Pro | Same as Pro | 2 |
 
 A phone that is not registered is refused. It does not suspend the plan.
 On the website user page, an admin can free a phone or raise that account's
-phone count (up to 10). The plan counts above stay the default for everyone
-else. `profiles.max_registered_devices` stores the raise.
+phone count (up to 10). The raise only goes above the plan’s device cap.
+`profiles.max_registered_devices` stores the raise.
 
-Purchase, in the app, asks for a prepaid period and an optional percent-off
+Purchase, in the app, picks one public plan and an optional percent-off
 coupon, then opens the **website** to pay. The app does not charge a card.
-
-| Period | Access |
-|---|---|
-| 1 year | 12 months |
-| 2 years + 1 month extra | 25 months |
-| 3 years + 2 months extra | 38 months |
-| 4 years + 3 months extra | 51 months |
-
-The 1-year list price is charged once per year. The extra months are free.
-Seed prices are Pro ₹1,499 / year and Elite ₹2,999 / year (longer periods
-are that price × the number of years). Change a live price in
-`paid_plan_catalog` — see `docs/06_PAYMENTS_PRODUCTION.md`. The coupon
-percent is applied on the website from `discount_codes`, never from a number
-the app sends.
+Checkout reads `amount_paise` and `duration_months` from the plan. A featured
+promo on the card is display only; the percent still comes from
+`discount_codes`. Paying replaces `plan_id` and adds the plan’s months onto
+the later of now and the current expiry.
 
 ## Accounts
 

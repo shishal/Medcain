@@ -65,11 +65,10 @@ Deno.serve(async (req) => {
     p_payment_id: pay.paymentId,
     p_order_id: pay.orderId,
     p_user_id: pay.userId,
-    p_plan: pay.plan,
+    p_plan_id: pay.planId,
     p_amount_paise: pay.amountPaise,
     p_currency: pay.currency,
     p_discount_code: pay.discountCode,
-    p_period: pay.period,
   });
 
   if (error) {
@@ -85,7 +84,7 @@ Deno.serve(async (req) => {
   }
 
   console.log(
-    `razorpay-webhook payment=${pay.paymentId} user=${pay.userId} plan=${pay.plan} duplicate=${data?.duplicate === true}`,
+    `razorpay-webhook payment=${pay.paymentId} user=${pay.userId} plan=${pay.planId} duplicate=${data?.duplicate === true}`,
   );
 
   return json({ received: true, ...data }, 200);

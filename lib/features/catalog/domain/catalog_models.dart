@@ -169,6 +169,7 @@ class CatalogLesson {
     required this.displayOrder,
     required this.requiredPlan,
     required this.isActive,
+    this.isOpen = true,
   });
 
   final String id;
@@ -177,6 +178,21 @@ class CatalogLesson {
   final int displayOrder;
   final PlanTier requiredPlan;
   final bool isActive;
+
+  /// From `lesson_access`. False when this plan cannot open the lesson.
+  final bool isOpen;
+
+  CatalogLesson copyWith({bool? isOpen}) {
+    return CatalogLesson(
+      id: id,
+      topicId: topicId,
+      name: name,
+      displayOrder: displayOrder,
+      requiredPlan: requiredPlan,
+      isActive: isActive,
+      isOpen: isOpen ?? this.isOpen,
+    );
+  }
 
   factory CatalogLesson.fromJson(Map<String, dynamic> json) {
     return CatalogLesson(
