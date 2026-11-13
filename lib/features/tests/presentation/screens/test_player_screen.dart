@@ -116,8 +116,14 @@ class _TestPlayerScreenState extends ConsumerState<TestPlayerScreen>
       }
     });
 
+    final session = sessionAsync.asData?.value;
+    // Practice (tutor and exam) is for studying. The identity tile stays on
+    // catalog tests only, once we know this sitting is not a practice session.
+    final showWatermark = session != null && !session.isEphemeralPractice;
+
     return ContentCaptureGuard(
       screen: ContentScreens.testPlayer,
+      watermark: showWatermark,
       child: sessionAsync.when(
         loading: () => Scaffold(
           appBar: AppBar(title: const Text('Test')),
