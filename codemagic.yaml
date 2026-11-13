@@ -20,10 +20,12 @@ definitions:
         : "${SUPABASE_ANON_KEY:?Add SUPABASE_ANON_KEY to the medico_app env group}"
         : "${CHECKOUT_URL:?Add CHECKOUT_URL to the medico_app env group}"
         # Only Flutter-safe values. Never put service_role in this group —
-        # .env is bundled into the binary as an asset.
+        # assets/env is bundled into the binary. A file named ".env" is
+        # dropped by Android's packager and the release build never starts.
+        mkdir -p "$CM_BUILD_DIR/assets"
         printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nCHECKOUT_URL=%s\n' \
           "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$CHECKOUT_URL" \
-          > "$CM_BUILD_DIR/.env"
+          > "$CM_BUILD_DIR/assets/env"
     - &flutter_pub_get
       name: Get Flutter packages
       script: flutter pub get

@@ -133,13 +133,14 @@ Rules:
 
 - Must be `https://` (Android already allows the app to query `https` browsers).
 - No trailing path required. The app adds `plan=pro|elite`, `period=y1|y2|y3|y4`, optional `code=`, and `phone=`.
-- `.env` is bundled as a Flutter **asset**. Changing it requires a **new app
-  build**. Editing Supabase or Razorpay after that does **not** require a
-  rebuild; editing `CHECKOUT_URL` does.
+- `assets/env` is bundled as a Flutter **asset** (Android drops a file named
+  `.env`). Changing it requires a **new app build**. Editing Supabase or
+  Razorpay after that does **not** require a rebuild; editing `CHECKOUT_URL`
+  does.
 
-For Codemagic: create `.env` in the build script from Codemagic environment
+For Codemagic: the build script writes `assets/env` from Codemagic environment
 variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `CHECKOUT_URL`). Do not commit
-`.env`.
+`assets/env`.
 
 **iOS:** if “Continue on web” does nothing, add to `ios/Runner/Info.plist`:
 

@@ -51,6 +51,8 @@ app.*.map.json
 .env
 .env.*
 !.env.example
+# Flutter asset copy of the public keys only. Android drops a ".env" asset.
+assets/env
 
 # Checkout page config (anon key is public, but keep local copies out of git)
 checkout/config.js

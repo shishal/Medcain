@@ -34,8 +34,10 @@ If Phase 0.1 already connected the repo, skip this.
 
 ## One-time: app secrets group `medico_app`
 
-The Flutter app loads `.env` as an asset. That file is gitignored, so CI must
-write it. In Codemagic: **Application settings → Environment variables**.
+The Flutter app loads `assets/env` as an asset. That file is gitignored, so CI
+must write it. It is not named `.env`: Android's packager drops dotfile assets,
+and the release build then stays on the splash. In Codemagic: **Application
+settings → Environment variables**.
 
 Create a group named exactly `medico_app` (must match `codemagic.yaml`) and add:
 
@@ -142,7 +144,7 @@ TestFlight group automatically, set `submit_to_testflight: true` and list
 | Symptom | Likely cause |
 |---|---|
 | `CM_KEYSTORE_PATH is not set` | Keystore reference is not named `medico`, or it was not uploaded. |
-| `.env` / `SUPABASE_URL` missing | `medico_app` group name mismatch, or variables not marked available to this app. |
+| Splash never leaves, log says `FileNotFoundError` | `assets/env` was not written, or the group variables are empty. A bundled file named `.env` is dropped from the APK. |
 | iOS signing / provisioning | Bundle ID not `com.shishal.medico`, or no App Store profile/certificate matching that ID. |
 | `app_store_connect: medico` integration error | API key in Codemagic is not named `medico`. |
 | Release APK cannot load data | Checkout/Supabase URL in the group is still localhost; or (fixed in this phase) missing `INTERNET` on the main manifest. |

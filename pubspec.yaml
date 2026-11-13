@@ -74,7 +74,9 @@ flutter:
   uses-material-design: true
 
   assets:
-    - .env
+    # Not ".env". Android's packager drops dotfiles, so a release build
+    # would ship without it and freeze on the splash. See SupabaseEnv.
+    - assets/env
     - assets/branding/
     - assets/illustrations/
 
