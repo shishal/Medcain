@@ -27,6 +27,14 @@ void main() {
     expect(teaser.appearanceCount, 3);
     expect(teaser.requiredPlan, PlanTier.free);
     expect(teaser.marks, 10);
+
+    final fromDatabase = PyqTeaser.fromJson({
+      PyqTeaserColumns.id: 'q1',
+      PyqTeaserColumns.questionText: 'Stem',
+      // numeric columns arrive as strings from PostgREST.
+      PyqTeaserColumns.marks: '10',
+    });
+    expect(fromDatabase.marks, 10);
     expect(teaser.kind, 'pyq_theory');
     expect(teaser.isHighYield, isTrue);
     expect(teaser.format.label, 'Essay');

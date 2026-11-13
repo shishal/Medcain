@@ -999,7 +999,7 @@ Entitlement columns on `plans` (checked only in Postgres):
 
 `plan_allows_question(plan_id, question_id, user_id)` is the predicate for the reader, practice picking, and lesson resources. A question with several sittings matches when any sitting matches. `latest` is the newest `exam_year` per subject inside the other filters, computed at read time. `plan_allows_lesson` opens a lesson when its subject’s MBBS phase is in a filtered plan, or when `preview_only` and the lesson contains a preview question.
 
-Students have no `select` on `questions` or `question_sample_answers`. Reads go through `question_listings`, a `security_barrier` view:
+Students have no `select` on `questions` or `question_sample_answers`. Reads go through `question_listings`, a security-definer view. It is not `security_barrier`: that made a subject load check every question in the bank before the topic filter, and the statement timed out. The view calls `private.my_plan_allows_question`, which students may execute, because Postgres checks function permissions as the querying role. `plan_allows_question` itself stays revoked from `authenticated`, so a student cannot pass another user id.
 
 - In the slice, or a preview: text is present. The key and sample answer appear when depth is `answer` or `explanation`. Explanations appear only at `explanation`.
 - Outside the slice with tease on: the card remains, with null text, key, and explanation, and `is_locked` true.

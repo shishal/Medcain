@@ -134,7 +134,8 @@ class PyqTeaser {
       topicId: json[PyqTeaserColumns.topicId] as String?,
       // Null when question_listings redacts a stem the plan cannot read.
       questionText: json[PyqTeaserColumns.questionText] as String? ?? '',
-      marks: json[PyqTeaserColumns.marks] as num?,
+      // PostgREST sends numeric columns as strings so the precision is kept.
+      marks: _asNum(json[PyqTeaserColumns.marks]),
       requiredPlan: PlanTier.fromString(
         json[PyqTeaserColumns.requiredPlan] as String? ?? 'free',
       ),
@@ -325,6 +326,12 @@ class ExamAppearance {
       ),
     );
   }
+}
+
+num? _asNum(Object? value) {
+  if (value == null) return null;
+  if (value is num) return value;
+  return num.tryParse(value.toString());
 }
 
 int _asInt(Object? value) {
