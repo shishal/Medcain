@@ -47,7 +47,15 @@ class _DeveloperModeLockState extends ConsumerState<DeveloperModeLock>
         if (monitor.enforces) _setBlocked(true);
       },
     );
-    unawaited(_refresh());
+    // A check that never answers would leave the solid splash color up.
+    unawaited(
+      _refresh().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          if (mounted && _blocked == null) _setBlocked(false);
+        },
+      ),
+    );
   }
 
   @override

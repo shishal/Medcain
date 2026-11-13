@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -66,70 +68,78 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     super.dispose();
   }
 
+  /// Device claim and profile load. A hung database call must not keep
+  /// the splash up after this.
+  static const _startupWait = Duration(seconds: 8);
+
   Future<void> _navigateAway() async {
     await Future<void>.delayed(const Duration(milliseconds: 1300));
     if (!mounted) return;
 
     var isAuthenticated = ref.read(authSessionProvider);
     if (isAuthenticated) {
-      final repo = ref.read(authRepositoryProvider);
-      final claim = await repo.claimActiveDevice();
-      if (!mounted) return;
-
-      if (claim case Success(:final value)) {
-        if (!value.ok || value.deviceLimit) {
-          ref.read(deviceSessionNoticeProvider.notifier).setMessage(
-            DeviceSessionMessages.deviceLimit,
-          );
-          await ref.read(authSessionProvider.notifier).signOut();
-          if (!mounted) return;
-          context.go(
-            AppRoutes.loginWithReason(AppRoutes.loginReasonDeviceLimit),
-          );
-          return;
-        }
-        ref.read(deviceSessionNoticeProvider.notifier).setFromClaim(value);
-      }
-
-      final assertResult = await repo.assertActiveDevice();
-      if (!mounted) return;
-
-      final stillActive = switch (assertResult) {
-        Success(:final value) => value,
-        Failure() => true, // don't lock out on a transient RPC failure
-      };
-
-      if (!stillActive) {
-        await ref
-            .read(authSessionProvider.notifier)
-            .signOutBecauseOtherDevice();
-        if (!mounted) return;
-        context.go(
-          AppRoutes.loginWithReason(AppRoutes.loginReasonOtherDevice),
-        );
-        return;
-      }
-
+      final alreadyLeft = await _confirmDevice().timeout(
+        _startupWait,
+        onTimeout: () => false,
+      );
+      if (!mounted || alreadyLeft) return;
       isAuthenticated = ref.read(authSessionProvider);
     }
 
-    if (!mounted) return;
     if (!isAuthenticated) {
       context.go(AppRoutes.login);
       return;
     }
 
-    // Admins skip the student home. The profile row is usually ready after
-    // the splash delay; if it fails we still open Home and the router corrects.
+    // Admins skip the student home. A failed or slow profile still opens
+    // Home; the router sends an admin on once the row arrives.
     var isAdmin = false;
     try {
-      isAdmin =
-          (await ref.read(userProfileProvider.future))?.isAdmin ?? false;
+      final profile = await ref
+          .read(userProfileProvider.future)
+          .timeout(_startupWait);
+      isAdmin = profile?.isAdmin ?? false;
     } catch (_) {
       isAdmin = false;
     }
     if (!mounted) return;
     context.go(isAdmin ? AppRoutes.admin : AppRoutes.home);
+  }
+
+  /// Registers this phone. Returns true when login was already opened.
+  Future<bool> _confirmDevice() async {
+    final repo = ref.read(authRepositoryProvider);
+    final claim = await repo.claimActiveDevice();
+    if (!mounted) return true;
+
+    if (claim case Success(:final value)) {
+      if (!value.ok || value.deviceLimit) {
+        ref.read(deviceSessionNoticeProvider.notifier).setMessage(
+          DeviceSessionMessages.deviceLimit,
+        );
+        await ref.read(authSessionProvider.notifier).signOut();
+        if (!mounted) return true;
+        context.go(AppRoutes.loginWithReason(AppRoutes.loginReasonDeviceLimit));
+        return true;
+      }
+      ref.read(deviceSessionNoticeProvider.notifier).setFromClaim(value);
+    }
+
+    final assertResult = await repo.assertActiveDevice();
+    if (!mounted) return true;
+
+    final stillActive = switch (assertResult) {
+      Success(:final value) => value,
+      Failure() => true, // don't lock out on a transient RPC failure
+    };
+
+    if (!stillActive) {
+      await ref.read(authSessionProvider.notifier).signOutBecauseOtherDevice();
+      if (!mounted) return true;
+      context.go(AppRoutes.loginWithReason(AppRoutes.loginReasonOtherDevice));
+      return true;
+    }
+    return false;
   }
 
   @override
