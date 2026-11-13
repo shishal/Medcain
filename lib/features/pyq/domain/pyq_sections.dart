@@ -114,7 +114,9 @@ int _comparePaperNames(String? a, String? b) {
 /// Splits the filtered feed into the three sections. Years run newest first,
 /// and each year is one row per printed paper (Paper I, then Paper II).
 /// Section 2 lists the student's college first, then other colleges of the
-/// same university. "Other" is grouped by university using [universityCodes].
+/// same university. "Other" is grouped by university: the university whose
+/// newest paper in this subject is most recent comes first. A tie on that
+/// year falls back to the university code in [universityCodes].
 PyqSections buildPyqSections({
   required List<PyqTeaser> teasers,
   required SubjectPyqFilter filter,
@@ -179,6 +181,16 @@ PyqSections buildPyqSections({
       for (final g in groups)
         if (g.section == section) g,
     ];
+    // Newest paper year per university, used only to order section 3.
+    final latestYear = <String, int>{};
+    if (section == PyqSection.other) {
+      for (final g in list) {
+        final current = latestYear[g.universityId];
+        if (current == null || g.year > current) {
+          latestYear[g.universityId] = g.year;
+        }
+      }
+    }
     list.sort((a, b) {
       if (section == PyqSection.ownCollege) {
         final byRank = collegeRank(a).compareTo(collegeRank(b));
@@ -187,6 +199,10 @@ PyqSections buildPyqSections({
         if (byCollege != 0) return byCollege;
       }
       if (section == PyqSection.other) {
+        final byLatest = latestYear[b.universityId]!.compareTo(
+          latestYear[a.universityId]!,
+        );
+        if (byLatest != 0) return byLatest;
         final byUni = codeOf(a).compareTo(codeOf(b));
         if (byUni != 0) return byUni;
       }

@@ -42,7 +42,12 @@ PyqSections _build(
     filter: filter,
     userUniversityId: 'u1',
     userCollegeId: 'c1',
-    universityCodes: const {'u1': 'GGSIPU', 'u2': 'KUHS', 'u3': 'RGUHS'},
+    universityCodes: const {
+      'u1': 'GGSIPU',
+      'u2': 'KUHS',
+      'u3': 'RGUHS',
+      'u4': 'AIIMS',
+    },
   );
 }
 
@@ -121,6 +126,8 @@ void main() {
       _teaser('e', [_sitting(year: 2023, university: 'u3')]),
       _teaser('f', [_sitting(year: 2021, university: 'u2')]),
       _teaser('g', [_sitting(year: 2025, university: 'u2')]),
+      // AIIMS sorts first alphabetically, but its newest paper is older.
+      _teaser('h', [_sitting(year: 2019, university: 'u4')]),
     ];
 
     test('puts each sitting in its section, newest year then paper', () {
@@ -140,11 +147,29 @@ void main() {
           ('c2', 2024, 'Paper I'),
         ],
       );
-      // "Other" is grouped by university code (KUHS before RGUHS).
+      // Newest university first, not A–Z: KUHS 2025, RGUHS 2023, AIIMS 2019.
       expect(sections.other.map((g) => (g.universityId, g.year)), [
         ('u2', 2025),
         ('u2', 2021),
         ('u3', 2023),
+        ('u4', 2019),
+      ]);
+    });
+
+    test('other universities with the same newest year stay alphabetical', () {
+      final sections = _build([
+        _teaser('rguhs', [_sitting(year: 2024, university: 'u3')]),
+        _teaser('aiims', [
+          _sitting(year: 2024, university: 'u4', paper: 'Paper II'),
+          _sitting(year: 2020, university: 'u4', paper: 'Paper I'),
+        ]),
+        _teaser('kuhs', [_sitting(year: 2024, university: 'u2')]),
+      ]);
+      expect(sections.other.map((g) => (g.universityId, g.year)), [
+        ('u4', 2024),
+        ('u4', 2020),
+        ('u2', 2024),
+        ('u3', 2024),
       ]);
     });
 

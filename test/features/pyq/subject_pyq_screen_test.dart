@@ -244,10 +244,12 @@ void main() {
     );
   });
 
-  Future<GoRouter> pumpScreen(WidgetTester tester) async {
-    // Tall enough that year headings plus a paper row under each year
-    // still leave the third section on screen.
-    tester.view.physicalSize = const Size(400, 1600);
+  Future<GoRouter> pumpScreen(
+    WidgetTester tester, {
+    PyqSubjectFeed? feed,
+  }) async {
+    // Tall enough that expanded sections still lay out every year heading.
+    tester.view.physicalSize = const Size(400, 3200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -280,7 +282,7 @@ void main() {
         overrides: [
           subjectPyqsProvider.overrideWith((ref, id) async {
             expect(id, 'anat');
-            return _feed();
+            return feed ?? _feed();
           }),
           bookmarkedIdsProvider.overrideWith(_StubBookmarkedIds.new),
           userProfileProvider.overrideWith(_StubProfile.new),
@@ -299,6 +301,13 @@ void main() {
                 name: 'Kerala University of Health Sciences',
                 state: 'Kerala',
                 slug: 'kuhs',
+              ),
+              University(
+                id: 'u3',
+                code: 'RGUHS',
+                name: 'Rajiv Gandhi University of Health Sciences',
+                state: 'Karnataka',
+                slug: 'rguhs',
               ),
             ],
           ),
@@ -326,6 +335,14 @@ void main() {
     return router;
   }
 
+  Future<void> expandSection(WidgetTester tester, String title) async {
+    final header = find.text(title);
+    await tester.ensureVisible(header);
+    await tester.pumpAndSettle();
+    await tester.tap(header);
+    await tester.pumpAndSettle();
+  }
+
   testWidgets(
     'subject screen shows own university, campus papers, then others',
     (tester) async {
@@ -343,6 +360,14 @@ void main() {
       final otherY = tester.getTopLeft(other).dy;
       expect(ownY, lessThan(collegeY));
       expect(collegeY, lessThan(otherY));
+
+      // Closed until opened, so the long paper list is not on screen yet.
+      expect(find.text('Paper I'), findsNothing);
+      expect(find.text('MAMC'), findsNothing);
+
+      await expandSection(tester, 'GGSIPU previous year questions');
+      await expandSection(tester, 'GGSIPU internal / pre-prof');
+      await expandSection(tester, 'Other universities');
 
       // Newest year first, Paper I above Paper II, and no stems in the list.
       expect(
@@ -382,6 +407,7 @@ void main() {
     tester,
   ) async {
     await pumpScreen(tester);
+    await expandSection(tester, 'GGSIPU internal / pre-prof');
 
     final paper = find.byKey(const ValueKey('ownCollege-2025-Paper I-c1'));
     await tester.ensureVisible(paper);
@@ -483,6 +509,76 @@ void main() {
 
     expect(find.text('2023'), findsWidgets);
     expect(find.text('2024'), findsNothing);
+  });
+
+  testWidgets('other universities are ordered by newest paper', (tester) async {
+    await pumpScreen(
+      tester,
+      feed: PyqSubjectFeed(
+        teasers: [
+          _teaser(
+            id: 'old-uni',
+            text: 'Older paper',
+            sittings: const [
+              PaperSitting(
+                universityId: 'u2',
+                year: 2018,
+                paperName: 'Paper I',
+              ),
+            ],
+          ),
+          _teaser(
+            id: 'new-uni',
+            text: 'Newer paper',
+            sittings: const [
+              PaperSitting(
+                universityId: 'u3',
+                year: 2024,
+                paperName: 'Paper I',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    await expandSection(tester, 'Other universities');
+    // RGUHS's newest paper is 2024; KUHS only has 2018, so RGUHS is first
+    // even though KUHS comes first in the alphabet.
+    expect(
+      tester.getTopLeft(find.text('RGUHS')).dy,
+      lessThan(tester.getTopLeft(find.text('KUHS')).dy),
+    );
+  });
+
+  testWidgets('more than three years hides the rest behind show more', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      feed: PyqSubjectFeed(
+        teasers: [
+          for (final year in [2024, 2023, 2022, 2021, 2020])
+            _teaser(id: 'y$year', text: 'Stem $year', years: [year]),
+        ],
+      ),
+    );
+
+    await expandSection(tester, 'GGSIPU previous year questions');
+    expect(find.text('2024'), findsOneWidget);
+    expect(find.text('2022'), findsOneWidget);
+    expect(find.text('2021'), findsNothing);
+    expect(find.text('2020'), findsNothing);
+
+    await tester.tap(find.text('Show 2 earlier years'));
+    await tester.pumpAndSettle();
+    expect(find.text('2021'), findsOneWidget);
+    expect(find.text('2020'), findsOneWidget);
+    expect(find.text('Show less'), findsOneWidget);
+
+    await tester.tap(find.text('Show less'));
+    await tester.pumpAndSettle();
+    expect(find.text('2020'), findsNothing);
   });
 }
 
