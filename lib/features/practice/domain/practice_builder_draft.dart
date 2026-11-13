@@ -46,6 +46,9 @@ class PracticeBuilderDraft {
   /// Lesson title shown on the builder. Not sent to Postgres.
   final String? scopeLabel;
 
+  /// Reading mode is a scroll of questions and answers, not an exam.
+  bool get isReading => feedbackTiming == FeedbackTiming.reading;
+
   /// Banner copy when the session is limited to [lessonIds].
   String? get lessonScopeMessage {
     if (lessonIds.isEmpty) return null;
@@ -236,11 +239,18 @@ class PracticeBuilderDraft {
               : explanationLevel);
 
     var timing = feedbackTiming;
-    if (timing == FeedbackTiming.immediate && !ctx.limits.allowTutorMode) {
-      timing = FeedbackTiming.onSubmit;
-    }
-    if (timing == FeedbackTiming.onSubmit && !ctx.limits.allowExamMode) {
-      timing = FeedbackTiming.immediate;
+    final tutorAllowed =
+        timing != FeedbackTiming.immediate || ctx.limits.allowTutorMode;
+    final examAllowed =
+        timing != FeedbackTiming.onSubmit || ctx.limits.allowExamMode;
+    if (!tutorAllowed || !examAllowed) {
+      if (ctx.limits.allowTutorMode) {
+        timing = FeedbackTiming.immediate;
+      } else if (ctx.limits.allowExamMode) {
+        timing = FeedbackTiming.onSubmit;
+      } else {
+        timing = FeedbackTiming.reading;
+      }
     }
 
     return copyWith(

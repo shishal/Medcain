@@ -270,6 +270,30 @@ void main() {
       expect(draft.timerEnabled, isFalse);
     });
 
+    test('uses reading when the plan has neither tutor nor exam', () {
+      const limits = PlanLimits(
+        plan: PlanTier.free,
+        maxPracticeSessionQuestions: 10,
+        allowFullExplanation: false,
+        allowTimerToggle: false,
+        allowTagFilter: false,
+        allowDifficultyFilter: false,
+        allowNegativeMarkingToggle: false,
+        allowTutorMode: false,
+        allowExamMode: false,
+      );
+
+      final clamped =
+          const PracticeBuilderDraft(
+            feedbackTiming: FeedbackTiming.onSubmit,
+          ).clampedTo(
+            const PracticePlanContext(limits: limits, questionsUsedToday: 0),
+          );
+
+      expect(clamped.feedbackTiming, FeedbackTiming.reading);
+      expect(clamped.isReading, isTrue);
+    });
+
     test('re-clamps stored filters against the current plan', () {
       // A session generated while Pro; user is now on Free.
       final stored = PracticeBuilderDraft.fromPracticeTestRow({

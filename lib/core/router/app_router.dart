@@ -21,6 +21,7 @@ import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/upgrade_prompt_screen.dart';
 import '../../features/practice/domain/practice_builder_draft.dart';
 import '../../features/practice/presentation/screens/practice_builder_screen.dart';
+import '../../features/practice/presentation/screens/practice_reading_screen.dart';
 import '../../features/progress/presentation/screens/progress_screens.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/pyq/presentation/open_pyq_reader.dart';
@@ -275,6 +276,13 @@ GoRouter goRouter(Ref ref) {
         builder: (context, state) {
           final testId = state.pathParameters['testId']!;
           return TestPlayerScreen(testId: testId);
+        },
+      ),
+      comicGoRoute(
+        path: AppRoutes.practiceReading,
+        builder: (context, state) {
+          final testId = state.pathParameters['testId']!;
+          return PracticeReadingScreen(testId: testId);
         },
       ),
       comicGoRoute(

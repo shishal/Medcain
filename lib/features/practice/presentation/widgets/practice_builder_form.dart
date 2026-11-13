@@ -77,36 +77,49 @@ class PracticeBuilderForm extends StatelessWidget {
           selected: draft.feedbackTiming,
           allowTutor: _limits.allowTutorMode,
           allowExam: _limits.allowExamMode,
-          onSelected: (value) =>
-              onChanged(draft.copyWith(feedbackTiming: value)),
+          onSelected: (value) {
+            var next = draft.copyWith(feedbackTiming: value);
+            // "None" hides the answer in Tutor Mode. Reading Mode is the
+            // answer, so bump that choice up to the answer itself.
+            if (value == FeedbackTiming.reading &&
+                draft.explanationLevel == ExplanationLevel.none) {
+              next = next.copyWith(
+                explanationLevel: ExplanationLevel.answerOnly,
+              );
+            }
+            onChanged(next);
+          },
         ),
         const SizedBox(height: Spacing.lg),
         _ExplanationLevelSection(
           selected: draft.explanationLevel,
           allowFull: _limits.allowFullExplanation,
+          hideNone: draft.isReading,
           onSelected: (value) =>
               onChanged(draft.copyWith(explanationLevel: value)),
           onUpgrade: onUpgrade,
         ),
-        const SizedBox(height: Spacing.lg),
-        _TimerSection(
-          enabled: draft.timerEnabled,
-          minutes: draft.timerMinutes,
-          canToggle: _limits.allowTimerToggle,
-          onEnabledChanged: (value) =>
-              onChanged(draft.copyWith(timerEnabled: value)),
-          onMinutesChanged: (value) =>
-              onChanged(draft.copyWith(timerMinutes: value)),
-          onUpgrade: onUpgrade,
-        ),
-        const SizedBox(height: Spacing.lg),
-        _NegativeMarkingSection(
-          enabled: draft.negativeMarking,
-          canToggle: _limits.allowNegativeMarkingToggle,
-          onChanged: (value) =>
-              onChanged(draft.copyWith(negativeMarking: value)),
-          onUpgrade: onUpgrade,
-        ),
+        if (!draft.isReading) ...[
+          const SizedBox(height: Spacing.lg),
+          _TimerSection(
+            enabled: draft.timerEnabled,
+            minutes: draft.timerMinutes,
+            canToggle: _limits.allowTimerToggle,
+            onEnabledChanged: (value) =>
+                onChanged(draft.copyWith(timerEnabled: value)),
+            onMinutesChanged: (value) =>
+                onChanged(draft.copyWith(timerMinutes: value)),
+            onUpgrade: onUpgrade,
+          ),
+          const SizedBox(height: Spacing.lg),
+          _NegativeMarkingSection(
+            enabled: draft.negativeMarking,
+            canToggle: _limits.allowNegativeMarkingToggle,
+            onChanged: (value) =>
+                onChanged(draft.copyWith(negativeMarking: value)),
+            onUpgrade: onUpgrade,
+          ),
+        ],
         const SizedBox(height: Spacing.xl),
       ],
     );
@@ -381,34 +394,34 @@ class _FeedbackTimingSection extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final modes = [
       for (final timing in FeedbackTiming.values)
-        if ((timing == FeedbackTiming.immediate && allowTutor) ||
+        if (timing == FeedbackTiming.reading ||
+            (timing == FeedbackTiming.immediate && allowTutor) ||
             (timing == FeedbackTiming.onSubmit && allowExam))
           timing,
     ];
-    if (modes.isEmpty) {
-      return Text(
-        'Practice sessions are not included on this plan.',
-        style: textTheme.bodyMedium,
-      );
-    }
     final shown = modes.contains(selected) ? selected : modes.first;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Feedback timing', style: textTheme.titleMedium),
+        Text('Mode', style: textTheme.titleMedium),
         const SizedBox(height: Spacing.sm),
-        SegmentedButton<FeedbackTiming>(
-          segments: [
+        // Chips wrap. Three full labels overflow a phone-width segmented button.
+        Wrap(
+          spacing: Spacing.sm,
+          runSpacing: Spacing.sm,
+          children: [
             for (final timing in modes)
-              ButtonSegment(value: timing, label: Text(timing.label)),
+              ChoiceChip(
+                label: Text(timing.label),
+                selected: shown == timing,
+                onSelected: (_) => onSelected(timing),
+              ),
           ],
-          selected: {shown},
-          onSelectionChanged: (value) => onSelected(value.first),
         ),
         const SizedBox(height: Spacing.sm),
         Text(
-          selected.subtitle,
+          shown.subtitle,
           style: textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -422,12 +435,16 @@ class _ExplanationLevelSection extends StatelessWidget {
   const _ExplanationLevelSection({
     required this.selected,
     required this.allowFull,
+    required this.hideNone,
     required this.onSelected,
     required this.onUpgrade,
   });
 
   final ExplanationLevel selected;
   final bool allowFull;
+
+  /// Reading Mode always shows the answer, so "None" is not a real choice.
+  final bool hideNone;
   final ValueChanged<ExplanationLevel> onSelected;
   final VoidCallback onUpgrade;
 
@@ -457,17 +474,18 @@ class _ExplanationLevelSection extends StatelessWidget {
           runSpacing: Spacing.sm,
           children: [
             for (final level in ExplanationLevel.values)
-              ChoiceChip(
-                label: Text(
-                  level == ExplanationLevel.full && !allowFull
-                      ? '${level.label} 🔒'
-                      : level.label,
+              if (!hideNone || level != ExplanationLevel.none)
+                ChoiceChip(
+                  label: Text(
+                    level == ExplanationLevel.full && !allowFull
+                        ? '${level.label} 🔒'
+                        : level.label,
+                  ),
+                  selected: selected == level,
+                  onSelected: (!allowFull && level == ExplanationLevel.full)
+                      ? null
+                      : (_) => onSelected(level),
                 ),
-                selected: selected == level,
-                onSelected: (!allowFull && level == ExplanationLevel.full)
-                    ? null
-                    : (_) => onSelected(level),
-              ),
           ],
         ),
         if (!allowFull)

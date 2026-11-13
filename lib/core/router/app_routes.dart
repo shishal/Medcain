@@ -18,6 +18,7 @@ abstract final class AppRoutes {
   static const pyq = '/pyq/:questionId';
   static const testDetail = '/tests/:testId';
   static const testPlayer = '/tests/:testId/play';
+  static const practiceReading = '/tests/:testId/read';
   static const results = '/results/:attemptId';
   static const solutionReview = '/results/:attemptId/review';
   static const bookmarks = '/bookmarks';
@@ -98,6 +99,7 @@ abstract final class AppRoutes {
 
   static String testDetailPath(String testId) => '/tests/$testId';
   static String testPlayerPath(String testId) => '/tests/$testId/play';
+  static String practiceReadingPath(String testId) => '/tests/$testId/read';
 
   static String resultsPath(
     String attemptId, {

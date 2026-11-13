@@ -173,7 +173,7 @@ void main() {
       expect(find.text('Pathology'), findsNothing);
       expect(find.text('Your year'), findsNothing);
       expect(find.text('Practice'), findsOneWidget);
-      expect(find.text('Tutor or exam mode'), findsOneWidget);
+      expect(find.text('Tutor, exam, or reading'), findsOneWidget);
       expect(find.byKey(const ValueKey('year-chip-p2')), findsNothing);
       expect(
         find.textContaining('Tap a subject for previous-year papers'),

@@ -99,7 +99,9 @@ class PracticeRepository {
     try {
       final limitsRaw = await _client.rpc(RpcFunctions.currentPlanDetail);
       if (limitsRaw is! Map) {
-        return const Failure('Could not load your plan limits. Please try again.');
+        return const Failure(
+          'Could not load your plan limits. Please try again.',
+        );
       }
       final limitsRow = Map<String, dynamic>.from(limitsRaw);
 
@@ -160,8 +162,14 @@ class PracticeRepository {
               draft.feedbackTiming.dbValue,
           CreatePracticeSessionParams.explanationLevel:
               draft.explanationLevel.dbValue,
-          CreatePracticeSessionParams.timerMinutes: draft.resolvedTimerMinutes,
-          CreatePracticeSessionParams.negativeMarking: draft.negativeMarking,
+          // Reading has no countdown and no score, so those toggles stay off
+          // even if the form still remembers them from Tutor or Exam.
+          CreatePracticeSessionParams.timerMinutes: draft.isReading
+              ? null
+              : draft.resolvedTimerMinutes,
+          CreatePracticeSessionParams.negativeMarking: draft.isReading
+              ? false
+              : draft.negativeMarking,
           CreatePracticeSessionParams.lessonIds: draft.lessonIds.isEmpty
               ? null
               : draft.lessonIds.toList(),

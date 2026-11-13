@@ -83,7 +83,7 @@ What a plan includes:
 - **Depth:** question text only, text plus the answer, or the answer plus the explanation. Reading and practice share that depth.
 - **Slice:** preview questions only, or a filter on kind (MCQ, theory), exam type, the student’s university or every university, MBBS course years, and past-paper years (all, latest per subject, or a list). A question with several sittings is included when any sitting matches.
 - **Tease:** Free shows a locked card with empty text for everything else. A narrow plan leaves those rows out.
-- **Practice:** tutor mode, exam mode, questions per session, and questions per day. Empty caps mean no cap.
+- **Practice:** tutor mode, exam mode, reading mode (scroll questions and answers, no attempt), questions per session, and questions per day. Empty caps mean no cap.
 
 `questions.is_preview` marks a free preview. `profiles.plan_id` is the subscription. `plan_expires_at` stays on the profile. An inactive plan cannot be bought, and people already on it keep it until it expires.
 

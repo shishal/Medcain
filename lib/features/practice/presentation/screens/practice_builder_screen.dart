@@ -83,7 +83,10 @@ class _PracticeBuilderScreenState extends ConsumerState<PracticeBuilderScreen> {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(toast)));
         }
-        context.go(AppRoutes.testPlayerPath(value.testId));
+        final path = draft.isReading
+            ? AppRoutes.practiceReadingPath(value.testId)
+            : AppRoutes.testPlayerPath(value.testId);
+        context.go(path);
       case Failure(:final message):
         setState(() => _errorMessage = message);
     }
@@ -177,6 +180,7 @@ class _PracticeBuilderScreenState extends ConsumerState<PracticeBuilderScreen> {
                   _StartBar(
                     errorMessage: _errorMessage,
                     isSubmitting: _isSubmitting,
+                    label: draft.isReading ? 'Start reading' : 'Start practice',
                     quotaExhausted: planContext.dailyQuotaExhausted,
                     onStart: _isSubmitting || planContext.dailyQuotaExhausted
                         ? null
@@ -200,12 +204,14 @@ class _StartBar extends StatelessWidget {
   const _StartBar({
     required this.errorMessage,
     required this.isSubmitting,
+    required this.label,
     required this.quotaExhausted,
     required this.onStart,
   });
 
   final String? errorMessage;
   final bool isSubmitting;
+  final String label;
   final bool quotaExhausted;
   final VoidCallback? onStart;
 
@@ -252,7 +258,7 @@ class _StartBar extends StatelessWidget {
                       color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   )
-                : const Text('Start practice'),
+                : Text(label),
           ),
         ],
       ),

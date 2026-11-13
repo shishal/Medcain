@@ -5,12 +5,14 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/utils/wall_clock.dart';
 import '../../../auth/presentation/providers/auth_session_provider.dart';
+import '../../../practice/domain/practice_enums.dart';
 import '../../data/local_attempt_store.dart';
 import '../../data/tests_repository.dart';
 import '../../domain/attempt_status.dart';
 import '../../domain/attempt_submit_request.dart';
 import '../../domain/player_session_state.dart';
 import '../../domain/question_option.dart';
+import '../../domain/reading_mode_redirect.dart';
 import '../../domain/submit_backoff.dart';
 import 'in_progress_attempts_provider.dart';
 
@@ -61,6 +63,9 @@ class PlayerSession extends _$PlayerSession {
     final local = await store.readOpenForTest(testId: testId, userId: userId);
 
     if (local != null && local.questions.isNotEmpty) {
+      if (local.feedbackTiming == FeedbackTiming.reading) {
+        throw const ReadingModeRedirect();
+      }
       final remote = await repo.fetchAttempt(local.attemptId);
       final stillOpen = switch (remote) {
         Failure() => true, // Offline: trust the local file.
@@ -105,6 +110,10 @@ class PlayerSession extends _$PlayerSession {
       Success(:final value) => value,
       Failure(:final message) => throw Exception(message),
     };
+
+    if (bundle.feedbackTiming == FeedbackTiming.reading) {
+      throw const ReadingModeRedirect();
+    }
 
     final attemptResult = await repo.startOrResumeAttempt(testId);
     final attempt = switch (attemptResult) {

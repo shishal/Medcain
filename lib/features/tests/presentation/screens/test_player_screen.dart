@@ -10,6 +10,7 @@ import '../../../profile/domain/plan_tier.dart';
 import '../../../security/domain/capture_event.dart';
 import '../../../security/presentation/widgets/content_capture_guard.dart';
 import '../../domain/player_session_state.dart';
+import '../../domain/reading_mode_redirect.dart';
 import '../providers/player_session_provider.dart';
 import '../widgets/test_player_view.dart';
 
@@ -32,6 +33,7 @@ class TestPlayerScreen extends ConsumerStatefulWidget {
 class _TestPlayerScreenState extends ConsumerState<TestPlayerScreen>
     with WidgetsBindingObserver {
   bool _didNavigateToResults = false;
+  bool _didRedirectToReading = false;
 
   @override
   void initState() {
@@ -67,6 +69,17 @@ class _TestPlayerScreenState extends ConsumerState<TestPlayerScreen>
 
   void _flush() {
     ref.read(playerSessionProvider(widget.testId).notifier).flushSave();
+  }
+
+  bool _isReadingRedirect(Object error) {
+    if (error is ReadingModeRedirect) return true;
+    return error.toString().contains('ReadingModeRedirect');
+  }
+
+  void _openReading(BuildContext context) {
+    if (_didRedirectToReading || !context.mounted) return;
+    _didRedirectToReading = true;
+    context.go(AppRoutes.practiceReadingPath(widget.testId));
   }
 
   void _goToResults(PlayerSessionState session) {
@@ -111,6 +124,15 @@ class _TestPlayerScreenState extends ConsumerState<TestPlayerScreen>
           body: const AsyncLoadingView(),
         ),
         error: (error, _) {
+          if (_isReadingRedirect(error)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _openReading(context);
+            });
+            return Scaffold(
+              appBar: AppBar(title: const Text('Reading')),
+              body: const AsyncLoadingView(),
+            );
+          }
           final message = UserFacingError.display(error);
           final planLocked = message == TestPlayerScreen._planLockedMessage;
           return Scaffold(

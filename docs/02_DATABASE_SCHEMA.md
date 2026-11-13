@@ -1007,7 +1007,7 @@ Students have no `select` on `questions` or `question_sample_answers`. Reads go 
 
 `registered_device_limit(user_id)` is `greatest(1, plan device cap, profile raise)`. `claim_active_device` uses that one-argument function.
 
-`create_practice_session` loads the current plan, rejects practice when it is off or the depth is question-only, rejects a tutor or exam mode the plan does not allow, and picks MCQs that `plan_allows_question` accepts.
+`create_practice_session` loads the current plan, rejects practice when it is off or the depth is question-only, rejects a tutor or exam mode the plan does not allow, and picks MCQs that `plan_allows_question` accepts. `feedback_timing = 'reading'` is allowed whenever practice is on. That session still spends the daily quota, and the function forces the timer and negative marking off. The app does not start an attempt for it.
 
 Checkout is `checkout_quote(plan_id, code)` and `apply_razorpay_payment(..., plan_id, ...)`. The captured paise must match the plan amount or `discounted_amount_paise`. The payment sets `plan_id` and adds `duration_months` onto the later of now and the current expiry. Razorpay notes carry `plan_id` only. Orders created before this migration, with `notes.plan` and a period, are rejected; assign the plan from the user page instead.
 

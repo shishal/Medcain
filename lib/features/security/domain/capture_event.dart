@@ -6,4 +6,5 @@ abstract final class ContentScreens {
   static const testPlayer = 'test_player';
   static const solutionReview = 'solution_review';
   static const pyqReader = 'pyq_reader';
+  static const practiceReading = 'practice_reading';
 }

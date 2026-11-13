@@ -18,7 +18,7 @@ A form the student fills in before starting a session, which calls `create_pract
 | Priority | Hidden in Practice (Practice is Upcoming). PYQ lists show **Must / Should / Could** — the `questions.difficulty` column now stores those words. It is optional and blank imports as `should`, so the UI shows a chip only for `must` and `could`. |
 | Question source | Single-select: **Unattempted**, **Previously Incorrect**, **Bookmarked**, **All** | This is the single most-used filter in every competitor app researched — give it visual priority in the UI, don't bury it |
 | Question count | Slider or stepper | Cap it live in the UI to the plan's `max_practice_session_questions` as the user drags it — don't let them select 80 and then get silently clamped to 50 server-side without explanation; show the cap and why |
-| Feedback timing | Two-option toggle: **Tutor Mode** (see answer + explanation right after each question) vs **Exam Mode** (see everything at the end) | Label these using the same terminology students already know from other QBanks — don't invent new names for a well-established concept |
+| Mode | **Tutor Mode** (see answer + explanation right after each question), **Exam Mode** (see everything at the end), or **Reading Mode** (scroll questions with the answer already open — no attempt) | Tutor and Exam use the names students already know from other QBanks. Reading is not an exam: no timer, no scoring, no option lock |
 | Explanation level | Two-option toggle: **Answer only** vs **Full explanation** | Hidden/forced to "Answer only" if `allow_full_explanation` is false for the plan |
 | Timer | On/off toggle, with minutes field if on | Hidden/forced on if `allow_timer_toggle` is false |
 | Negative marking | On/off toggle | Off by default — practice is for learning, not exam pressure, unless the student deliberately wants realism |
@@ -28,6 +28,8 @@ On submit: call `create_practice_session()`, then navigate straight into the que
 ## 2. Feedback timing behavior
 
 **Exam Mode (`feedback_timing = 'on_submit'`)**: identical to the Test Engine spec's palette states and behavior in every respect. No reveal until the session is submitted.
+
+**Reading Mode (`feedback_timing = 'reading'`)**: no attempt, no timer, no score. `create_practice_session` still picks the MCQs and counts them against the daily quota, then the app opens a scroll. Each card shows the stem, the options, and the correct option marked. Explanation text follows `show_explanation_level` (`full` shows it). Timer and negative-marking controls are hidden, and the generator forces both off. Opening `/play` for this session redirects to the reader and does not start an attempt.
 
 **Tutor Mode (`feedback_timing = 'immediate'`)**: this is the behavior that's actually new.
 

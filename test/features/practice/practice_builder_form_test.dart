@@ -151,5 +151,51 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Full explanation'), findsOneWidget);
+    expect(find.text('Reading Mode'), findsOneWidget);
+  });
+
+  testWidgets('reading mode hides the exam controls', (tester) async {
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    var draft = const PracticeBuilderDraft(
+      explanationLevel: ExplanationLevel.none,
+    ).clampedTo(proContext);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              return PracticeBuilderForm(
+                draft: draft,
+                catalog: catalog,
+                planContext: proContext,
+                onChanged: (next) => setState(() => draft = next),
+                onUpgrade: () {},
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Timer'), findsOneWidget);
+    expect(find.text('None'), findsOneWidget);
+
+    await tester.tap(find.text('Reading Mode'));
+    await tester.pumpAndSettle();
+
+    expect(draft.isReading, isTrue);
+    expect(draft.explanationLevel, ExplanationLevel.answerOnly);
+    expect(find.text('Timer'), findsNothing);
+    expect(find.text('Negative marking'), findsNothing);
+    expect(find.text('None'), findsNothing);
+    expect(
+      find.text('Scroll through each question with the answer already open'),
+      findsOneWidget,
+    );
   });
 }

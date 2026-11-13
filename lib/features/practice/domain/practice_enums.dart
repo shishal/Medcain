@@ -65,14 +65,19 @@ enum QuestionSourceFilter {
   };
 }
 
-/// `tests.feedback_timing`: Tutor Mode vs Exam Mode.
+/// `tests.feedback_timing`: Tutor, Exam, or Reading.
+///
+/// [reading] does not start an attempt. The student scrolls questions with
+/// the answer already open.
 enum FeedbackTiming {
   immediate,
-  onSubmit;
+  onSubmit,
+  reading;
 
   static FeedbackTiming fromString(String value) {
     return switch (value.toLowerCase()) {
       'immediate' => FeedbackTiming.immediate,
+      'reading' => FeedbackTiming.reading,
       _ => FeedbackTiming.onSubmit,
     };
   }
@@ -80,18 +85,22 @@ enum FeedbackTiming {
   String get dbValue => switch (this) {
     FeedbackTiming.immediate => 'immediate',
     FeedbackTiming.onSubmit => 'on_submit',
+    FeedbackTiming.reading => 'reading',
   };
 
   /// Labels students already know from other QBanks.
   String get label => switch (this) {
     FeedbackTiming.immediate => 'Tutor Mode',
     FeedbackTiming.onSubmit => 'Exam Mode',
+    FeedbackTiming.reading => 'Reading Mode',
   };
 
   String get subtitle => switch (this) {
     FeedbackTiming.immediate =>
       'See the answer and explanation after each question',
     FeedbackTiming.onSubmit => 'See everything at the end, like a real test',
+    FeedbackTiming.reading =>
+      'Scroll through each question with the answer already open',
   };
 }
 
