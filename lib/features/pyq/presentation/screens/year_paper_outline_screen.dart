@@ -13,7 +13,8 @@ import '../providers/pyq_providers.dart';
 import '../widgets/pyq_teaser_card.dart';
 
 /// One exam year and, when [paperName] is set, one printed paper
-/// (Paper I, Paper II, …): pinned LAQ / Short notes / MCQ / Other tabs.
+/// (Paper I, Paper II, …). [monthQuery] narrows that paper to one month.
+/// Pinned LAQ / Short notes / MCQ / Other tabs.
 class YearPaperOutlineScreen extends ConsumerWidget {
   const YearPaperOutlineScreen({
     super.key,
@@ -24,6 +25,7 @@ class YearPaperOutlineScreen extends ConsumerWidget {
     this.section,
     this.collegeId,
     this.paperName,
+    this.monthQuery,
   });
 
   final String subjectId;
@@ -44,6 +46,10 @@ class YearPaperOutlineScreen extends ConsumerWidget {
   /// string means the sheet left the paper label blank.
   final String? paperName;
 
+  /// Null keeps every month. Empty string keeps sittings with no month.
+  /// `"8"` keeps August only.
+  final String? monthQuery;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(subjectPyqsProvider(subjectId));
@@ -53,11 +59,16 @@ class YearPaperOutlineScreen extends ConsumerWidget {
     final scopeUniversityId = universityId;
     // Null = no college filter. Empty string = papers with no college set.
     final scopeCollegeId = collegeId;
-    final paperTitle = _paperTitle(paperName);
-    // Narrow to the tapped row so a KUHS 2024 Paper I row does not also list
-    // Paper II, or the 2024 stems of another university (or another campus).
+    final month = _monthFromQuery(monthQuery);
+    final paperTitle = paperName == null && monthQuery == null
+        ? null
+        : paperSittingLabel(month: month, paperName: paperName);
+    // Narrow to the tapped row so a KUHS 2024 August Paper I row does not
+    // also list October, Paper II, or another university (or campus).
     final bool Function(PaperSitting)? scope =
-        (scopeSection == null || scopeUniversityId == null) && paperName == null
+        (scopeSection == null || scopeUniversityId == null) &&
+            paperName == null &&
+            monthQuery == null
         ? null
         : (sitting) {
             if (scopeSection != null && scopeUniversityId != null) {
@@ -77,6 +88,7 @@ class YearPaperOutlineScreen extends ConsumerWidget {
                 }
               }
             }
+            if (monthQuery != null && sitting.month != month) return false;
             if (paperName == null) return true;
             return (sitting.paperName?.trim() ?? '') == paperName!.trim();
           };
@@ -116,11 +128,13 @@ class YearPaperOutlineScreen extends ConsumerWidget {
   }
 }
 
-/// Null when the route did not pick a paper. Empty sheet labels read "Paper".
-String? _paperTitle(String? paperName) {
-  if (paperName == null) return null;
-  final trimmed = paperName.trim();
-  return trimmed.isEmpty ? 'Paper' : trimmed;
+/// Null when [raw] is absent or not 1–12. Empty string is null on purpose:
+/// that row was a sitting the sheet stored with no month.
+int? _monthFromQuery(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  final month = int.tryParse(raw);
+  if (month == null || month < 1 || month > 12) return null;
+  return month;
 }
 
 class _OutlineBody extends StatefulWidget {

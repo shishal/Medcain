@@ -147,6 +147,10 @@ class SubjectPyqScreen extends ConsumerWidget {
                   : null,
               // Empty string means the sheet left the paper label blank.
               paperName: group.paperName ?? '',
+              // Always scope the month so August Paper I does not also
+              // open October Paper I. Null month means the sheet had none.
+              month: group.month,
+              scopeMonth: true,
             ),
           );
 
@@ -272,7 +276,11 @@ class SubjectPyqScreen extends ConsumerWidget {
                         (g) => g.universityId,
                         (g) => codeOf(g.universityId),
                       )) ...[
-                        _GroupHeading(slice.label, first: slice.first),
+                        _GroupHeading(
+                          slice.label,
+                          first: slice.first,
+                          accent: accents.other,
+                        ),
                         _YearList(
                           key: ValueKey('other-${slice.id}'),
                           groups: slice.groups,
@@ -515,25 +523,55 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
 }
 
 class _GroupHeading extends StatelessWidget {
-  const _GroupHeading(this.text, {required this.first});
+  const _GroupHeading(this.text, {required this.first, this.accent});
 
   final String text;
   final bool first;
 
+  /// Set for university codes so the short name reads as a label, not body text.
+  final Color? accent;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final accent = this.accent;
+    final label = Text(
+      text,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w800,
+        color: accent,
+        letterSpacing: accent == null ? null : 0.6,
+      ),
+    );
     return Padding(
       padding: EdgeInsets.only(top: first ? 0 : Spacing.sm, bottom: Spacing.xs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!first) Divider(height: Spacing.lg, color: scheme.outlineVariant),
-          Text(
-            text,
-            style: Theme.of(context).textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w800),
-          ),
+          if (accent == null)
+            label
+          else
+            Align(
+              alignment: Alignment.centerLeft,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: dark ? 0.22 : 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: accent.withValues(alpha: dark ? 0.7 : 0.45),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Spacing.sm,
+                    vertical: Spacing.xs,
+                  ),
+                  child: label,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -642,7 +680,8 @@ class _YearHeading extends StatelessWidget {
   }
 }
 
-/// Paper I / Paper II under a year. Opening it lists only that paper.
+/// One month and paper under a year, such as August · Paper I.
+/// Opening it lists only that sitting.
 class _PaperCard extends StatelessWidget {
   const _PaperCard({required this.group, required this.onTap});
 

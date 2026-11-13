@@ -29,14 +29,16 @@ PyqSection classifySitting(
   return PyqSection.ownUniversity;
 }
 
-/// One row on the subject screen: one printed paper (Paper I, Paper II, …)
-/// in one year, within one section (and one college, for campus papers).
+/// One row on the subject screen: one month and printed paper
+/// (August · Paper I, October · Paper I, …) in one year, within one
+/// section (and one college, for campus papers).
 class PyqSittingGroup {
   const PyqSittingGroup({
     required this.section,
     required this.universityId,
     this.collegeId,
     required this.year,
+    this.month,
     required this.examTypes,
     this.paperName,
     required this.questionCount,
@@ -48,18 +50,18 @@ class PyqSittingGroup {
   /// Set for campus-paper rows so the outline can open just that college.
   final String? collegeId;
   final int year;
+
+  /// Sheet month, 1–12. Null when that sitting has no month yet.
+  final int? month;
   final List<PaperExamType> examTypes;
 
   /// Printed paper label such as `Paper I`. Null when the sheet left it blank.
   final String? paperName;
   final int questionCount;
 
-  /// What the paper row shows. Blank sheet values still get a tappable row.
-  String get paperLabel {
-    final name = paperName?.trim();
-    if (name == null || name.isEmpty) return 'Paper';
-    return name;
-  }
+  /// What the row shows: `August · Paper I`, or `Paper` when both are blank.
+  String get paperLabel =>
+      paperSittingLabel(month: month, paperName: paperName);
 }
 
 class PyqSections {
@@ -102,6 +104,12 @@ int _paperOrdinal(String? name) {
   return int.tryParse(tail) ?? _paperRoman[tail] ?? 500;
 }
 
+/// 1–12 stay in calendar order. Anything else sorts after December.
+int _monthRank(int? month) {
+  if (month == null || month < 1 || month > 12) return 13;
+  return month;
+}
+
 int _comparePaperNames(String? a, String? b) {
   final aBlank = a == null || a.trim().isEmpty;
   final bBlank = b == null || b.trim().isEmpty;
@@ -111,8 +119,10 @@ int _comparePaperNames(String? a, String? b) {
   return (a ?? '').compareTo(b ?? '');
 }
 
-/// Splits the filtered feed into the three sections. Years run newest first,
-/// and each year is one row per printed paper (Paper I, then Paper II).
+/// Splits the filtered feed into the three sections. Years run newest first.
+/// Inside a year, each month and printed paper is its own row (August
+/// Paper I, then August Paper II, then October Paper I). A sitting with
+/// no month comes after the dated ones.
 /// Section 2 lists the student's college first, then other colleges of the
 /// same university. "Other" is grouped by university: the university whose
 /// newest paper in this subject is most recent comes first. A tie on that
@@ -124,8 +134,9 @@ PyqSections buildPyqSections({
   required String? userCollegeId,
   Map<String, String> universityCodes = const {},
 }) {
-  // Key: section, university, college (campus rows only), year, paper name.
-  final builders = <(PyqSection, String, String, int, String), _GroupBuilder>{};
+  // Key: section, university, college (campus rows only), year, month, paper.
+  final builders =
+      <(PyqSection, String, String, int, int?, String), _GroupBuilder>{};
   for (final teaser in applySubjectPyqFilter(teasers, filter)) {
     for (final sitting in teaser.sittings) {
       if (!sittingMatches(sitting, filter)) continue;
@@ -134,7 +145,7 @@ PyqSections buildPyqSections({
         userUniversityId: userUniversityId,
       );
       // Keep campus papers of the same uni/year as separate rows per college;
-      // prof/supply and other-university rows stay one per uni/year/paper.
+      // prof/supply and other-university rows stay one per uni/year/month/paper.
       final collegeKey = section == PyqSection.ownCollege
           ? (sitting.collegeId ?? '')
           : '';
@@ -144,6 +155,7 @@ PyqSections buildPyqSections({
         sitting.universityId,
         collegeKey,
         sitting.year,
+        sitting.month,
         paperKey,
       ), _GroupBuilder.new);
       group.questionIds.add(teaser.id);
@@ -158,11 +170,12 @@ PyqSections buildPyqSections({
         universityId: entry.key.$2,
         collegeId: entry.key.$3.isEmpty ? null : entry.key.$3,
         year: entry.key.$4,
+        month: entry.key.$5,
         examTypes: [
           for (final type in PaperExamType.values)
             if (entry.value.examTypes.contains(type)) type,
         ],
-        paperName: entry.key.$5.isEmpty ? null : entry.key.$5,
+        paperName: entry.key.$6.isEmpty ? null : entry.key.$6,
         questionCount: entry.value.questionIds.length,
       ),
   ];
@@ -208,6 +221,9 @@ PyqSections buildPyqSections({
       }
       final byYear = b.year.compareTo(a.year);
       if (byYear != 0) return byYear;
+      // January before December. A missing month sits after the dated ones.
+      final byMonth = _monthRank(a.month).compareTo(_monthRank(b.month));
+      if (byMonth != 0) return byMonth;
       return _comparePaperNames(a.paperName, b.paperName);
     });
     return list;

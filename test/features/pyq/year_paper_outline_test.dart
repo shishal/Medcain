@@ -314,6 +314,78 @@ void main() {
     expect(find.text('Long essay Paper II'), findsNothing);
     expect(find.text('2023 Paper I'), findsNothing);
   });
+
+  testWidgets('a month route hides the other month of the same paper', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          subjectPyqsProvider.overrideWith(
+            (ref, id) async => PyqSubjectFeed(
+              teasers: [
+                PyqTeaser(
+                  id: 'aug',
+                  questionText: 'August femoral triangle',
+                  marks: 10,
+                  requiredPlan: PlanTier.free,
+                  appearanceCount: 1,
+                  kind: 'pyq_theory',
+                  sittings: const [
+                    PaperSitting(
+                      universityId: 'u1',
+                      year: 2024,
+                      month: 8,
+                      paperName: 'Paper I',
+                    ),
+                  ],
+                ),
+                PyqTeaser(
+                  id: 'oct',
+                  questionText: 'October femoral triangle',
+                  marks: 10,
+                  requiredPlan: PlanTier.free,
+                  appearanceCount: 1,
+                  kind: 'pyq_theory',
+                  sittings: const [
+                    PaperSitting(
+                      universityId: 'u1',
+                      year: 2024,
+                      month: 10,
+                      paperName: 'Paper I',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          bookmarkedIdsProvider.overrideWith(_StubBookmarkedIds.new),
+          userProfileProvider.overrideWith(_StubProfile.new),
+        ],
+        child: const MaterialApp(
+          home: YearPaperOutlineScreen(
+            subjectId: 'anat',
+            year: 2024,
+            title: 'Anatomy',
+            universityId: 'u1',
+            section: 'ownUniversity',
+            paperName: 'Paper I',
+            monthQuery: '8',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Anatomy · 2024 · August · Paper I'), findsOneWidget);
+    expect(find.text('August femoral triangle'), findsOneWidget);
+    expect(find.text('October femoral triangle'), findsNothing);
+  });
 }
 
 class _StubBookmarkedIds extends BookmarkedIds {

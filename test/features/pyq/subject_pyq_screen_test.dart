@@ -266,12 +266,19 @@ void main() {
         ),
         GoRoute(
           path: AppRoutes.subjectYear,
-          builder: (_, state) => Text(
-            'Outline ${state.pathParameters['year']} '
-            '${state.uri.queryParameters['uni']} '
-            '${state.uri.queryParameters['section']} '
-            '${state.uri.queryParameters['paper']}',
-          ),
+          builder: (_, state) {
+            final month = state.uri.queryParameters['month'];
+            final monthLabel = (month == null || month.isEmpty)
+                ? ''
+                : ' month=$month';
+            return Text(
+              'Outline ${state.pathParameters['year']} '
+              '${state.uri.queryParameters['uni']} '
+              '${state.uri.queryParameters['section']} '
+              '${state.uri.queryParameters['paper']}'
+              '$monthLabel',
+            );
+          },
         ),
       ],
     );
@@ -509,6 +516,55 @@ void main() {
 
     expect(find.text('2023'), findsWidgets);
     expect(find.text('2024'), findsNothing);
+  });
+
+  testWidgets('the same paper in two months is two rows', (tester) async {
+    await pumpScreen(
+      tester,
+      feed: PyqSubjectFeed(
+        teasers: [
+          _teaser(
+            id: 'oct',
+            text: 'October stem',
+            sittings: const [
+              PaperSitting(
+                universityId: 'u1',
+                year: 2024,
+                month: 10,
+                paperName: 'Paper I',
+              ),
+            ],
+          ),
+          _teaser(
+            id: 'aug',
+            text: 'August stem',
+            sittings: const [
+              PaperSitting(
+                universityId: 'u1',
+                year: 2024,
+                month: 8,
+                paperName: 'Paper I',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    await expandSection(tester, 'GGSIPU previous year questions');
+    expect(find.text('August · Paper I'), findsOneWidget);
+    expect(find.text('October · Paper I'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('August · Paper I')).dy,
+      lessThan(tester.getTopLeft(find.text('October · Paper I')).dy),
+    );
+
+    await tester.tap(find.text('August · Paper I'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Outline 2024 u1 ownUniversity Paper I month=8'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('other universities are ordered by newest paper', (tester) async {

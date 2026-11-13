@@ -228,6 +228,9 @@ GoRouter goRouter(Ref ref) {
             section: state.uri.queryParameters['section'],
             collegeId: state.uri.queryParameters['college'],
             paperName: state.uri.queryParameters['paper'],
+            // Null when the link did not pick a month. Empty string means
+            // the row's sitting has no month, so dated ones stay out.
+            monthQuery: state.uri.queryParameters['month'],
           );
         },
       ),

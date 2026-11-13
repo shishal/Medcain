@@ -11,12 +11,14 @@ PaperSitting _sitting({
   PaperExamType type = PaperExamType.prof,
   required int year,
   String? paper = 'Paper I',
+  int? month,
 }) {
   return PaperSitting(
     universityId: university,
     collegeId: college,
     examType: type,
     year: year,
+    month: month,
     paperName: paper,
   );
 }
@@ -181,6 +183,21 @@ void main() {
       // The stem that sat both papers is counted again on Paper II.
       expect(rows[1].questionCount, 2);
       expect(rows.first.examTypes, [PaperExamType.prof]);
+    });
+
+    test('the same paper in two months is two rows, earlier month first', () {
+      final sections = _build([
+        _teaser('oct', [_sitting(year: 2024, month: 10)]),
+        _teaser('aug-ii', [_sitting(year: 2024, paper: 'Paper II', month: 8)]),
+        _teaser('aug-i', [_sitting(year: 2024, month: 8)]),
+        _teaser('undated', [_sitting(year: 2024)]),
+      ]);
+      expect(sections.ownUniversity.map((g) => (g.month, g.paperLabel)), [
+        (8, 'August · Paper I'),
+        (8, 'August · Paper II'),
+        (10, 'October · Paper I'),
+        (null, 'Paper I'),
+      ]);
     });
 
     test('a blank paper name is its own row after named papers', () {

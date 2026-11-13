@@ -63,6 +63,9 @@ abstract final class AppRoutes {
   /// university and section the year shows every sitting. A null [paperName]
   /// keeps every paper in that year; an empty string means the sheet left
   /// the paper label blank.
+  ///
+  /// [scopeMonth] keeps one month of that paper. [month] is 1–12; null means
+  /// the sheet had no month. Omit [scopeMonth] to keep every month.
   static String subjectYearPath(
     String id,
     int year,
@@ -71,6 +74,8 @@ abstract final class AppRoutes {
     String? section,
     String? collegeId,
     String? paperName,
+    int? month,
+    bool scopeMonth = false,
   }) => Uri(
     path: '/subjects/$id/years/$year',
     queryParameters: {
@@ -79,6 +84,7 @@ abstract final class AppRoutes {
       'section': ?section,
       'college': ?collegeId,
       'paper': ?paperName,
+      if (scopeMonth) 'month': month == null ? '' : '$month',
     },
   ).toString();
 
