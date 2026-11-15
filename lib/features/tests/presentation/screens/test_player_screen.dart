@@ -169,16 +169,19 @@ class _TestPlayerScreenState extends ConsumerState<TestPlayerScreen>
           }
 
           if (session.isPendingSubmit) {
-            final notifier = ref.read(playerSessionProvider(testId).notifier);
-            if (!notifier.isSubmitTerminalFailure) {
+            if (!session.isSubmitTerminalFailure) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                notifier.ensureSubmitting();
+                ref
+                    .read(playerSessionProvider(testId).notifier)
+                    .ensureSubmitting();
               });
             }
             return _SubmittingBody(
               errorMessage: session.submitError,
-              isTerminalFailure: notifier.isSubmitTerminalFailure,
-              onRetry: () => notifier.ensureSubmitting(forceRetry: true),
+              isTerminalFailure: session.isSubmitTerminalFailure,
+              onRetry: () => ref
+                  .read(playerSessionProvider(testId).notifier)
+                  .ensureSubmitting(forceRetry: true),
               onExit: () => _exit(context),
             );
           }

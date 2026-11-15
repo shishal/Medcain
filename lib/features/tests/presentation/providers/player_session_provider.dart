@@ -36,10 +36,6 @@ class PlayerSession extends _$PlayerSession {
   WallClock _clock = WallClock();
   var _alive = true;
   var _submitLoopStarted = false;
-  var _submitTerminalFailure = false;
-
-  /// True when `submit_attempt` failed with a non-retryable terminal error.
-  bool get isSubmitTerminalFailure => _submitTerminalFailure;
 
   /// Clock used by the countdown UI — includes server skew correction.
   DateTime now() => _clock.now();
@@ -48,7 +44,6 @@ class PlayerSession extends _$PlayerSession {
   Future<PlayerSessionState> build(String testId) async {
     _alive = true;
     _submitLoopStarted = false;
-    _submitTerminalFailure = false;
     ref.onDispose(() {
       _alive = false;
       _tearDown();
@@ -204,13 +199,15 @@ class PlayerSession extends _$PlayerSession {
 
   /// Starts the RPC + backoff loop once. Safe to call from the UI repeatedly.
   Future<void> ensureSubmitting({bool forceRetry = false}) async {
-    if (forceRetry) {
-      _submitTerminalFailure = false;
-    }
-    if (_submitLoopStarted || _submitTerminalFailure) return;
-    final session = state.value;
+    if (_submitLoopStarted) return;
+    var session = state.value;
     if (session == null || session.isSubmitComplete) return;
     if (!session.isPendingSubmit) return;
+    if (session.isSubmitTerminalFailure && !forceRetry) return;
+    if (forceRetry && session.isSubmitTerminalFailure) {
+      session = session.copyWith(isSubmitTerminalFailure: false);
+      state = AsyncData(session);
+    }
     _submitLoopStarted = true;
     _tickTimer?.cancel();
     _tickTimer = null;
@@ -345,8 +342,12 @@ class PlayerSession extends _$PlayerSession {
             await store.delete(session.attemptId);
           }
           if (!_alive) return;
-          _submitTerminalFailure = true;
-          state = AsyncData(session.copyWith(submitError: message));
+          state = AsyncData(
+            session.copyWith(
+              submitError: message,
+              isSubmitTerminalFailure: true,
+            ),
+          );
           return;
         case Failure(:final message):
           failures++;

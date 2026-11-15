@@ -53,6 +53,7 @@ class PlayerSessionState {
     required this.sectionStartedAt,
     this.localStatus = LocalAttemptStatus.inProgress,
     this.submitError,
+    this.isSubmitTerminalFailure = false,
     this.submittedScore,
     this.isSectional = false,
     this.sectionCount = 1,
@@ -138,6 +139,10 @@ class PlayerSessionState {
 
   /// Last RPC error while retrying. Null after a successful submit.
   final String? submitError;
+
+  /// `submit_attempt` failed with an error that will not succeed on retry.
+  /// In memory only — a new session starts the submit loop again.
+  final bool isSubmitTerminalFailure;
 
   /// Set when `submit_attempt` returns. Not persisted locally.
   final AttemptScore? submittedScore;
@@ -534,6 +539,7 @@ class PlayerSessionState {
     LocalAttemptStatus? localStatus,
     String? submitError,
     bool clearSubmitError = false,
+    bool? isSubmitTerminalFailure,
     AttemptScore? submittedScore,
     bool? isSectional,
     int? sectionCount,
@@ -556,6 +562,8 @@ class PlayerSessionState {
       sectionStartedAt: sectionStartedAt ?? this.sectionStartedAt,
       localStatus: localStatus ?? this.localStatus,
       submitError: clearSubmitError ? null : (submitError ?? this.submitError),
+      isSubmitTerminalFailure:
+          isSubmitTerminalFailure ?? this.isSubmitTerminalFailure,
       submittedScore: submittedScore ?? this.submittedScore,
       isSectional: isSectional ?? this.isSectional,
       sectionCount: sectionCount ?? this.sectionCount,
