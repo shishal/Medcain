@@ -6,6 +6,9 @@
 //   WHATSAPP_BUSINESS_NUMBER    digits only, the number students message (wa.me)
 //   WHATSAPP_ACCESS_TOKEN       optional; sends the free "you're confirmed" text reply
 //   WHATSAPP_PHONE_NUMBER_ID    optional; used when the webhook omits metadata
+//   NURSING_WEBHOOK_URL         full nursing webhook URL, including ?apikey=
+//                               NURSE LOGIN and NURSE RANK are forwarded there.
+//                               Meta stays pointed at this function.
 //
 // Callback URL (anon key is public, same one the app ships):
 //   https://<ref>.supabase.co/functions/v1/whatsapp-webhook?apikey=<anon key>
@@ -31,6 +34,7 @@ import {
 } from '../_shared/whatsapp_auth.ts';
 
 const GRAPH_VERSION = 'v22.0';
+const NURSING_MESSAGE_RE = /^NURSE\s+(LOGIN|RANK)\b/i;
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
@@ -63,17 +67,32 @@ Deno.serve(async (req) => {
     return json({ error: 'Invalid JSON' }, 400);
   }
 
+  const messages = extractInboundMessages(payload);
+  const nursingMessages = messages.filter((message) =>
+    NURSING_MESSAGE_RE.test(message.body.trim())
+  );
+  const medicoMessages = messages.filter((message) =>
+    !NURSING_MESSAGE_RE.test(message.body.trim())
+  );
+  if (messages.length === 0) {
+    console.error('webhook had no inbound text messages');
+  }
+
+  // One WhatsApp number has one Meta callback. This function is that callback.
+  // Nursing sign-in and rank requests are forwarded with the original body
+  // and signature so the other project can verify them itself.
+  if (nursingMessages.length > 0) {
+    const forwarded = await forwardToNursing(req, rawBody);
+    if (medicoMessages.length === 0 || !forwarded.ok) return forwarded;
+  }
+
   const service = createServiceClient();
   if (service == null) {
     return json({ error: 'Server is missing Supabase config.' }, 500);
   }
 
   const expectedNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? '';
-  const messages = extractInboundMessages(payload);
-  if (messages.length === 0) {
-    console.error('webhook had no inbound text messages');
-  }
-  for (const message of messages) {
+  for (const message of medicoMessages) {
     // A wrong Phone number ID used to drop the message and leave the app
     // waiting. The login code and the sender's phone are the real checks.
     if (
@@ -93,6 +112,34 @@ Deno.serve(async (req) => {
 
   return json({ ok: true });
 });
+
+async function forwardToNursing(req: Request, rawBody: string): Promise<Response> {
+  const target = Deno.env.get('NURSING_WEBHOOK_URL') ?? '';
+  if (target.length === 0) {
+    console.error('NURSING_WEBHOOK_URL is not set');
+    return json({ error: 'Nursing webhook is not configured' }, 500);
+  }
+  const headers = new Headers();
+  const contentType = req.headers.get('content-type');
+  const signature = req.headers.get('x-hub-signature-256');
+  if (contentType) headers.set('content-type', contentType);
+  if (signature) headers.set('x-hub-signature-256', signature);
+  const upstream = await fetch(target, {
+    method: 'POST',
+    headers,
+    body: rawBody,
+  });
+  const text = await upstream.text();
+  if (!upstream.ok) {
+    console.error('nursing webhook returned', upstream.status);
+  }
+  return new Response(text, {
+    status: upstream.status,
+    headers: {
+      'content-type': upstream.headers.get('content-type') ?? 'application/json',
+    },
+  });
+}
 
 async function verifySubscription(url: URL): Promise<Response> {
   const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN') ?? '';
