@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../features/admin/presentation/providers/admin_student_preview_provider.dart';
 import '../../features/admin/presentation/screens/admin_announcement_screen.dart';
 import '../../features/admin/presentation/screens/admin_announcements_screen.dart';
 import '../../features/admin/presentation/screens/admin_home_screen.dart';
@@ -46,12 +47,14 @@ part 'app_router.g.dart';
 GoRouter goRouter(Ref ref) {
   final authRepository = ref.watch(authRepositoryProvider);
 
-  // Re-run redirect when auth or profile changes. Watching those providers
-  // here would build a new GoRouter, and a new router always opens on splash.
+  // Re-run redirect when auth, profile, or the student-preview flag changes.
+  // Watching those providers here would build a new GoRouter, and a new
+  // router always opens on splash.
   final authRefresh = GoRouterRefreshStream(authRepository.authStateChanges);
   final profileRefresh = ValueNotifier<int>(0);
   ref.listen(authSessionProvider, (_, _) => profileRefresh.value++);
   ref.listen(userProfileProvider, (_, _) => profileRefresh.value++);
+  ref.listen(adminStudentPreviewProvider, (_, _) => profileRefresh.value++);
   final refreshListenable = Listenable.merge([authRefresh, profileRefresh]);
   ref.onDispose(authRefresh.dispose);
   ref.onDispose(profileRefresh.dispose);
@@ -78,6 +81,9 @@ GoRouter goRouter(Ref ref) {
           location == AppRoutes.login || location == AppRoutes.signup;
       final onAdmin =
           path == AppRoutes.admin || path.startsWith('${AppRoutes.admin}/');
+      // Set from Admin home only. While it is on, this account uses the
+      // student routes. It is still the same profile and the same plan.
+      final previewingStudent = ref.read(adminStudentPreviewProvider);
 
       // Splash handles its own navigation after a brief display.
       if (onSplash) return null;
@@ -87,15 +93,17 @@ GoRouter goRouter(Ref ref) {
       }
       if (isAuthenticated && onAuth) {
         if (profileAsync.isLoading) return null;
-        if (profileAsync.value?.isAdmin == true) return AppRoutes.admin;
+        if (profileAsync.value?.isAdmin == true && !previewingStudent) {
+          return AppRoutes.admin;
+        }
         return AppRoutes.home;
       }
       if (isAuthenticated && !onAuth) {
         if (profileAsync.isLoading) return null;
         final profile = profileAsync.value;
         // is_admin is read-only for the client. Non-admins cannot stay on
-        // /admin, and admins skip the student shell and onboarding.
-        if (profile?.isAdmin == true) {
+        // /admin. Admins stay on /admin unless they opened the student app.
+        if (profile?.isAdmin == true && !previewingStudent) {
           if (!onAdmin) return AppRoutes.admin;
           return null;
         }

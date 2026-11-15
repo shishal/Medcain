@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../auth/data/auth_repository.dart';
+import '../providers/admin_student_preview_provider.dart';
 
 class AdminHomeScreen extends ConsumerWidget {
   const AdminHomeScreen({super.key});
@@ -50,6 +51,14 @@ class AdminHomeScreen extends ConsumerWidget {
             title: 'Notifications',
             subtitle: 'Publish an in-app announcement',
             onTap: () => context.push(AppRoutes.adminAnnouncements),
+          ),
+          _Tile(
+            icon: Icons.phone_iphone,
+            title: 'Open student app',
+            subtitle: 'Home, practice, and profile for this account',
+            onTap: () {
+              ref.read(adminStudentPreviewProvider.notifier).open();
+            },
           ),
         ],
       ),

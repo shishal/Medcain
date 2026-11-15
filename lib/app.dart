@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_provider.dart';
+import 'features/admin/presentation/widgets/admin_student_preview_overlay.dart';
 import 'features/auth/presentation/widgets/device_session_guard.dart';
 import 'features/security/presentation/widgets/app_screenshot_lock.dart';
 import 'features/security/presentation/widgets/developer_mode_lock.dart';
@@ -33,7 +34,9 @@ class MedicoApp extends ConsumerWidget {
             builder: (context, child) {
               // ignore: deprecated_member_use
               return MaterialUiCompatibilityBridge(
-                child: child ?? const SizedBox.shrink(),
+                child: AdminStudentPreviewOverlay(
+                  child: child ?? const SizedBox.shrink(),
+                ),
               );
             },
           ),
