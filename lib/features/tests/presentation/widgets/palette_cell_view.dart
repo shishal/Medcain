@@ -27,6 +27,11 @@ class PaletteCellView extends StatelessWidget {
     final outline = _outlineColor(cell.outline);
     final colorScheme = Theme.of(context).colorScheme;
 
+    // 44dp touch target wrapping the 36dp visual circle, with a plain
+    // DecoratedBox instead of 180 implicit AnimatedContainer controllers when
+    // opening the palette sheet.
+    final hitSize = size < 44 ? 44.0 : size;
+
     return Semantics(
       button: true,
       selected: selected,
@@ -39,72 +44,77 @@ class PaletteCellView extends StatelessWidget {
         key: Key('palette-${cell.questionNumber}'),
         onTap: locked ? null : onTap,
         customBorder: const CircleBorder(),
-        child: Opacity(
-          opacity: locked ? 0.45 : 1,
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: size,
-                  height: size,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: fill,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: selected
-                          ? colorScheme.primary
-                          : (outline ??
-                                (fill == null
-                                    ? colorScheme.outline
-                                    : Colors.transparent)),
-                      width: selected || outline != null ? 2.5 : 1,
+        child: SizedBox(
+          width: hitSize,
+          height: hitSize,
+          child: Center(
+            child: Opacity(
+              opacity: locked ? 0.45 : 1,
+              child: SizedBox(
+                width: size,
+                height: size,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: size,
+                      height: size,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: fill,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: selected
+                              ? colorScheme.primary
+                              : (outline ??
+                                    (fill == null
+                                        ? colorScheme.outline
+                                        : Colors.transparent)),
+                          width: selected || outline != null ? 2.5 : 1,
+                        ),
+                      ),
+                      child: Text(
+                        '${cell.questionNumber}',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: fill == null
+                              ? colorScheme.onSurface
+                              : Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    '${cell.questionNumber}',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: fill == null
-                          ? colorScheme.onSurface
-                          : Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                    if (cell.showGreenCheck)
+                      Positioned(
+                        right: -2,
+                        bottom: -2,
+                        child: _CornerBadge(
+                          color: PlayerColors.correct,
+                          icon: Icons.check,
+                          surface: colorScheme.surface,
+                        ),
+                      ),
+                    if (cell.showReviewDot)
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: _CornerBadge(
+                          color: PlayerColors.review,
+                          surface: colorScheme.surface,
+                        ),
+                      ),
+                    if (locked)
+                      Align(
+                        child: Icon(
+                          Icons.lock,
+                          size: 12,
+                          color: fill == null
+                              ? colorScheme.onSurface
+                              : Colors.white,
+                        ),
+                      ),
+                  ],
                 ),
-                if (cell.showGreenCheck)
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: _CornerBadge(
-                      color: PlayerColors.correct,
-                      icon: Icons.check,
-                      surface: colorScheme.surface,
-                    ),
-                  ),
-                if (cell.showReviewDot)
-                  Positioned(
-                    right: -2,
-                    top: -2,
-                    child: _CornerBadge(
-                      color: PlayerColors.review,
-                      surface: colorScheme.surface,
-                    ),
-                  ),
-                if (locked)
-                  Align(
-                    child: Icon(
-                      Icons.lock,
-                      size: 12,
-                      color: fill == null
-                          ? colorScheme.onSurface
-                          : Colors.white,
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
         ),

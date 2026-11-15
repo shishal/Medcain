@@ -46,7 +46,7 @@ final class AuthSessionProvider extends $NotifierProvider<AuthSession, bool> {
   }
 }
 
-String _$authSessionHash() => r'bd4fe613004b951e55057e3b80dc47f7d4bcb3a6';
+String _$authSessionHash() => r'0af49d02d710d41c2c01b99ddc2ad49315cb7175';
 
 /// Whether a Supabase session is active. Listens to auth state changes so the
 /// router and splash screen stay in sync after login, logout, or app restart.

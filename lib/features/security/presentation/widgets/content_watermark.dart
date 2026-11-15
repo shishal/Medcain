@@ -20,11 +20,17 @@ class ContentWatermark extends StatelessWidget {
 
     // IgnorePointer: paint on top of the player without stealing option taps.
     // ExcludeSemantics: don't let TalkBack read the same string dozens of times.
-    return IgnorePointer(
-      child: ExcludeSemantics(
-        child: CustomPaint(
-          painter: _TiledWatermarkPainter(text: text, color: color),
-          child: const SizedBox.expand(),
+    // RepaintBoundary: isolate the tiled text layer so 1s timer ticks beneath
+    // it never repaint the full-screen watermark.
+    return RepaintBoundary(
+      child: IgnorePointer(
+        child: ExcludeSemantics(
+          child: CustomPaint(
+            isComplex: true,
+            willChange: false,
+            painter: _TiledWatermarkPainter(text: text, color: color),
+            child: const SizedBox.expand(),
+          ),
         ),
       ),
     );

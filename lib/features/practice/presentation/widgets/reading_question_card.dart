@@ -5,6 +5,8 @@ import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/open_external_link.dart';
 import '../../../../core/widgets/comic_card.dart';
 import '../../../../core/widgets/markdown_copy.dart';
+import '../../../../core/widgets/question_stem_image.dart';
+import '../../../../core/widgets/reading_text_zoom.dart';
 import '../../../bookmarks/presentation/widgets/bookmark_icon_button.dart';
 import '../../../tests/domain/player_question.dart';
 import '../../../tests/domain/player_session_state.dart';
@@ -19,17 +21,24 @@ class ReadingQuestionCard extends StatelessWidget {
     required this.number,
     required this.question,
     required this.explanationLevel,
+    this.zoom,
   });
 
   final int number;
   final PlayerQuestion question;
   final ExplanationLevel explanationLevel;
+  final ReadingTextZoom? zoom;
+
+  Widget _maybeZoom(Widget child) {
+    final activeZoom = zoom;
+    if (activeZoom == null) return child;
+    return ReadingZoom(zoom: activeZoom, child: child);
+  }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
-    final imageUrl = question.imageUrl?.trim();
     final showExplanation = explanationLevel == ExplanationLevel.full;
     final explanation = showExplanation
         ? PlayerQuestion.joinedExplanation(
@@ -57,32 +66,28 @@ class ReadingQuestionCard extends StatelessWidget {
               BookmarkIconButton(questionId: question.id),
             ],
           ),
-          Text(question.questionText, style: textTheme.titleMedium),
-          if (imageUrl != null && imageUrl.isNotEmpty) ...[
-            const SizedBox(height: Spacing.md),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(Spacing.sm),
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) =>
-                    const SizedBox.shrink(),
-              ),
-            ),
-          ],
+          _maybeZoom(Text(question.questionText, style: textTheme.titleMedium)),
+          QuestionStemImage(imageUrl: question.imageUrl),
           const SizedBox(height: Spacing.md),
-          for (final option in QuestionOption.values) ...[
-            OptionTile(
-              letter: option.label,
-              text: question.textFor(option),
-              visual: option == question.correctOption
-                  ? OptionVisual.revealedCorrect
-                  : OptionVisual.idle,
-              locked: true,
-              onTap: () {},
+          _maybeZoom(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final option in QuestionOption.values) ...[
+                  OptionTile(
+                    letter: option.label,
+                    text: question.textFor(option),
+                    visual: option == question.correctOption
+                        ? OptionVisual.revealedCorrect
+                        : OptionVisual.idle,
+                    locked: true,
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: Spacing.sm),
+                ],
+              ],
             ),
-            const SizedBox(height: Spacing.sm),
-          ],
+          ),
           Text(
             'Answer ${question.correctOption.label}',
             style: textTheme.titleSmall?.copyWith(
@@ -94,12 +99,15 @@ class ReadingQuestionCard extends StatelessWidget {
             const SizedBox(height: Spacing.md),
             Text('Explanation', style: textTheme.titleSmall),
             const SizedBox(height: Spacing.xs),
-            MarkdownCopy(data: explanation),
+            zoom != null
+                ? ZoomableMarkdownCopy(data: explanation, zoom: zoom)
+                : MarkdownCopy(data: explanation),
           ],
           if (videoUrl != null && videoUrl.isNotEmpty)
-            TextButton(
+            TextButton.icon(
               onPressed: () => openExternalLink(context, videoUrl),
-              child: const Text('Watch explanation'),
+              icon: const Icon(Icons.play_circle_outline, size: 18),
+              label: const Text('Watch explanation'),
             ),
         ],
       ),

@@ -16,11 +16,15 @@ class StaggeredFade extends StatelessWidget {
       curve: Curves.easeOutCubic,
       builder: (context, t, child) {
         return Opacity(
-          opacity: t,
-          child: Transform.translate(
-            offset: Offset(0, 18 * (1 - t)),
-            child: child,
-          ),
+          opacity: t.clamp(0.0, 1.0),
+          // Once the entrance completes (`t >= 1`), skip the `Opacity` compositing
+          // layer and `Transform` completely so cards paint directly.
+          child: t >= 1
+              ? child
+              : Transform.translate(
+                  offset: Offset(0, 18 * (1 - t)),
+                  child: child,
+                ),
         );
       },
       child: child,

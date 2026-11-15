@@ -79,6 +79,62 @@ Future<List<BookmarkedQuestion>> bookmarksList(Ref ref) async {
   };
 }
 
+/// Lesson IDs the signed-in user has bookmarked. Shared across all
+/// `LessonBookmarkIconButton`s so rendering N lesson rows fires 1 query,
+/// not N parallel queries, and toggling updates `BookmarksScreen` immediately.
+@Riverpod(keepAlive: true)
+class BookmarkedLessonIds extends _$BookmarkedLessonIds {
+  final _inFlight = <String>{};
+
+  @override
+  Future<Set<String>> build() async {
+    _inFlight.clear();
+    final isSignedIn = ref.watch(authSessionProvider);
+    if (!isSignedIn) return {};
+
+    final result = await ref.read(bookmarksRepositoryProvider).fetchLessonIds();
+    return switch (result) {
+      Success(:final value) => value,
+      Failure(:final message) => throw Exception(message),
+    };
+  }
+
+  Future<Result<void>> toggle(String lessonId) async {
+    if (_inFlight.contains(lessonId)) {
+      return const Success(null);
+    }
+
+    final current = Set<String>.from(state.value ?? const <String>{});
+    final adding = !current.contains(lessonId);
+    final next = Set<String>.from(current);
+    if (adding) {
+      next.add(lessonId);
+    } else {
+      next.remove(lessonId);
+    }
+    state = AsyncData(next);
+    _inFlight.add(lessonId);
+
+    try {
+      final repo = ref.read(bookmarksRepositoryProvider);
+      final result = adding
+          ? await repo.addLesson(lessonId)
+          : await repo.removeLesson(lessonId);
+
+      switch (result) {
+        case Success():
+          ref.invalidate(lessonBookmarksListProvider);
+          return result;
+        case Failure():
+          state = AsyncData(current);
+          return result;
+      }
+    } finally {
+      _inFlight.remove(lessonId);
+    }
+  }
+}
+
 /// Bookmarked lessons, shown as a second section under the questions.
 @riverpod
 Future<List<BookmarkedLesson>> lessonBookmarksList(Ref ref) async {

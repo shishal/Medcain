@@ -98,9 +98,11 @@ const _paperRoman = {
   'x': 10,
 };
 
+final _whitespaceRe = RegExp(r'\s+');
+
 int _paperOrdinal(String? name) {
   if (name == null || name.trim().isEmpty) return 1000;
-  final tail = name.trim().toLowerCase().split(RegExp(r'\s+')).last;
+  final tail = name.trim().toLowerCase().split(_whitespaceRe).last;
   return int.tryParse(tail) ?? _paperRoman[tail] ?? 500;
 }
 

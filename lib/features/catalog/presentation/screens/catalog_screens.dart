@@ -13,6 +13,7 @@ import '../../../bookmarks/presentation/widgets/lesson_bookmark_icon_button.dart
 import '../../../practice/domain/practice_builder_draft.dart';
 import '../../../profile/domain/plan_tier.dart';
 import '../../../profile/presentation/providers/current_plan_provider.dart';
+import '../../../progress/presentation/providers/ug_home_providers.dart';
 import '../../../pyq/domain/pyq_models.dart';
 import '../../../pyq/domain/question_format.dart';
 import '../../../pyq/presentation/open_pyq_reader.dart';
@@ -139,6 +140,8 @@ class LessonScreen extends ConsumerStatefulWidget {
 class _LessonScreenState extends ConsumerState<LessonScreen> {
   bool _recordedOpen = false;
   bool _redirectedToUpgrade = false;
+  bool _learnt = false;
+  bool _markingLearnt = false;
   QuestionFormat? _formatFilter;
 
   @override
@@ -209,105 +212,154 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               if (_formatFilter == null || t.format == _formatFilter) t,
           ];
           final hasMcq = feed.teasers.any((teaser) => teaser.kind == 'mcq');
-          return ListView(
-            padding: const EdgeInsets.all(Spacing.md),
-            children: [
-              if (hasMcq) ...[
-                FilledButton.icon(
-                  onPressed: () => context.go(
-                    AppRoutes.practice,
-                    extra: PracticeBuilderDraft(
-                      lessonIds: {widget.lessonId},
-                      scopeLabel: widget.title,
-                    ),
-                  ),
-                  icon: const Icon(Icons.quiz_outlined),
-                  label: const Text('Practice MCQs'),
+          final questionIds = [for (final item in items) item.id];
+          return CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  Spacing.md,
+                  Spacing.md,
+                  Spacing.md,
+                  0,
                 ),
-                const SizedBox(height: Spacing.sm),
-              ],
-              FilledButton.tonal(
-                onPressed: () async {
-                  final result = await ref
-                      .read(catalogRepositoryProvider)
-                      .markLessonLearnt(widget.lessonId);
-                  if (!context.mounted) return;
-                  final message = switch (result) {
-                    Success() => 'Marked as learnt',
-                    Failure(:final message) => message,
-                  };
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text(message)));
-                },
-                child: const Text('Mark lesson learnt'),
-              ),
-              if (resources.isNotEmpty) ...[
-                const SizedBox(height: Spacing.lg),
-                Text(
-                  'More on this topic',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                for (final link in resources)
-                  Padding(
-                    padding: const EdgeInsets.only(top: Spacing.sm),
-                    child: ComicCard(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Spacing.sm,
-                        vertical: Spacing.xs,
-                      ),
-                      onTap: () => _openLink(link, plan),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          link.isFree ? Icons.open_in_new : Icons.lock_outline,
+                sliver: SliverList.list(
+                  children: [
+                    if (hasMcq) ...[
+                      FilledButton.icon(
+                        onPressed: () => context.go(
+                          AppRoutes.practice,
+                          extra: PracticeBuilderDraft(
+                            lessonIds: {widget.lessonId},
+                            scopeLabel: widget.title,
+                          ),
                         ),
-                        title: Text(link.title),
-                        subtitle: link.sourceLabel == null
-                            ? null
-                            : Text(link.sourceLabel!),
+                        icon: const Icon(Icons.quiz_outlined),
+                        label: const Text('Practice MCQs'),
+                      ),
+                      const SizedBox(height: Spacing.sm),
+                    ],
+                    FilledButton.tonalIcon(
+                      onPressed: _learnt || _markingLearnt
+                          ? null
+                          : () async {
+                              setState(() => _markingLearnt = true);
+                              final result = await ref
+                                  .read(catalogRepositoryProvider)
+                                  .markLessonLearnt(widget.lessonId);
+                              if (!context.mounted) return;
+                              setState(() => _markingLearnt = false);
+                              switch (result) {
+                                case Success():
+                                  setState(() => _learnt = true);
+                                  ref.invalidate(studyProgressProvider);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Marked as learnt'),
+                                    ),
+                                  );
+                                case Failure(:final message):
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(message)),
+                                  );
+                              }
+                            },
+                      icon: Icon(
+                        _learnt
+                            ? Icons.check_rounded
+                            : Icons.check_circle_outline,
+                      ),
+                      label: Text(
+                        _learnt ? 'Lesson learnt' : 'Mark lesson learnt',
                       ),
                     ),
-                  ),
-              ],
-              const SizedBox(height: Spacing.lg),
-              Text(
-                'Previous year questions',
-                style: Theme.of(context).textTheme.titleMedium,
+                    if (resources.isNotEmpty) ...[
+                      const SizedBox(height: Spacing.lg),
+                      Text(
+                        'More on this topic',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      for (final link in resources)
+                        Padding(
+                          padding: const EdgeInsets.only(top: Spacing.sm),
+                          child: ComicCard(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Spacing.sm,
+                              vertical: Spacing.xs,
+                            ),
+                            onTap: () => _openLink(link, plan),
+                            child: ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(
+                                link.isFree
+                                    ? Icons.open_in_new
+                                    : Icons.lock_outline,
+                              ),
+                              title: Text(link.title),
+                              subtitle: link.sourceLabel == null
+                                  ? null
+                                  : Text(link.sourceLabel!),
+                            ),
+                          ),
+                        ),
+                    ],
+                    const SizedBox(height: Spacing.lg),
+                    Text(
+                      'Previous year questions',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: Spacing.sm),
+                    PyqFormatChips(
+                      selected: _formatFilter,
+                      onSelected: (value) =>
+                          setState(() => _formatFilter = value),
+                    ),
+                    const SizedBox(height: Spacing.sm),
+                  ],
+                ),
               ),
-              const SizedBox(height: Spacing.sm),
-              PyqFormatChips(
-                selected: _formatFilter,
-                onSelected: (value) => setState(() => _formatFilter = value),
-              ),
-              const SizedBox(height: Spacing.sm),
               if (items.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: Spacing.xl),
-                  child: AsyncEmptyView(
-                    icon: Icons.description_outlined,
-                    message: _formatFilter == null
-                        ? 'No PYQs tagged to this lesson yet.'
-                        : 'No ${_formatFilter!.label} questions in this lesson.',
-                    actionLabel: _formatFilter == null ? null : 'Show all',
-                    onAction: _formatFilter == null
-                        ? null
-                        : () => setState(() => _formatFilter = null),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Spacing.md,
+                    vertical: Spacing.xl,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: AsyncEmptyView(
+                      icon: Icons.description_outlined,
+                      message: _formatFilter == null
+                          ? 'No PYQs tagged to this lesson yet.'
+                          : 'No ${_formatFilter!.label} questions in this lesson.',
+                      actionLabel: _formatFilter == null ? null : 'Show all',
+                      onAction: _formatFilter == null
+                          ? null
+                          : () => setState(() => _formatFilter = null),
+                    ),
                   ),
                 )
               else
-                for (var i = 0; i < items.length; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: Spacing.sm),
-                    child: PyqTeaserCard(
-                      teaser: items[i],
-                      index: i,
-                      onTap: () => openPyqReader(
-                        context,
-                        questionId: items[i].id,
-                        questionIds: [for (final item in items) item.id],
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    Spacing.md,
+                    0,
+                    Spacing.md,
+                    Spacing.md,
+                  ),
+                  sliver: SliverList.builder(
+                    itemCount: items.length,
+                    itemBuilder: (context, i) => Padding(
+                      padding: const EdgeInsets.only(bottom: Spacing.sm),
+                      child: PyqTeaserCard(
+                        teaser: items[i],
+                        index: i,
+                        onTap: () => openPyqReader(
+                          context,
+                          questionId: items[i].id,
+                          questionIds: questionIds,
+                        ),
                       ),
                     ),
                   ),
+                ),
             ],
           );
         },

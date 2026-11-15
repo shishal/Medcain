@@ -47,12 +47,15 @@ class _DeveloperModeLockState extends ConsumerState<DeveloperModeLock>
         if (monitor.enforces) _setBlocked(true);
       },
     );
-    // A check that never answers would leave the solid splash color up.
+    // A check that never answers on an enforced Android release build must fail
+    // closed (lock screen), never mount paid question text in the widget tree.
     unawaited(
       _refresh().timeout(
         const Duration(seconds: 3),
         onTimeout: () {
-          if (mounted && _blocked == null) _setBlocked(false);
+          if (mounted && _blocked == null) {
+            _setBlocked(monitor.enforces);
+          }
         },
       ),
     );

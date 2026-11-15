@@ -3,20 +3,27 @@
 /// A 10-digit Indian mobile (starts with 6–9) is treated as +91. Any other
 /// country must be entered with a leading +.
 abstract final class WhatsAppPhone {
+  static final _lettersRe = RegExp('[a-zA-Z]');
+  static final _nonDigitsRe = RegExp(r'\D');
+  static final _indian10Re = RegExp(r'^[6-9]\d{9}$');
+  static final _indian010Re = RegExp(r'^0[6-9]\d{9}$');
+  static final _indian91Re = RegExp(r'^91[6-9]\d{9}$');
+  static final _e164DigitsRe = RegExp(r'^[1-9]\d{7,14}$');
+
   static String? normalize(String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty || trimmed.length > 32) return null;
-    if (RegExp('[a-zA-Z]').hasMatch(trimmed)) return null;
+    if (_lettersRe.hasMatch(trimmed)) return null;
 
-    final digits = trimmed.replaceAll(RegExp(r'\D'), '');
+    final digits = trimmed.replaceAll(_nonDigitsRe, '');
     if (trimmed.startsWith('+')) return _toE164(digits);
-    if (RegExp(r'^[6-9]\d{9}$').hasMatch(digits)) {
+    if (_indian10Re.hasMatch(digits)) {
       return _toE164('91$digits');
     }
-    if (RegExp(r'^0[6-9]\d{9}$').hasMatch(digits)) {
+    if (_indian010Re.hasMatch(digits)) {
       return _toE164('91${digits.substring(1)}');
     }
-    if (RegExp(r'^91[6-9]\d{9}$').hasMatch(digits)) return _toE164(digits);
+    if (_indian91Re.hasMatch(digits)) return _toE164(digits);
     if (digits.startsWith('00') && digits.length > 4) {
       return _toE164(digits.substring(2));
     }
@@ -24,8 +31,8 @@ abstract final class WhatsAppPhone {
   }
 
   static String? _toE164(String digits) {
-    if (!RegExp(r'^[1-9]\d{7,14}$').hasMatch(digits)) return null;
-    if (digits.startsWith('91') && !RegExp(r'^91[6-9]\d{9}$').hasMatch(digits)) {
+    if (!_e164DigitsRe.hasMatch(digits)) return null;
+    if (digits.startsWith('91') && !_indian91Re.hasMatch(digits)) {
       return null;
     }
     return '+$digits';

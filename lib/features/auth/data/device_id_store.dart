@@ -5,18 +5,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Preference key for the stable install id used by single-device login.
 const deviceIdPrefKey = 'medico_device_id';
 
+String? _cachedDeviceId;
+
 /// Returns a UUID that stays stable for this app install (SharedPreferences).
 ///
 /// Not a hardware IMEI — reinstall generates a new id (counts as a new device
 /// toward the lifetime cap).
 Future<String> getOrCreateDeviceId() async {
+  final cached = _cachedDeviceId;
+  if (cached != null && cached.isNotEmpty) return cached;
   final prefs = await SharedPreferences.getInstance();
   final existing = prefs.getString(deviceIdPrefKey);
   if (existing != null && existing.isNotEmpty) {
+    _cachedDeviceId = existing;
     return existing;
   }
   final created = _randomUuidV4();
   await prefs.setString(deviceIdPrefKey, created);
+  _cachedDeviceId = created;
   return created;
 }
 

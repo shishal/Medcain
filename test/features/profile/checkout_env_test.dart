@@ -32,4 +32,15 @@ void main() {
       '127.0.0.1',
     );
   });
+
+  test('non-https or unsafe schemes fall back to production checkout', () {
+    expect(
+      CheckoutEnv.resolve('http://evil.example.com/checkout'),
+      CheckoutEnv.production,
+    );
+    expect(
+      CheckoutEnv.resolve('javascript://medcain.shishal.com/%0aalert(1)'),
+      CheckoutEnv.production,
+    );
+  });
 }

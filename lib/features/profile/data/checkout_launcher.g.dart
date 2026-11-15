@@ -53,4 +53,4 @@ final class CheckoutLauncherProvider
   }
 }
 
-String _$checkoutLauncherHash() => r'c24a354a10828f064c4144054f3697161a7a16ef';
+String _$checkoutLauncherHash() => r'688fb560c6b915d311252a7936e580a4d9031781';

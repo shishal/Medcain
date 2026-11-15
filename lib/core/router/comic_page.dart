@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 
+final _fadeTween = CurveTween(curve: Curves.easeOutCubic);
+
 /// Quiet fade used instead of the comic sticker-flip (scale + slide).
 CustomTransitionPage<void> comicTransitionPage({
   required GoRouterState state,
@@ -13,12 +15,12 @@ CustomTransitionPage<void> comicTransitionPage({
     transitionDuration: const Duration(milliseconds: 280),
     reverseTransitionDuration: const Duration(milliseconds: 220),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
+      // `animation.drive` attaches no disposable listener per frame (unlike
+      // allocating a `CurvedAnimation` inside `transitionsBuilder`).
+      return FadeTransition(
+        opacity: animation.drive(_fadeTween),
+        child: child,
       );
-      return FadeTransition(opacity: curved, child: child);
     },
   );
 }

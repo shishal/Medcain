@@ -168,22 +168,36 @@ class CatalogRepository {
 
   /// Papers + PYQ counts for [selectedUniversityId]. Empty when that
   /// university has no tagged papers — no substitute bank.
-  Future<Result<UniversityCoverage>> fetchCoverage(String? selectedUniversityId) async {
+  Future<Result<UniversityCoverage>> fetchCoverage(
+    String? selectedUniversityId, {
+    University? university,
+  }) async {
     if (_client.auth.currentUser == null) {
       return const Failure('Not signed in.');
     }
+    if (selectedUniversityId == null || selectedUniversityId.isEmpty) {
+      return const Success(
+        UniversityCoverage(
+          paperCount: 0,
+          pyqCount: 0,
+          contentUniversityId: '',
+        ),
+      );
+    }
     try {
-      final uniRows = await _client
-          .from(Tables.universities)
-          .select(
-            '${UniversityColumns.id},${UniversityColumns.code},'
-            '${UniversityColumns.name},${UniversityColumns.state},'
-            '${UniversityColumns.slug}',
-          );
-      final unis = _map(uniRows, University.fromJson);
-      University? selected;
-      for (final u in unis) {
-        if (u.id == selectedUniversityId) selected = u;
+      var selected = university;
+      if (selected == null) {
+        final uniRows = await _client
+            .from(Tables.universities)
+            .select(
+              '${UniversityColumns.id},${UniversityColumns.code},'
+              '${UniversityColumns.name},${UniversityColumns.state},'
+              '${UniversityColumns.slug}',
+            )
+            .eq(UniversityColumns.id, selectedUniversityId)
+            .limit(1);
+        final unis = _map(uniRows, University.fromJson);
+        if (unis.isNotEmpty) selected = unis.first;
       }
       if (selected == null) {
         return const Success(
@@ -203,22 +217,35 @@ class CatalogRepository {
           .cast<Map<String, dynamic>>()
           .map((r) => r[ExamPaperColumns.id] as String)
           .toList();
-      var pyqCount = 0;
-      if (ids.isNotEmpty) {
-        final apps = await _client
-            .from(Tables.questionAppearances)
-            .select(AppearanceColumns.questionId)
-            .inFilter(AppearanceColumns.examPaperId, ids);
-        pyqCount = {
-          for (final row in (apps as List<dynamic>).cast<Map<String, dynamic>>())
-            row[AppearanceColumns.questionId] as String,
-        }.length;
+      final uniquePyqIds = <String>{};
+      const chunkSize = 80;
+      const pageSize = 1000;
+      for (var i = 0; i < ids.length; i += chunkSize) {
+        final end = i + chunkSize > ids.length ? ids.length : i + chunkSize;
+        final chunk = ids.sublist(i, end);
+        var from = 0;
+        while (true) {
+          final apps = await _client
+              .from(Tables.questionAppearances)
+              .select(AppearanceColumns.questionId)
+              .inFilter(AppearanceColumns.examPaperId, chunk)
+              .order(AppearanceColumns.questionId)
+              .order(AppearanceColumns.examPaperId)
+              .range(from, from + pageSize - 1);
+          final list = (apps as List<dynamic>).cast<Map<String, dynamic>>();
+          for (final row in list) {
+            final qid = row[AppearanceColumns.questionId];
+            if (qid is String) uniquePyqIds.add(qid);
+          }
+          if (list.length < pageSize) break;
+          from += pageSize;
+        }
       }
 
       return Success(
         UniversityCoverage(
           paperCount: ids.length,
-          pyqCount: pyqCount,
+          pyqCount: uniquePyqIds.length,
           contentUniversityId: selected.id,
           contentUniversityName: selected.name,
           selectedUniversityName: selected.name,
@@ -255,12 +282,17 @@ class CatalogRepository {
     if (lessons.isEmpty) return lessons;
     final rows = await _client
         .from(Tables.lessonAccess)
-        .select('lesson_id, is_open')
-        .inFilter('lesson_id', [for (final lesson in lessons) lesson.id]);
+        .select(
+          '${LessonAccessColumns.lessonId},${LessonAccessColumns.isOpen}',
+        )
+        .inFilter(LessonAccessColumns.lessonId, [
+          for (final lesson in lessons) lesson.id,
+        ]);
     final openById = {
       for (final row in (rows as List<dynamic>).cast<Map<String, dynamic>>())
-        if (row['lesson_id'] is String)
-          row['lesson_id'] as String: row['is_open'] == true,
+        if (row[LessonAccessColumns.lessonId] is String)
+          row[LessonAccessColumns.lessonId] as String:
+              row[LessonAccessColumns.isOpen] == true,
     };
     return [
       for (final lesson in lessons)

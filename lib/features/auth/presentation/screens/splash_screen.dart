@@ -73,36 +73,47 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   static const _startupWait = Duration(seconds: 8);
 
   Future<void> _navigateAway() async {
-    await Future<void>.delayed(const Duration(milliseconds: 1300));
+    final minDisplay = Future<void>.delayed(const Duration(milliseconds: 950));
     if (!mounted) return;
 
     var isAuthenticated = ref.read(authSessionProvider);
-    if (isAuthenticated) {
-      final alreadyLeft = await _confirmDevice().timeout(
-        _startupWait,
-        onTimeout: () => false,
-      );
-      if (!mounted || alreadyLeft) return;
-      isAuthenticated = ref.read(authSessionProvider);
-    }
-
     if (!isAuthenticated) {
+      await minDisplay;
+      if (!mounted) return;
       context.go(AppRoutes.login);
       return;
     }
 
-    // Admins skip the student home. A failed or slow profile still opens
-    // Home; the router sends an admin on once the row arrives.
+    // Run the branding intro concurrently with device verification + profile
+    // warm-up so cold start doesn't wait 1.3s idle before starting RPCs.
+    var alreadyLeft = false;
     var isAdmin = false;
-    try {
-      final profile = await ref
-          .read(userProfileProvider.future)
-          .timeout(_startupWait);
-      isAdmin = profile?.isAdmin ?? false;
-    } catch (_) {
-      isAdmin = false;
+    await Future.wait([
+      minDisplay,
+      () async {
+        alreadyLeft = await _confirmDevice().timeout(
+          _startupWait,
+          onTimeout: () => false,
+        );
+        if (!mounted || alreadyLeft) return;
+        isAuthenticated = ref.read(authSessionProvider);
+        if (!isAuthenticated) return;
+        try {
+          final profile = await ref
+              .read(userProfileProvider.future)
+              .timeout(_startupWait);
+          isAdmin = profile?.isAdmin ?? false;
+        } catch (_) {
+          isAdmin = false;
+        }
+      }(),
+    ]);
+
+    if (!mounted || alreadyLeft) return;
+    if (!isAuthenticated) {
+      context.go(AppRoutes.login);
+      return;
     }
-    if (!mounted) return;
     context.go(isAdmin ? AppRoutes.admin : AppRoutes.home);
   }
 
@@ -123,6 +134,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         return true;
       }
       ref.read(deviceSessionNoticeProvider.notifier).setFromClaim(value);
+      // `claimActiveDevice` just succeeded with `ok == true`, so a redundant
+      // `assertActiveDevice` round-trip right behind it is unnecessary.
+      return false;
     }
 
     final assertResult = await repo.assertActiveDevice();

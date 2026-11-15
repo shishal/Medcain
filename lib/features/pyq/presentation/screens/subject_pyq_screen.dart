@@ -186,17 +186,22 @@ class SubjectPyqScreen extends ConsumerWidget {
                 ),
                 if (activeSummary != null && activeSummary.isNotEmpty) ...[
                   const SizedBox(height: Spacing.sm),
-                  Text(
-                    activeSummary,
-                    style: Theme.of(context).textTheme.labelLarge,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          activeSummary,
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: ref
+                            .read(subjectPyqFiltersProvider(subjectId).notifier)
+                            .clear,
+                        child: const Text('Clear filters'),
+                      ),
+                    ],
                   ),
-                  if (filter.isActive && sections.isEmpty)
-                    TextButton(
-                      onPressed: ref
-                          .read(subjectPyqFiltersProvider(subjectId).notifier)
-                          .clear,
-                      child: const Text('Clear filters'),
-                    ),
                 ],
                 const SizedBox(height: Spacing.md),
                 // All three headings stay visible even when empty so the

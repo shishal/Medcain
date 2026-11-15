@@ -54,9 +54,36 @@ class _ComicSelectSheet<T> extends StatefulWidget {
 
 class _ComicSelectSheetState<T> extends State<_ComicSelectSheet<T>> {
   final _query = TextEditingController();
+  late List<({T item, String label, String lower})> _indexed;
 
   bool get _showSearch =>
       widget.items.length >= _ComicSelectSheet.searchAfterCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _rebuildIndex();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ComicSelectSheet<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.items, widget.items) ||
+        oldWidget.labelOf != widget.labelOf) {
+      _rebuildIndex();
+    }
+  }
+
+  void _rebuildIndex() {
+    _indexed = [
+      for (final item in widget.items)
+        (
+          item: item,
+          label: widget.labelOf(item),
+          lower: widget.labelOf(item).toLowerCase(),
+        ),
+    ];
+  }
 
   @override
   void dispose() {
@@ -68,10 +95,8 @@ class _ComicSelectSheetState<T> extends State<_ComicSelectSheet<T>> {
   Widget build(BuildContext context) {
     final q = _query.text.trim().toLowerCase();
     final visible = q.isEmpty
-        ? widget.items
-        : widget.items
-              .where((item) => widget.labelOf(item).toLowerCase().contains(q))
-              .toList();
+        ? _indexed
+        : _indexed.where((entry) => entry.lower.contains(q)).toList();
     final media = MediaQuery.of(context);
     // Give the list a real height. A min-size Column + maxHeight ConstrainedBox
     // was collapsing to ~one row once the keyboard opened.
@@ -105,6 +130,7 @@ class _ComicSelectSheetState<T> extends State<_ComicSelectSheet<T>> {
                   // emulators that can swallow the tap instead of opening IME.
                   stylusHandwritingEnabled: false,
                   onTap: requestSoftKeyboard,
+                  onTapOutside: dismissSoftKeyboard,
                   decoration: const InputDecoration(
                     hintText: 'Search',
                     prefixIcon: Icon(Icons.search),
@@ -131,19 +157,19 @@ class _ComicSelectSheetState<T> extends State<_ComicSelectSheet<T>> {
                     separatorBuilder: (_, _) =>
                         const SizedBox(height: Spacing.sm),
                     itemBuilder: (context, i) {
-                      final item = visible[i];
-                      final selectedNow = widget.selected == item;
+                      final entry = visible[i];
+                      final selectedNow = widget.selected == entry.item;
                       return ComicCard(
                         padding: const EdgeInsets.symmetric(
                           horizontal: Spacing.md,
                           vertical: Spacing.sm,
                         ),
-                        onTap: () => Navigator.pop(context, item),
+                        onTap: () => Navigator.pop(context, entry.item),
                         child: Row(
                           children: [
                             Expanded(
                               child: Text(
-                                widget.labelOf(item),
+                                entry.label,
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                             ),

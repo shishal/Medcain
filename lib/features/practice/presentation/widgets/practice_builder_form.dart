@@ -551,6 +551,19 @@ class _TimerSection extends StatelessWidget {
           ),
         if (enabled) ...[
           const SizedBox(height: Spacing.sm),
+          Wrap(
+            spacing: Spacing.sm,
+            runSpacing: Spacing.xs,
+            children: [
+              for (final preset in const [10, 15, 30, 45, 60, 90])
+                ChoiceChip(
+                  label: Text('${preset}m'),
+                  selected: minutes == preset,
+                  onSelected: (_) => onMinutesChanged(preset),
+                ),
+            ],
+          ),
+          const SizedBox(height: Spacing.xs),
           Row(
             children: [
               Text('Duration', style: textTheme.bodyLarge),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +27,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   static const _minQueryLength = 2;
 
   final _controller = TextEditingController();
+  Timer? _debounce;
+  var _requestSeq = 0;
   bool _loading = false;
   String? _error;
   SearchHits? _hits;
@@ -32,24 +36,47 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
+  void _onChanged(String raw) {
+    _debounce?.cancel();
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      if (_hits != null || _error != null || _searched) {
+        setState(() {
+          _hits = null;
+          _error = null;
+          _searched = false;
+          _loading = false;
+        });
+      }
+      return;
+    }
+    if (trimmed.length < _minQueryLength) return;
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      _run(trimmed);
+    });
+  }
+
   Future<void> _run(String raw) async {
+    _debounce?.cancel();
     final query = raw.trim();
     if (query.length < _minQueryLength) {
       setState(() => _error = 'Type at least $_minQueryLength letters.');
       return;
     }
 
+    final seq = ++_requestSeq;
     setState(() {
       _loading = true;
       _error = null;
       _searched = true;
     });
     final result = await ref.read(progressRepositoryProvider).search(query);
-    if (!mounted) return;
+    if (!mounted || seq != _requestSeq) return;
     switch (result) {
       case Success(:final value):
         setState(() {
@@ -65,11 +92,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _clear() {
+    _debounce?.cancel();
+    _requestSeq++;
     _controller.clear();
     setState(() {
       _hits = null;
       _error = null;
       _searched = false;
+      _loading = false;
     });
   }
 
@@ -95,20 +125,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               textInputAction: TextInputAction.search,
               stylusHandwritingEnabled: false,
               onTap: requestSoftKeyboard,
-              // Rebuild on every keystroke so the clear button appears and
-              // the "at least 2 letters" hint can disappear as you type.
-              onChanged: (_) => setState(() {}),
+              onTapOutside: dismissSoftKeyboard,
+              onChanged: _onChanged,
               decoration: InputDecoration(
                 hintText: 'Subjects, lessons, PYQs',
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _controller.text.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: 'Clear',
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: _clear,
-                      ),
+                // Only rebuild the suffix button on keystroke, not the entire
+                // result list below.
+                suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _controller,
+                  builder: (context, value, _) {
+                    if (value.text.isEmpty) return const SizedBox.shrink();
+                    return IconButton(
+                      tooltip: 'Clear',
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: _clear,
+                    );
+                  },
+                ),
               ),
               onSubmitted: _run,
             ),
@@ -131,6 +166,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             if (hits != null && !empty)
               Expanded(
                 child: ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
                     if (hits.subjects.isNotEmpty)
                       _ResultGroup(

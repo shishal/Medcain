@@ -111,6 +111,65 @@ final class BookmarksListProvider
 
 String _$bookmarksListHash() => r'40311f49469854dd8d175f3974d9d17238c10956';
 
+/// Lesson IDs the signed-in user has bookmarked. Shared across all
+/// `LessonBookmarkIconButton`s so rendering N lesson rows fires 1 query,
+/// not N parallel queries, and toggling updates `BookmarksScreen` immediately.
+
+@ProviderFor(BookmarkedLessonIds)
+final bookmarkedLessonIdsProvider = BookmarkedLessonIdsProvider._();
+
+/// Lesson IDs the signed-in user has bookmarked. Shared across all
+/// `LessonBookmarkIconButton`s so rendering N lesson rows fires 1 query,
+/// not N parallel queries, and toggling updates `BookmarksScreen` immediately.
+final class BookmarkedLessonIdsProvider
+    extends $AsyncNotifierProvider<BookmarkedLessonIds, Set<String>> {
+  /// Lesson IDs the signed-in user has bookmarked. Shared across all
+  /// `LessonBookmarkIconButton`s so rendering N lesson rows fires 1 query,
+  /// not N parallel queries, and toggling updates `BookmarksScreen` immediately.
+  BookmarkedLessonIdsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'bookmarkedLessonIdsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$bookmarkedLessonIdsHash();
+
+  @$internal
+  @override
+  BookmarkedLessonIds create() => BookmarkedLessonIds();
+}
+
+String _$bookmarkedLessonIdsHash() =>
+    r'a443857e7151e7079040ca349c53a4afd8336a79';
+
+/// Lesson IDs the signed-in user has bookmarked. Shared across all
+/// `LessonBookmarkIconButton`s so rendering N lesson rows fires 1 query,
+/// not N parallel queries, and toggling updates `BookmarksScreen` immediately.
+
+abstract class _$BookmarkedLessonIds extends $AsyncNotifier<Set<String>> {
+  FutureOr<Set<String>> build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<Set<String>>, Set<String>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<Set<String>>, Set<String>>,
+              AsyncValue<Set<String>>,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 /// Bookmarked lessons, shown as a second section under the questions.
 
 @ProviderFor(lessonBookmarksList)

@@ -15,6 +15,7 @@ import '../../../../core/widgets/markdown_copy.dart';
 import '../../../../core/widgets/reading_text_zoom.dart';
 import '../../../profile/domain/plan_tier.dart';
 import '../../../profile/presentation/providers/current_plan_provider.dart';
+import '../../../progress/presentation/providers/ug_home_providers.dart';
 import '../../../bookmarks/presentation/widgets/bookmark_icon_button.dart';
 import '../../../security/domain/capture_event.dart';
 import '../../../security/presentation/widgets/content_capture_guard.dart';
@@ -67,6 +68,9 @@ class _PyqReaderPager extends StatefulWidget {
 
 class _PyqReaderPagerState extends State<_PyqReaderPager> {
   late final PageController _pages;
+  // Shared zoom across every question in this swipe sequence so setting 1.3x
+  // on Question 1 does not reset to 1.0x when swiping to Question 2.
+  final _zoom = ReadingTextZoom();
 
   @override
   void initState() {
@@ -77,7 +81,22 @@ class _PyqReaderPagerState extends State<_PyqReaderPager> {
   @override
   void dispose() {
     _pages.dispose();
+    _zoom.dispose();
     super.dispose();
+  }
+
+  void _goPrevious() {
+    _pages.previousPage(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _goNext() {
+    _pages.nextPage(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -95,6 +114,9 @@ class _PyqReaderPagerState extends State<_PyqReaderPager> {
           questionId: id,
           position: index + 1,
           total: total,
+          zoom: _zoom,
+          onPrevious: index > 0 ? _goPrevious : null,
+          onNext: index < total - 1 ? _goNext : null,
         );
       },
     );
@@ -107,11 +129,17 @@ class _PyqReaderPage extends ConsumerWidget {
     required this.questionId,
     this.position,
     this.total,
+    this.zoom,
+    this.onPrevious,
+    this.onNext,
   });
 
   final String questionId;
   final int? position;
   final int? total;
+  final ReadingTextZoom? zoom;
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
 
   String get _title {
     final pos = position;
@@ -138,8 +166,15 @@ class _PyqReaderPage extends ConsumerWidget {
             onAction: () => ref.invalidate(pyqDetailProvider(questionId)),
           ),
         ),
-        data: (value) =>
-            _PyqBody(detail: value, questionId: questionId, title: _title),
+        data: (value) => _PyqBody(
+          detail: value,
+          questionId: questionId,
+          title: _title,
+          zoom: zoom,
+          showNavButtons: (total ?? 1) > 1,
+          onPrevious: onPrevious,
+          onNext: onNext,
+        ),
       ),
     );
   }
@@ -150,11 +185,19 @@ class _PyqBody extends ConsumerStatefulWidget {
     required this.detail,
     required this.questionId,
     required this.title,
+    this.zoom,
+    this.showNavButtons = false,
+    this.onPrevious,
+    this.onNext,
   });
 
   final PyqDetail detail;
   final String questionId;
   final String title;
+  final ReadingTextZoom? zoom;
+  final bool showNavButtons;
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
 
   @override
   ConsumerState<_PyqBody> createState() => _PyqBodyState();
@@ -165,18 +208,31 @@ class _PyqBodyState extends ConsumerState<_PyqBody> {
   _ReaderPanel _panel = _ReaderPanel.directAnswer;
   late bool _learnt;
 
-  /// One scale for the stem, the options, and every answer block.
-  final _zoom = ReadingTextZoom();
+  /// Owned fallback zoom when `_PyqBody` is opened for a single standalone PYQ.
+  ReadingTextZoom? _ownedZoom;
+  ReadingTextZoom get _zoom => widget.zoom ?? _ownedZoom!;
 
   @override
   void initState() {
     super.initState();
+    if (widget.zoom == null) _ownedZoom = ReadingTextZoom();
     _learnt = widget.detail.questionLearnt;
   }
 
   @override
+  void didUpdateWidget(covariant _PyqBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.zoom != null) {
+      _ownedZoom?.dispose();
+      _ownedZoom = null;
+    } else {
+      _ownedZoom ??= ReadingTextZoom();
+    }
+  }
+
+  @override
   void dispose() {
-    _zoom.dispose();
+    _ownedZoom?.dispose();
     super.dispose();
   }
 
@@ -238,10 +294,35 @@ class _PyqBodyState extends ConsumerState<_PyqBody> {
     ].join(' · ');
 
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    final stemTint = dark
+        ? Color.alphaBlend(
+            scheme.primary.withValues(alpha: 0.14),
+            ComicColors.of(context).stickerLift,
+          )
+        : Color.alphaBlend(
+            StickerFills.peach.withValues(alpha: 0.35),
+            ComicColors.of(context).sticker,
+          );
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
-        actions: [BookmarkIconButton(questionId: widget.questionId)],
+        actions: [
+          if (widget.showNavButtons) ...[
+            IconButton(
+              tooltip: 'Previous question',
+              onPressed: widget.onPrevious,
+              icon: const Icon(Icons.chevron_left_rounded),
+            ),
+            IconButton(
+              tooltip: 'Next question',
+              onPressed: widget.onNext,
+              icon: const Icon(Icons.chevron_right_rounded),
+            ),
+          ],
+          BookmarkIconButton(questionId: widget.questionId),
+        ],
       ),
       // The A− / A+ pill floats over the scroll view so it stays put while
       // the stem and the answer move. Extra bottom padding keeps the last
@@ -277,10 +358,7 @@ class _PyqBodyState extends ConsumerState<_PyqBody> {
               ),
               const SizedBox(height: Spacing.md),
               ComicCard(
-                color: Color.alphaBlend(
-                  StickerFills.peach.withValues(alpha: 0.35),
-                  ComicColors.of(context).sticker,
-                ),
+                color: stemTint,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -336,6 +414,10 @@ class _PyqBodyState extends ConsumerState<_PyqBody> {
                         switch (result) {
                           case Success():
                             setState(() => _learnt = true);
+                            ref.invalidate(studyProgressProvider);
+                            ref.invalidate(
+                              pyqDetailProvider(widget.questionId),
+                            );
                           case Failure(:final message):
                             ScaffoldMessenger.of(this.context)
                                 .showSnackBar(SnackBar(content: Text(message)));

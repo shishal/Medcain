@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,11 +9,14 @@ import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
+import '../../../practice/presentation/providers/practice_plan_context_provider.dart';
 import '../../data/checkout_env.dart';
 import '../../data/checkout_launcher.dart';
 import '../../domain/plan_offer.dart';
 import '../../domain/plan_tier.dart';
+import '../providers/current_plan_provider.dart';
 import '../providers/public_plans_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../widgets/plan_comparison_card.dart';
 import '../widgets/plan_purchase_sheet.dart';
 
@@ -30,8 +35,47 @@ class UpgradePromptScreen extends ConsumerStatefulWidget {
       _UpgradePromptScreenState();
 }
 
-class _UpgradePromptScreenState extends ConsumerState<UpgradePromptScreen> {
+class _UpgradePromptScreenState extends ConsumerState<UpgradePromptScreen>
+    with WidgetsBindingObserver {
   String? _openingPlanId;
+  bool _awaitingPaymentReturn = false;
+  Timer? _settleTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _settleTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _awaitingPaymentReturn) {
+      _awaitingPaymentReturn = false;
+      unawaited(_refreshAfterCheckout());
+      // Follow up once 3s later in case the Razorpay webhook was still settling
+      // when the student switched back from the browser.
+      _settleTimer?.cancel();
+      _settleTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) unawaited(_refreshAfterCheckout());
+      });
+    }
+  }
+
+  Future<void> _refreshAfterCheckout() async {
+    await ref.read(userProfileProvider.notifier).refresh();
+    if (!mounted) return;
+    ref.invalidate(effectivePlanProvider);
+    ref.invalidate(currentPlanProvider);
+    ref.invalidate(practicePlanContextProvider);
+    ref.invalidate(publicPlansProvider);
+  }
 
   Future<void> _openPurchase(PlanOffer plan) async {
     await showModalBottomSheet<void>(
@@ -63,6 +107,7 @@ class _UpgradePromptScreenState extends ConsumerState<UpgradePromptScreen> {
 
     switch (result) {
       case Success():
+        _awaitingPaymentReturn = true;
         return true;
       case Failure(:final message):
         ScaffoldMessenger.of(
@@ -84,6 +129,7 @@ class _UpgradePromptScreenState extends ConsumerState<UpgradePromptScreen> {
       appBar: AppBar(
         title: const Text('Plans'),
         leading: IconButton(
+          tooltip: 'Back',
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             if (context.canPop()) {
@@ -95,46 +141,47 @@ class _UpgradePromptScreenState extends ConsumerState<UpgradePromptScreen> {
         ),
       ),
       body: plansAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Padding(
-          padding: const EdgeInsets.all(Spacing.lg),
-          child: InlineErrorMessage(
-            message: UserFacingError.display(error),
-            onRetry: () => ref.invalidate(publicPlansProvider),
-          ),
+        loading: () => const AsyncLoadingView(),
+        error: (error, _) => AsyncErrorView(
+          message: UserFacingError.display(error),
+          onAction: () => ref.invalidate(publicPlansProvider),
         ),
         data: (plans) {
-          return ListView(
-            padding: const EdgeInsets.all(Spacing.lg),
-            children: [
-              Text('Compare plans', style: textTheme.headlineSmall),
-              const SizedBox(height: Spacing.sm),
-              Text(
-                CheckoutEnv.webCheckoutEnabled
-                    ? 'You will finish payment on our website in your browser. '
-                          'This app never takes a card.'
-                    : 'Paid checkout is paused during this beta. '
-                          'You can keep using the Free plan.',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+          return RefreshIndicator(
+            onRefresh: _refreshAfterCheckout,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(Spacing.lg),
+              children: [
+                Text('Compare plans', style: textTheme.headlineSmall),
+                const SizedBox(height: Spacing.sm),
+                Text(
+                  CheckoutEnv.webCheckoutEnabled
+                      ? 'You will finish payment on our website in your browser. '
+                            'This app never takes a card.'
+                      : 'Paid checkout is paused during this beta. '
+                            'You can keep using the Free plan.',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: Spacing.lg),
-              for (final offer in plans) ...[
-                PlanComparisonCard(
-                  offer: offer,
-                  isCurrent: currentId == offer.id,
-                  isOpening: _openingPlanId == offer.id,
-                  onContinueInBrowser:
-                      !CheckoutEnv.webCheckoutEnabled ||
-                          !offer.isPurchasable ||
-                          currentId == offer.id
-                      ? null
-                      : () => _openPurchase(offer),
-                ),
-                const SizedBox(height: Spacing.md),
+                const SizedBox(height: Spacing.lg),
+                for (final offer in plans) ...[
+                  PlanComparisonCard(
+                    offer: offer,
+                    isCurrent: currentId == offer.id,
+                    isOpening: _openingPlanId == offer.id,
+                    onContinueInBrowser:
+                        !CheckoutEnv.webCheckoutEnabled ||
+                            !offer.isPurchasable ||
+                            currentId == offer.id
+                        ? null
+                        : () => _openPurchase(offer),
+                  ),
+                  const SizedBox(height: Spacing.md),
+                ],
               ],
-            ],
+            ),
           );
         },
       ),

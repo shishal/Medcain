@@ -25,6 +25,7 @@ import {
   isValidMetaSignature,
   parseLoginCode,
   samePhone,
+  sha256Hex,
   timingSafeEqual,
   type InboundWhatsAppMessage,
 } from '../_shared/whatsapp_auth.ts';
@@ -35,7 +36,7 @@ Deno.serve(async (req) => {
   const url = new URL(req.url);
 
   if (req.method === 'GET') {
-    return verifySubscription(url);
+    return await verifySubscription(url);
   }
   if (req.method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405);
@@ -93,7 +94,7 @@ Deno.serve(async (req) => {
   return json({ ok: true });
 });
 
-function verifySubscription(url: URL): Response {
+async function verifySubscription(url: URL): Promise<Response> {
   const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN') ?? '';
   if (verifyToken.length === 0) {
     console.error('WHATSAPP_VERIFY_TOKEN is not set');
@@ -101,11 +102,16 @@ function verifySubscription(url: URL): Response {
   }
 
   const mode = url.searchParams.get('hub.mode');
-  const provided = url.searchParams.get('hub.verify_token');
+  const provided = url.searchParams.get('hub.verify_token') ?? '';
   const challenge = url.searchParams.get('hub.challenge') ?? '';
+  // Compare fixed-length SHA-256 digests so token length is never leaked.
+  const [providedDigest, expectedDigest] = await Promise.all([
+    sha256Hex(provided),
+    sha256Hex(verifyToken),
+  ]);
   if (
     mode !== 'subscribe' ||
-    !timingSafeEqual(provided ?? '', verifyToken) ||
+    !timingSafeEqual(providedDigest, expectedDigest) ||
     challenge.length === 0 ||
     challenge.length > 256
   ) {

@@ -78,7 +78,8 @@
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;');
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
   }
 
   function errorText(error) {
@@ -162,6 +163,12 @@
     </div>`;
   }
 
+  const ALLOWED_MD_TAGS = new Set([
+    'P', 'STRONG', 'B', 'EM', 'I', 'DEL', 'UL', 'OL', 'LI',
+    'CODE', 'PRE', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+    'BR', 'HR', 'A', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD',
+  ]);
+
   function renderMarkdown(text) {
     const source = esc(text || '');
     if (!window.marked || typeof window.marked.parse !== 'function') {
@@ -174,24 +181,28 @@
       return `<p>${source}</p>`;
     }
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    doc.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach((node) => {
+    doc.querySelectorAll('script,style,iframe,object,embed,link,meta,svg,math,form,input,button,textarea').forEach((node) => {
       node.remove();
     });
     doc.body.querySelectorAll('*').forEach((el) => {
+      if (!ALLOWED_MD_TAGS.has(el.tagName)) {
+        el.replaceWith(...el.childNodes);
+        return;
+      }
       [...el.attributes].forEach((attr) => {
         const name = attr.name.toLowerCase();
-        if (name.startsWith('on') || name === 'style') el.removeAttribute(attr.name);
+        if (el.tagName === 'A' && name === 'href') return;
+        el.removeAttribute(attr.name);
       });
       if (el.tagName === 'A') {
         const href = el.getAttribute('href') || '';
-        if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) {
+        if (!/^https:\/\//i.test(href) && !/^mailto:/i.test(href)) {
           el.removeAttribute('href');
         } else {
           el.setAttribute('rel', 'noopener noreferrer');
           el.setAttribute('target', '_blank');
         }
       }
-      if (el.tagName === 'IMG') el.remove();
     });
     return doc.body.innerHTML;
   }
@@ -299,6 +310,7 @@
       const button = event.target.querySelector('button');
       if (button) button.disabled = true;
       const popup = window.open('about:blank', '_blank');
+      if (popup) popup.opener = null;
       try {
         const data = await invoke('whatsapp-auth-start', { phone });
         const waUrl = typeof data.wa_url === 'string' ? data.wa_url : '';
@@ -2148,6 +2160,7 @@
   supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
     auth: {
       storageKey: 'medcain-admin-auth',
+      storage: window.sessionStorage,
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,

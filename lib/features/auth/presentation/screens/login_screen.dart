@@ -61,7 +61,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _pollOnce();
+      if (_challenge != null && !_finished) {
+        _startPolling();
+        _pollOnce();
+      }
+      return;
+    }
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      // Stop polling the Edge Function every 2s while WhatsApp is in the
+      // foreground; `resumed` checks immediately as soon as the user returns.
+      _pollTimer?.cancel();
+      _pollTimer = null;
     }
   }
 
@@ -174,7 +185,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
       switch (result) {
         case Success(:final value):
-          if (value == null) return;
+          if (value == null) {
+            if (_infoMessage == UserFacingError.offlineMessage) {
+              setState(() => _infoMessage = null);
+            }
+            return;
+          }
           // setSession emits signedIn before the device claim returns.
           // The router ignores that event, so publish the session that is
           // actually left before we navigate.
@@ -185,7 +201,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           await _enterApp(value);
         case Failure(:final message):
           if (message == UserFacingError.offlineMessage) {
-            setState(() => _infoMessage = message);
+            if (_infoMessage != message) {
+              setState(() => _infoMessage = message);
+            }
             return;
           }
           _failWaiting(message);
@@ -271,6 +289,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           child: Form(
             key: _formKey,
             child: ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
                 const SizedBox(height: Spacing.lg),
                 const Center(
@@ -327,12 +346,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     decoration: const InputDecoration(
                       labelText: 'WhatsApp number',
                       hintText: '9876543210',
+                      helperText: '10-digit Indian number, or +country code',
                     ),
                     keyboardType: TextInputType.phone,
                     autofillHints: const [AutofillHints.telephoneNumber],
                     textInputAction: TextInputAction.done,
                     stylusHandwritingEnabled: false,
                     onTap: requestSoftKeyboard,
+                    onTapOutside: dismissSoftKeyboard,
                     enabled: !_isLoading,
                     onFieldSubmitted: (_) => _submit(),
                     validator: WhatsAppPhone.validator,

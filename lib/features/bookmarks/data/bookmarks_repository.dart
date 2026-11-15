@@ -56,7 +56,8 @@ class BookmarksRepository {
             '${BookmarkColumns.questionId},${BookmarkColumns.createdAt}',
           )
           .eq(BookmarkColumns.userId, userId)
-          .order(BookmarkColumns.createdAt, ascending: false);
+          .order(BookmarkColumns.createdAt, ascending: false)
+          .limit(500);
 
       final bookmarks = (rows as List<dynamic>).cast<Map<String, dynamic>>();
       final questionIds = [
@@ -64,17 +65,21 @@ class BookmarksRepository {
           if (row[BookmarkColumns.questionId] is String)
             row[BookmarkColumns.questionId] as String,
       ];
-      final listingRows = questionIds.isEmpty
-          ? const <Map<String, dynamic>>[]
-          : (await _client
-                    .from(Tables.questionListings)
-                    .select(
-                      '${QuestionColumns.id},${QuestionColumns.questionText},'
-                      '${QuestionColumns.topicId}',
-                    )
-                    .inFilter(QuestionColumns.id, questionIds)
-                as List<dynamic>)
-              .cast<Map<String, dynamic>>();
+      final listingRows = <Map<String, dynamic>>[];
+      const chunkSize = 80;
+      for (var i = 0; i < questionIds.length; i += chunkSize) {
+        final end = i + chunkSize > questionIds.length
+            ? questionIds.length
+            : i + chunkSize;
+        final chunk = await _client
+            .from(Tables.questionListings)
+            .select(
+              '${QuestionColumns.id},${QuestionColumns.questionText},'
+              '${QuestionColumns.topicId}',
+            )
+            .inFilter(QuestionColumns.id, questionIds.sublist(i, end));
+        listingRows.addAll((chunk as List<dynamic>).cast<Map<String, dynamic>>());
+      }
       final listingById = {
         for (final row in listingRows)
           if (row[QuestionColumns.id] is String)
@@ -85,41 +90,31 @@ class BookmarksRepository {
           if (row[QuestionColumns.topicId] is String)
             row[QuestionColumns.topicId] as String,
       };
+      // Embed `subjects(name)` directly on `topics` so we don't fire a 4th
+      // sequential query.
       final topicRows = topicIds.isEmpty
           ? const <Map<String, dynamic>>[]
           : (await _client
                     .from(Tables.topics)
                     .select(
                       '${TopicColumns.id},${TopicColumns.name},'
-                      '${TopicColumns.subjectId}',
+                      '${TopicColumns.subjectId},'
+                      '${TopicColumns.subjectEmbed}:${Tables.subjects}(${SubjectColumns.name})',
                     )
                     .inFilter(TopicColumns.id, topicIds.toList())
                 as List<dynamic>)
               .cast<Map<String, dynamic>>();
-      final subjectIds = {
-        for (final row in topicRows)
-          if (row[TopicColumns.subjectId] is String)
-            row[TopicColumns.subjectId] as String,
-      };
-      final subjectRows = subjectIds.isEmpty
-          ? const <Map<String, dynamic>>[]
-          : (await _client
-                    .from(Tables.subjects)
-                    .select('${SubjectColumns.id},${SubjectColumns.name}')
-                    .inFilter(SubjectColumns.id, subjectIds.toList())
-                as List<dynamic>)
-              .cast<Map<String, dynamic>>();
-      final subjectName = {
-        for (final row in subjectRows)
-          if (row[SubjectColumns.id] is String)
-            row[SubjectColumns.id] as String:
-                row[SubjectColumns.name] as String? ?? '',
-      };
-      final topicById = {
-        for (final row in topicRows)
-          if (row[TopicColumns.id] is String)
-            row[TopicColumns.id] as String: row,
-      };
+      final subjectName = <String, String>{};
+      final topicById = <String, Map<String, dynamic>>{};
+      for (final row in topicRows) {
+        final id = row[TopicColumns.id];
+        if (id is String) topicById[id] = row;
+        final subjectId = row[TopicColumns.subjectId];
+        final embed = row[TopicColumns.subjectEmbed];
+        if (subjectId is String && embed is Map) {
+          subjectName[subjectId] = embed[SubjectColumns.name] as String? ?? '';
+        }
+      }
 
       return Success([
         for (final row in bookmarks)

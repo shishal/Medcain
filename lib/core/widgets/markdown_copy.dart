@@ -1,7 +1,7 @@
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../utils/open_external_link.dart';
 import 'reading_text_zoom.dart';
 
 /// flutter_markdown_plus still takes the old framework [ThemeData], so the
@@ -96,9 +96,7 @@ class MarkdownCopy extends StatelessWidget {
       styleSheet: sheet,
       onTapLink: (text, href, title) {
         if (href == null || href.isEmpty) return;
-        final uri = Uri.tryParse(href);
-        if (uri == null) return;
-        launchUrl(uri, mode: LaunchMode.externalApplication);
+        openExternalLink(context, href);
       },
     );
   }

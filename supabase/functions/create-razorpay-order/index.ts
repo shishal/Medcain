@@ -22,7 +22,8 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  if (!supabaseUrl || !supabaseAnonKey) {
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
     return jsonResponse({ error: 'Server is missing Supabase config.' }, 500);
   }
 
@@ -148,11 +149,36 @@ Deno.serve(async (req) => {
   });
 
   const razorpayBody = await razorpayResponse.json();
-  if (!razorpayResponse.ok) {
+  if (!razorpayResponse.ok || typeof razorpayBody?.id !== 'string') {
     console.error('Razorpay Orders API error', razorpayBody);
     return jsonResponse(
       { error: 'Could not start checkout. Please try again.' },
       502,
+    );
+  }
+
+  // Persist authoritative order terms server-side so apply_razorpay_payment
+  // never trusts client-overridable payment.entity.notes on Standard Checkout.
+  const service = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { error: orderInsertError } = await service
+    .from('payment_orders')
+    .insert({
+      razorpay_order_id: razorpayBody.id,
+      user_id: user.id,
+      plan_id: planId,
+      amount_paise: amountPaise,
+      list_amount_paise: listAmountPaise,
+      currency: 'INR',
+      discount_code: discountCode,
+      percent_off: percentOff,
+    });
+  if (orderInsertError) {
+    console.error('payment_orders insert failed', orderInsertError.message);
+    return jsonResponse(
+      { error: 'Could not start checkout. Please try again.' },
+      500,
     );
   }
 
@@ -178,7 +204,7 @@ Deno.serve(async (req) => {
     plan_id: planId,
     label: planName,
     description,
-    name: 'Medico',
+    name: 'MEDCAIN',
     prefillEmail: email,
     prefillPhone: phone,
   });

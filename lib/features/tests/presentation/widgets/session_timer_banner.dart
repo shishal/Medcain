@@ -52,29 +52,35 @@ class _SessionTimerBannerState extends State<SessionTimerBanner> {
     final sectionPrefix = session.isSectional
         ? 'Sec ${session.currentSection} · '
         : '';
+    // Announce via `liveRegion` only at milestone thresholds (5m, 1m, 30s) so
+    // TalkBack/VoiceOver does not read out every single second non-stop.
+    final remSec = remaining.inSeconds;
+    final announceMilestone = remSec == 300 || remSec == 60 || remSec == 30;
 
-    return Semantics(
-      liveRegion: true,
-      label: session.isSectional
-          ? 'Section ${session.currentSection}, $label remaining'
-          : '$label remaining',
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Spacing.sm),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.timer_outlined, size: 18, color: color),
-            const SizedBox(width: Spacing.xs),
-            Text(
-              '$sectionPrefix$label',
-              key: const Key('session-timer'),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: color,
-                fontFeatures: const [FontFeature.tabularFigures()],
-                fontWeight: urgent ? FontWeight.w700 : FontWeight.w600,
+    return RepaintBoundary(
+      child: Semantics(
+        liveRegion: announceMilestone,
+        label: session.isSectional
+            ? 'Section ${session.currentSection}, $label remaining'
+            : '$label remaining',
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.sm),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.timer_outlined, size: 18, color: color),
+              const SizedBox(width: Spacing.xs),
+              Text(
+                '$sectionPrefix$label',
+                key: const Key('session-timer'),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: color,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  fontWeight: urgent ? FontWeight.w700 : FontWeight.w600,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

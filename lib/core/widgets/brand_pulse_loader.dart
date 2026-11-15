@@ -39,16 +39,18 @@ class _BrandPulseLoaderState extends State<BrandPulseLoader>
   @override
   Widget build(BuildContext context) {
     final color = widget.color ?? Theme.of(context).colorScheme.primary;
-    return Semantics(
-      label: 'Loading',
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          return CustomPaint(
-            size: Size(widget.width, widget.height),
-            painter: _EcgPainter(t: _controller.value, color: color),
-          );
-        },
+    return RepaintBoundary(
+      child: Semantics(
+        label: 'Loading',
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            return CustomPaint(
+              size: Size(widget.width, widget.height),
+              painter: _EcgPainter(t: _controller.value, color: color),
+            );
+          },
+        ),
       ),
     );
   }
@@ -60,9 +62,20 @@ class _EcgPainter extends CustomPainter {
   final double t;
   final Color color;
 
+  static Size? _cachedSize;
+  static Path? _cachedPath;
+  static double _cachedLength = 0;
+
   @override
   void paint(Canvas canvas, Size size) {
-    final path = _ecgPath(size);
+    if (_cachedSize != size || _cachedPath == null) {
+      final built = _ecgPath(size);
+      final metrics = built.computeMetrics().toList();
+      _cachedSize = size;
+      _cachedPath = built;
+      _cachedLength = metrics.isEmpty ? 0 : metrics.first.length;
+    }
+    final path = _cachedPath!;
     final faint = Paint()
       ..color = color.withValues(alpha: 0.28)
       ..style = PaintingStyle.stroke
@@ -71,11 +84,10 @@ class _EcgPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round;
     canvas.drawPath(path, faint);
 
-    final metrics = path.computeMetrics().toList();
-    if (metrics.isEmpty) return;
-    final metric = metrics.first;
-    final head = (t * metric.length).clamp(0, metric.length);
-    final tail = (head - metric.length * 0.38).clamp(0, metric.length);
+    if (_cachedLength <= 0) return;
+    final metric = path.computeMetrics().first;
+    final head = (t * _cachedLength).clamp(0, _cachedLength);
+    final tail = (head - _cachedLength * 0.38).clamp(0, _cachedLength);
 
     final trace = metric.extractPath(tail.toDouble(), head.toDouble());
     final strong = Paint()

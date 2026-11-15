@@ -16,11 +16,13 @@ class FeedbackReveal {
     required this.isCorrect,
     required this.highlightCorrectOption,
     this.explanationText,
+    this.videoUrl,
   });
 
   final bool isCorrect;
   final bool highlightCorrectOption;
   final String? explanationText;
+  final String? videoUrl;
 }
 
 /// How one option chip should look. Exam Mode only uses [idle] / [selected].
@@ -182,9 +184,43 @@ class PlayerSessionState {
   bool get canSubmitSection =>
       isSectional && !isPendingSubmit && !isLastSection;
 
-  PaletteTally get paletteTally => PaletteTally.fromCells([
-    for (var i = 0; i < questions.length; i++) paletteAt(i),
-  ]);
+  PaletteTally get paletteTally {
+    var notVisited = 0;
+    var notAnswered = 0;
+    var answered = 0;
+    var correct = 0;
+    var incorrect = 0;
+    var marked = 0;
+    final isTutor = isTutorMode;
+    for (final question in questions) {
+      final answer = answerFor(question);
+      if (answer.markedForReview) marked++;
+      if (!answer.visited) {
+        notVisited++;
+        continue;
+      }
+      final selected = answer.selectedOption;
+      if (selected == null) {
+        notAnswered++;
+      } else if (isTutor) {
+        if (selected == question.correctOption) {
+          correct++;
+        } else {
+          incorrect++;
+        }
+      } else {
+        answered++;
+      }
+    }
+    return PaletteTally(
+      notVisited: notVisited,
+      notAnswered: notAnswered,
+      answered: answered,
+      correct: correct,
+      incorrect: incorrect,
+      marked: marked,
+    );
+  }
 
   /// Tutor Mode locks the option the moment it is chosen.
   bool get isCurrentAnswerLocked =>
@@ -219,10 +255,14 @@ class PlayerSessionState {
       currentQuestion.explanationText,
       currentQuestion.explanationDeep,
     );
+    final rawVideo = currentQuestion.explanationVideoUrl?.trim();
     return FeedbackReveal(
       isCorrect: isCorrect,
       highlightCorrectOption: showAnswer,
       explanationText: showText ? raw : null,
+      videoUrl: showText && rawVideo != null && rawVideo.isNotEmpty
+          ? rawVideo
+          : null,
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../core/utils/cache_for_extension.dart';
 import '../../../../core/utils/result.dart';
 import '../../../profile/domain/plan_tier.dart';
 import '../../../profile/presentation/providers/current_plan_provider.dart';
@@ -13,6 +14,7 @@ part 'pyq_providers.g.dart';
 
 @riverpod
 Future<PyqLessonFeed> lessonPyqs(Ref ref, String lessonId) async {
+  ref.cacheFor(const Duration(minutes: 5));
   final profile = await ref.watch(userProfileProvider.future);
   final result = await ref
       .watch(pyqRepositoryProvider)
@@ -121,6 +123,7 @@ Set<T> _toggled<T>(Set<T> current, T value) {
 
 @riverpod
 Future<PyqDetail> pyqDetail(Ref ref, String questionId) async {
+  ref.cacheFor(const Duration(minutes: 5));
   final plan = ref.watch(currentPlanProvider).value ?? PlanTier.free;
   final result = await ref
       .watch(pyqRepositoryProvider)

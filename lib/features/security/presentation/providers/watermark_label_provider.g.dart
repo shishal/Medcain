@@ -8,29 +8,26 @@ part of 'watermark_label_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Identity tiled over question content. Email comes from Auth (always
-/// present when signed in); name/phone come from `profiles` when set.
+/// Identity tiled over question content.
 ///
-/// Watches [userProfileProvider] as [AsyncValue] so a profile load/error
-/// still leaves the email watermark visible.
+/// The WhatsApp number comes from Auth when the profile phone is still
+/// empty. A synthetic internal email is never painted.
 
 @ProviderFor(watermarkLabel)
 final watermarkLabelProvider = WatermarkLabelProvider._();
 
-/// Identity tiled over question content. Email comes from Auth (always
-/// present when signed in); name/phone come from `profiles` when set.
+/// Identity tiled over question content.
 ///
-/// Watches [userProfileProvider] as [AsyncValue] so a profile load/error
-/// still leaves the email watermark visible.
+/// The WhatsApp number comes from Auth when the profile phone is still
+/// empty. A synthetic internal email is never painted.
 
 final class WatermarkLabelProvider
     extends $FunctionalProvider<String, String, String>
     with $Provider<String> {
-  /// Identity tiled over question content. Email comes from Auth (always
-  /// present when signed in); name/phone come from `profiles` when set.
+  /// Identity tiled over question content.
   ///
-  /// Watches [userProfileProvider] as [AsyncValue] so a profile load/error
-  /// still leaves the email watermark visible.
+  /// The WhatsApp number comes from Auth when the profile phone is still
+  /// empty. A synthetic internal email is never painted.
   WatermarkLabelProvider._()
     : super(
         from: null,
@@ -64,4 +61,4 @@ final class WatermarkLabelProvider
   }
 }
 
-String _$watermarkLabelHash() => r'0b36a8306cbdcf4d35396320f00bb51d5d70d1a3';
+String _$watermarkLabelHash() => r'39d950a8158de08bb50574fdfa70ac36b0bb767f';

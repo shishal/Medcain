@@ -10,6 +10,7 @@ import '../../data/local_attempt_store.dart';
 import '../../data/tests_repository.dart';
 import '../../domain/attempt_status.dart';
 import '../../domain/attempt_submit_request.dart';
+import '../../domain/local_attempt_snapshot.dart';
 import '../../domain/player_session_state.dart';
 import '../../domain/question_option.dart';
 import '../../domain/reading_mode_redirect.dart';
@@ -35,6 +36,10 @@ class PlayerSession extends _$PlayerSession {
   WallClock _clock = WallClock();
   var _alive = true;
   var _submitLoopStarted = false;
+  var _submitTerminalFailure = false;
+
+  /// True when `submit_attempt` failed with a non-retryable terminal error.
+  bool get isSubmitTerminalFailure => _submitTerminalFailure;
 
   /// Clock used by the countdown UI — includes server skew correction.
   DateTime now() => _clock.now();
@@ -43,6 +48,7 @@ class PlayerSession extends _$PlayerSession {
   Future<PlayerSessionState> build(String testId) async {
     _alive = true;
     _submitLoopStarted = false;
+    _submitTerminalFailure = false;
     ref.onDispose(() {
       _alive = false;
       _tearDown();
@@ -58,9 +64,14 @@ class PlayerSession extends _$PlayerSession {
     }
     _userId = userId;
 
-    await _reconcileClock(repo);
-
-    final local = await store.readOpenForTest(testId: testId, userId: userId);
+    late final LocalAttemptSnapshot? localLoaded;
+    await Future.wait([
+      _reconcileClock(repo),
+      store
+          .readOpenForTest(testId: testId, userId: userId)
+          .then((v) => localLoaded = v),
+    ]);
+    final local = localLoaded;
 
     if (local != null && local.questions.isNotEmpty) {
       if (local.feedbackTiming == FeedbackTiming.reading) {
@@ -192,15 +203,40 @@ class PlayerSession extends _$PlayerSession {
   }
 
   /// Starts the RPC + backoff loop once. Safe to call from the UI repeatedly.
-  Future<void> ensureSubmitting() async {
-    if (_submitLoopStarted) return;
+  Future<void> ensureSubmitting({bool forceRetry = false}) async {
+    if (forceRetry) {
+      _submitTerminalFailure = false;
+    }
+    if (_submitLoopStarted || _submitTerminalFailure) return;
     final session = state.value;
     if (session == null || session.isSubmitComplete) return;
     if (!session.isPendingSubmit) return;
     _submitLoopStarted = true;
     _tickTimer?.cancel();
     _tickTimer = null;
-    await _submitLoop();
+    try {
+      await _submitLoop();
+    } finally {
+      _submitLoopStarted = false;
+    }
+  }
+
+  /// Pauses the 1s expiry ticker while the player screen is off-stage so a
+  /// `keepAlive` session does not burn CPU across the rest of the app.
+  void pauseTicker() {
+    _tickTimer?.cancel();
+    _tickTimer = null;
+  }
+
+  /// Resumes the 1s expiry ticker when `TestPlayerScreen` is visible again.
+  void resumeTicker() {
+    final current = state.value;
+    if (current != null && !current.isPendingSubmit && !current.isSubmitComplete) {
+      _applyExpiry(persist: true);
+      if (state.value?.isPendingSubmit != true) {
+        _startTicker();
+      }
+    }
   }
 
   /// Re-check Postgres time and expiry after the app returns to the foreground.
@@ -309,6 +345,7 @@ class PlayerSession extends _$PlayerSession {
             await store.delete(session.attemptId);
           }
           if (!_alive) return;
+          _submitTerminalFailure = true;
           state = AsyncData(session.copyWith(submitError: message));
           return;
         case Failure(:final message):
@@ -351,10 +388,9 @@ class PlayerSession extends _$PlayerSession {
     if (userId == null || current == null || store == null) return;
     if (current.isSubmitComplete) return;
     final timed = _applyElapsed(current);
-    if (!identical(timed, current)) {
-      state = AsyncData(timed);
-      _questionVisibleSince = DateTime.now();
-    }
+    // Write `timed` to disk without reassigning `state` — `timeSpentSeconds` is
+    // not rendered in `TestPlayerView`, so reassigning `state` here caused a
+    // full-screen widget + Markdown rebuild 500ms after every tap.
     await store.write(timed.toSnapshot(userId: userId));
   }
 

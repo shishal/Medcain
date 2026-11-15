@@ -4,7 +4,9 @@ import '../../../../core/utils/result.dart';
 import '../../../auth/presentation/providers/auth_session_provider.dart';
 import '../../data/local_attempt_store.dart';
 import '../../data/tests_repository.dart';
+import '../../domain/attempt.dart';
 import '../../domain/attempt_status.dart';
+import '../../domain/local_attempt_snapshot.dart';
 import '../../domain/resumable_attempt.dart';
 
 part 'in_progress_attempts_provider.g.dart';
@@ -25,11 +27,15 @@ class InProgressAttempts extends _$InProgressAttempts {
     final userId = repo.currentUserId;
     if (userId == null) return const [];
 
-    final local = await store.listForUser(userId);
-    final remoteResult = await repo.listInProgressAttempts();
+    late final List<LocalAttemptSnapshot> local;
+    late final Result<List<Attempt>> remoteResult;
+    await Future.wait([
+      store.listForUser(userId).then((v) => local = v),
+      repo.listInProgressAttempts().then((v) => remoteResult = v),
+    ]);
     final remoteList = switch (remoteResult) {
       Success(:final value) => value,
-      Failure() => const [],
+      Failure() => const <Attempt>[],
     };
     final remoteReachable = remoteResult is Success;
     final remoteById = {for (final attempt in remoteList) attempt.id: attempt};

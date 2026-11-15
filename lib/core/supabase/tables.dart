@@ -516,3 +516,15 @@ abstract final class AnnouncementReadColumns {
   static const announcementId = 'announcement_id';
   static const readAt = 'read_at';
 }
+
+abstract final class QuestionProgressColumns {
+  static const userId = 'user_id';
+  static const questionId = 'question_id';
+  static const learntAt = 'learnt_at';
+  static const lastViewedAt = 'last_viewed_at';
+}
+
+abstract final class LessonAccessColumns {
+  static const lessonId = 'lesson_id';
+  static const isOpen = 'is_open';
+}

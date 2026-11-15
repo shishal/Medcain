@@ -68,7 +68,7 @@ final class AttemptResultsProvider
   }
 }
 
-String _$attemptResultsHash() => r'9995352fa65a11527ab66cf9b764c11366884195';
+String _$attemptResultsHash() => r'15d8aa02cfc4c64a9c5ab8dcf2273c70e0c099a4';
 
 /// Submitted-attempt summary for the results screen.
 

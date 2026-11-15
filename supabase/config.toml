@@ -218,7 +218,10 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
-enable_signup = true
+# Disabled: students and admins sign in exclusively via user-initiated WhatsApp
+# (minted server-side via service_role). Leaving email signup open allowed
+# pre-registering synthetic @auth.medico.internal addresses.
+enable_signup = false
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true

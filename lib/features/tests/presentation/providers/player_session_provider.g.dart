@@ -65,7 +65,7 @@ final class PlayerSessionProvider
   }
 }
 
-String _$playerSessionHash() => r'ea60ecce7e375aca953c59cb49b68cf833c7a07d';
+String _$playerSessionHash() => r'b037e378c2898c749d89c87dbadbb93cb904af34';
 
 /// Player for one [testId]. Creates or resumes an `attempts` row, downloads
 /// questions, and autosaves answers to a local JSON file (spec §4).

@@ -3,14 +3,19 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Opens [url] in the device browser and tells the student when it fails.
 ///
-/// Resource URLs come from the content sheet, so a typo is a realistic input.
-/// The call sites used to `return` on an unparseable URL and ignore whatever
-/// [launchUrl] reported, which made the tap look like a dead button.
+/// Only `https` (plus `mailto` for support links) is allowed so an imported
+/// or markdown link cannot invoke `javascript:`, `file:`, `intent:`, or other
+/// arbitrary OS URI schemes.
 Future<void> openExternalLink(BuildContext context, String url) async {
-  final uri = Uri.tryParse(url);
-  final opened = uri == null
-      ? false
-      : await launchUrl(uri, mode: LaunchMode.externalApplication);
+  final uri = Uri.tryParse(url.trim());
+  final scheme = uri?.scheme.toLowerCase();
+  final safeScheme =
+      uri != null &&
+      ((scheme == 'https' && uri.host.isNotEmpty) ||
+          (scheme == 'mailto' && uri.path.isNotEmpty));
+  final opened = safeScheme
+      ? await launchUrl(uri, mode: LaunchMode.externalApplication)
+      : false;
 
   // `context.mounted` matters because we awaited: the screen may be gone.
   if (!opened && context.mounted) {

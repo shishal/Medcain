@@ -68,7 +68,7 @@ final class AttemptReviewProvider
   }
 }
 
-String _$attemptReviewHash() => r'de77880a38b59990739ebe59475b2a37a5c6d87d';
+String _$attemptReviewHash() => r'ea5c78e9599867bd3be9d2accc9dfeb2bf2ff177';
 
 /// Per-question solutions for a submitted attempt.
 

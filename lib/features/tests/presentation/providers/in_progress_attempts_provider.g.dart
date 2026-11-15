@@ -46,7 +46,7 @@ final class InProgressAttemptsProvider
 }
 
 String _$inProgressAttemptsHash() =>
-    r'212e44b1a8ff8f312320956106ebc62cfc3ae9cf';
+    r'352e6502bd2f3fe1ab11f0650639cd0eabd77303';
 
 /// In-progress attempts for the signed-in user, reconciled against the server.
 ///

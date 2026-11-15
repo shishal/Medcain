@@ -107,7 +107,8 @@
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;');
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
   }
 
   async function currentUser() {
@@ -133,11 +134,18 @@
     return email;
   }
 
+  let onVisible = null;
+
   function stopPoll() {
     pollGen += 1;
     if (pollTimer) {
       clearInterval(pollTimer);
       pollTimer = 0;
+    }
+    if (onVisible) {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+      onVisible = null;
     }
   }
 
@@ -173,6 +181,7 @@
       if (button) button.disabled = true;
       // Open during the click, before the network wait, or the browser blocks it.
       const popup = window.open('about:blank', '_blank');
+      if (popup) popup.opener = null;
       const result = await invokeFunction('whatsapp-auth-start', { phone });
       const data = result.data || {};
       const waUrl = typeof data.wa_url === 'string' ? data.wa_url : '';
@@ -205,18 +214,35 @@
         <p>Send this message from <strong>${escapeHtml(state.phone)}</strong>. Don't edit it. We sign you in when it arrives.</p>
         <p><strong>${escapeHtml(state.message)}</strong></p>
         <button class="primary" id="open-wa" type="button">Open WhatsApp</button>
+        <button class="ghost" id="copy-wa" type="button">Copy message</button>
         <p class="muted" id="wait-status">Waiting for your message…</p>
         <button class="ghost" id="cancel-wa" type="button">Use a different number</button>
       </div>
     `;
     panel.querySelector('#open-wa').addEventListener('click', () => {
-      window.open(state.waUrl, '_blank', 'noopener');
+      const win = window.open(state.waUrl, '_blank', 'noopener,noreferrer');
+      if (win) win.opener = null;
+    });
+    panel.querySelector('#copy-wa').addEventListener('click', async () => {
+      if (!navigator.clipboard) return;
+      try {
+        await navigator.clipboard.writeText(state.message);
+        const status = panel.querySelector('#wait-status');
+        if (status) status.textContent = 'Message copied. Paste and send it in WhatsApp…';
+      } catch {
+        // Clipboard API blocked; message remains selectable above.
+      }
     });
     panel.querySelector('#cancel-wa').addEventListener('click', () => {
       renderLogin();
     });
     const gen = pollGen;
     const tick = () => pollOnce(gen, state.challengeId, state.secret);
+    onVisible = () => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
     tick();
     pollTimer = window.setInterval(tick, 2000);
   }
@@ -274,7 +300,8 @@
 
     const planCards = catalog
       .map((plan) => {
-        const selected = plan.id === selectedPlanId ? ' selected' : '';
+        const isSelected = plan.id === selectedPlanId;
+        const selected = isSelected ? ' selected' : '';
         const promo = plan.promo_headline
           ? `<p class="success">${escapeHtml(plan.promo_headline)}${plan.promo_detail ? ` · ${escapeHtml(plan.promo_detail)}` : ''}</p>`
           : '';
@@ -283,9 +310,9 @@
           : '';
         return `
           <div class="card${selected}">
-            <button class="plan-pick" type="button" data-plan="${escapeHtml(plan.id)}">
+            <button class="plan-pick" type="button" aria-pressed="${isSelected}" data-plan="${escapeHtml(plan.id)}">
               <div class="row">
-                <strong>${escapeHtml(plan.name)}</strong>
+                <strong>${escapeHtml(plan.name)}${isSelected ? ' <span class="selected-badge">· Selected</span>' : ''}</strong>
                 <span class="price">${formatInr(plan.amount_paise)}</span>
               </div>
               <p class="muted">${escapeHtml(durationText(plan))}${plan.tagline ? ` · ${escapeHtml(plan.tagline)}` : ''}</p>
@@ -331,6 +358,12 @@
       });
     });
 
+    panel.querySelector('#code').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        applyCode(user);
+      }
+    });
     panel.querySelector('#apply-code').addEventListener('click', () => applyCode(user));
     panel.querySelector('#pay').addEventListener('click', () => startPay(user));
     panel.querySelector('#sign-out').addEventListener('click', async () => {
@@ -344,8 +377,8 @@
       <div class="card">
         <p class="success">Payment received.</p>
         <p>
-          Your plan should update within a few seconds. Reopen Medico and tap
-          refresh on Profile if it still shows Free.
+          Your plan should update within a few seconds. Reopen MEDCAIN — your
+          subscription refreshes automatically when you return to the app.
         </p>
         <p class="muted">You can close this tab.</p>
       </div>
@@ -359,30 +392,44 @@
     appliedQuote = null;
     if (!draftCode) {
       renderPlans(user);
-      return;
+      return true;
+    }
+
+    const applyBtn = panel.querySelector('#apply-code');
+    if (applyBtn) {
+      applyBtn.disabled = true;
+      applyBtn.textContent = 'Applying…';
     }
 
     const { data, error } = await supabase.rpc('checkout_quote', {
       p_plan_id: selectedPlanId,
       p_code: draftCode,
     });
-    if (seq !== quoteSeq) return;
+    if (seq !== quoteSeq) return false;
 
     if (error || !data || typeof data.amount_paise !== 'number') {
       discountError = quoteError(error);
       renderPlans(user);
-      return;
+      return false;
     }
 
     appliedQuote = data;
     draftCode = data.discount_code || draftCode;
     renderPlans(user);
+    return true;
   }
 
   async function startPay(user) {
     if (busy) return;
+    const typedCode = (panel.querySelector('#code')?.value ?? draftCode).trim();
+    // Validate an unapplied coupon first so the Pay button price and the
+    // Razorpay order price never disagree.
+    if (typedCode !== (appliedQuote?.discount_code || '')) {
+      draftCode = typedCode;
+      const ok = await applyCode(user);
+      if (!ok) return;
+    }
     busy = true;
-    draftCode = (panel.querySelector('#code')?.value || draftCode).trim();
     const payButton = panel.querySelector('#pay');
     if (payButton) {
       payButton.disabled = true;
@@ -394,7 +441,7 @@
       {
         body: {
           plan_id: selectedPlanId,
-          code: draftCode || null,
+          code: appliedQuote?.discount_code || null,
         },
       },
     );

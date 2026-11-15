@@ -94,43 +94,49 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fg = selected ? color : muted;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(
-                horizontal: Spacing.md,
-                vertical: Spacing.xs,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.md,
+                  vertical: Spacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: selected ? color.withValues(alpha: 0.22) : null,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.35),
+                            blurRadius: 10,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Icon(selected ? filled : outlined, color: fg, size: 22),
               ),
-              decoration: BoxDecoration(
-                color: selected ? color.withValues(alpha: 0.22) : null,
-                borderRadius: BorderRadius.circular(999),
-                boxShadow: selected
-                    ? [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                        ),
-                      ]
-                    : null,
+              const SizedBox(height: Spacing.xs),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: fg,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
               ),
-              child: Icon(selected ? filled : outlined, color: fg, size: 22),
-            ),
-            const SizedBox(height: Spacing.xs),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: fg,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

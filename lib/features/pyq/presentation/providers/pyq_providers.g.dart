@@ -64,7 +64,7 @@ final class LessonPyqsProvider
   }
 }
 
-String _$lessonPyqsHash() => r'ac051abcc090571a9a0fc6b05b77c3ef4d30ca33';
+String _$lessonPyqsHash() => r'a18965e9fb6d6f23dfddbfeac0fd280f41780c85';
 
 final class LessonPyqsFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<PyqLessonFeed>, String> {
@@ -325,7 +325,7 @@ final class SubjectPyqFiltersProvider
   }
 }
 
-String _$subjectPyqFiltersHash() => r'c4ea3e743e87ae8a22ca7709499161a5b576ca33';
+String _$subjectPyqFiltersHash() => r'd30996bd2d598154611a415a9dc82c70d4d33e14';
 
 /// University / year / exam type / paper / MCQ-or-theory / chapter picks for
 /// one subject's PYQ screen and its paper outlines.
@@ -436,7 +436,7 @@ final class PyqDetailProvider
   }
 }
 
-String _$pyqDetailHash() => r'8745bc3a0effe519046e16754fab8098ba9b116f';
+String _$pyqDetailHash() => r'e3a0d95cad88b80ea42974f22b717bf300c79e64';
 
 final class PyqDetailFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<PyqDetail>, String> {

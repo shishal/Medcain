@@ -41,7 +41,14 @@ abstract final class CheckoutEnv {
     if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
       return production;
     }
+    final scheme = uri.scheme.toLowerCase();
     final host = uri.host.toLowerCase();
+    final isLocalHttp =
+        scheme == 'http' &&
+        (host == 'localhost' || host == '127.0.0.1' || host == '::1');
+    if (scheme != 'https' && !isLocalHttp) {
+      return production;
+    }
     if (host == 'sites.google.com' || host.endsWith('.sites.google.com')) {
       return production;
     }

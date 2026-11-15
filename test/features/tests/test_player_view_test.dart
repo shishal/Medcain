@@ -370,4 +370,44 @@ void main() {
     expect(session.value.currentIndex, 2);
     expect(find.text('Section 2 Q1'), findsOneWidget);
   });
+
+  testWidgets('Submit test requires confirmation before calling onFinish', (
+    tester,
+  ) async {
+    var finishCount = 0;
+    final session = ValueNotifier(_session(FeedbackTiming.onSubmit));
+    addTearDown(session.dispose);
+
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TestPlayerView(
+          session: session.value,
+          onSelectOption: (_) {},
+          onGoTo: (_) {},
+          onClear: () {},
+          onToggleMark: () {},
+          onMarkAndNext: () {},
+          onPrevious: () {},
+          onSaveAndNext: () {},
+          onFinish: () => finishCount++,
+          onExit: () {},
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Submit test'));
+    await tester.pumpAndSettle();
+    expect(finishCount, 0);
+    expect(find.text('Submit test?'), findsOneWidget);
+    expect(find.textContaining('2 questions are still unanswered'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('confirm-finish-test')));
+    await tester.pumpAndSettle();
+    expect(finishCount, 1);
+  });
 }

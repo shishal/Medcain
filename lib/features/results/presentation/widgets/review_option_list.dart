@@ -1,10 +1,11 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../../../core/theme/player_colors.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../core/utils/open_external_link.dart';
 import '../../../../core/widgets/markdown_copy.dart';
 import '../../../tests/domain/question_option.dart';
 import '../../../tests/presentation/widgets/option_list.dart';
-import '../../../../core/theme/player_colors.dart';
 import '../../domain/attempt_review.dart';
 
 /// Options in review: tap does nothing; colors come from [ReviewItem.visualFor].
@@ -90,11 +91,11 @@ class ReviewStatusBanner extends StatelessWidget {
                 MarkdownCopy(data: explanation),
               ],
               if (videoUrl != null) ...[
-                const SizedBox(height: Spacing.sm),
-                Text(
-                  'Video: $videoUrl',
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(color: colorScheme.onSurfaceVariant),
+                const SizedBox(height: Spacing.xs),
+                TextButton.icon(
+                  onPressed: () => openExternalLink(context, videoUrl),
+                  icon: const Icon(Icons.play_circle_outline, size: 18),
+                  label: const Text('Watch explanation'),
                 ),
               ],
             ],

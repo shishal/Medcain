@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -53,6 +55,14 @@ class PyqRepository {
 
   final SupabaseClient _client;
 
+  static const _teaserSelect =
+      '${QuestionColumns.id},${QuestionColumns.lessonId},'
+      '${QuestionColumns.topicId},${QuestionColumns.questionText},'
+      '${QuestionColumns.marks},${QuestionColumns.requiredPlan},'
+      '${QuestionColumns.kind},${QuestionColumns.difficulty},'
+      '${QuestionColumns.hasDirectAnswer},${QuestionColumns.hasExplanation},'
+      '${QuestionColumns.publicCode},${QuestionColumns.isLocked}';
+
   Future<Result<List<ResourceLink>>> fetchLessonResources(
     String lessonId,
   ) async {
@@ -86,11 +96,11 @@ class PyqRepository {
       return const Failure('Not signed in.');
     }
     try {
-      // question_listings includes Pro rows and nulls the stem when the
-      // caller's plan is too low. pyq_teasers stays plan-gated for the reader.
+      // Select only teaser header columns — not full essay sample answers or
+      // explanations — and fetch appearances + textbook refs in parallel.
       final rows = await _client
           .from(Tables.questionListings)
-          .select()
+          .select(_teaserSelect)
           .eq(PyqTeaserColumns.lessonId, lessonId)
           .order(PyqTeaserColumns.id);
       final all = (rows as List<dynamic>)
@@ -102,22 +112,37 @@ class PyqRepository {
       }
 
       final ids = all.map((t) => t.id).toList();
-      final appRows = await _client
-          .from(Tables.questionAppearances)
-          .select(
-            '${AppearanceColumns.questionId},'
-            '${AppearanceColumns.examPaperEmbed}:${Tables.examPapers}('
-            '${ExamPaperColumns.universityId},'
-            '${ExamPaperColumns.examYear})',
-          )
-          .inFilter(AppearanceColumns.questionId, ids);
+      late final List<dynamic> appRows;
+      late final List<dynamic> refRows;
+      await Future.wait([
+        _client
+            .from(Tables.questionAppearances)
+            .select(
+              '${AppearanceColumns.questionId},'
+              '${AppearanceColumns.examPaperEmbed}:${Tables.examPapers}('
+              '${ExamPaperColumns.universityId},'
+              '${ExamPaperColumns.examYear})',
+            )
+            .inFilter(AppearanceColumns.questionId, ids)
+            .then((v) => appRows = v as List<dynamic>),
+        _client
+            .from(Tables.questionTextbookRefs)
+            .select(
+              '${TextbookRefColumns.questionId},${TextbookRefColumns.page},'
+              '${TextbookRefColumns.sectionHeading},'
+              '${TextbookRefColumns.textbookEmbed}:${Tables.textbooks}('
+              '${TextbookColumns.title},${TextbookColumns.edition},'
+              '${TextbookColumns.sheetKey})',
+            )
+            .inFilter(TextbookRefColumns.questionId, ids)
+            .then((v) => refRows = v as List<dynamic>),
+      ]);
 
       final contentUni = universityId;
 
       final yearsByQuestionUni = <String, Map<String, List<int>>>{};
       final unisByQuestion = <String, Set<String>>{};
-      for (final raw
-          in (appRows as List<dynamic>).cast<Map<String, dynamic>>()) {
+      for (final raw in appRows.cast<Map<String, dynamic>>()) {
         final qid = raw[AppearanceColumns.questionId] as String;
         final paper = raw[AppearanceColumns.examPaperEmbed];
         final map = paper is Map<String, dynamic> ? paper : <String, dynamic>{};
@@ -134,19 +159,8 @@ class PyqRepository {
         }
       }
 
-      final refRows = await _client
-          .from(Tables.questionTextbookRefs)
-          .select(
-            '${TextbookRefColumns.questionId},${TextbookRefColumns.page},'
-            '${TextbookRefColumns.sectionHeading},'
-            '${TextbookRefColumns.textbookEmbed}:${Tables.textbooks}('
-            '${TextbookColumns.title},${TextbookColumns.edition},'
-            '${TextbookColumns.sheetKey})',
-          )
-          .inFilter(TextbookRefColumns.questionId, ids);
       final firstRef = <String, String>{};
-      for (final raw
-          in (refRows as List<dynamic>).cast<Map<String, dynamic>>()) {
+      for (final raw in refRows.cast<Map<String, dynamic>>()) {
         final qid = raw[TextbookRefColumns.questionId] as String;
         if (firstRef.containsKey(qid)) continue;
         firstRef[qid] = TextbookCitation.fromJson(raw).label;
@@ -188,12 +202,22 @@ class PyqRepository {
       return const Failure('Not signed in.');
     }
     try {
-      final topicRows = await _client
-          .from(Tables.topics)
-          .select()
-          .eq(TopicColumns.subjectId, subjectId)
-          .order(TopicColumns.displayOrder);
-      final topics = (topicRows as List<dynamic>).cast<Map<String, dynamic>>();
+      late final List<dynamic> topicRows;
+      late final List<dynamic> paperRows;
+      await Future.wait([
+        _client
+            .from(Tables.topics)
+            .select('${TopicColumns.id},${TopicColumns.name}')
+            .eq(TopicColumns.subjectId, subjectId)
+            .order(TopicColumns.displayOrder)
+            .then((v) => topicRows = v as List<dynamic>),
+        _client
+            .from(Tables.examPapers)
+            .select(ExamPaperColumns.id)
+            .eq(ExamPaperColumns.subjectId, subjectId)
+            .then((v) => paperRows = v as List<dynamic>),
+      ]);
+      final topics = topicRows.cast<Map<String, dynamic>>();
       final chapters = [
         for (final t in topics)
           PyqChapter(
@@ -203,13 +227,42 @@ class PyqRepository {
       ];
       final topicNameById = {for (final c in chapters) c.id: c.name};
       final topicIds = chapters.map((c) => c.id).toList();
-      final lessonRows = await _inFilterSelect(
-        table: Tables.lessons,
-        column: LessonColumns.topicId,
-        ids: topicIds,
-        select:
-            '${LessonColumns.id},${LessonColumns.name},${LessonColumns.topicId}',
-      );
+      final paperIds = [
+        for (final raw in paperRows.cast<Map<String, dynamic>>())
+          if (raw[ExamPaperColumns.id] is String)
+            raw[ExamPaperColumns.id] as String,
+      ];
+
+      late final List<Map<String, dynamic>> lessonRows;
+      late final List<Map<String, dynamic>> topicQuestionRows;
+      late final List<Map<String, dynamic>> appearanceRows;
+      await Future.wait([
+        _inFilterSelect(
+          table: Tables.lessons,
+          column: LessonColumns.topicId,
+          ids: topicIds,
+          select:
+              '${LessonColumns.id},${LessonColumns.name},${LessonColumns.topicId}',
+        ).then((v) => lessonRows = v),
+        _inFilterSelect(
+          table: Tables.questionListings,
+          column: QuestionColumns.topicId,
+          ids: topicIds,
+          select: _teaserSelect,
+          activeOnly: true,
+        ).then((v) => topicQuestionRows = v),
+        _inFilterSelect(
+          table: Tables.questionAppearances,
+          column: AppearanceColumns.examPaperId,
+          ids: paperIds,
+          select: AppearanceColumns.questionId,
+          orderColumns: const [
+            AppearanceColumns.questionId,
+            AppearanceColumns.examPaperId,
+          ],
+        ).then((v) => appearanceRows = v),
+      ]);
+
       final lessonNameById = <String, String>{};
       final lessonTopicById = <String, String>{};
       for (final raw in lessonRows) {
@@ -219,18 +272,7 @@ class PyqRepository {
         if (tid != null) lessonTopicById[id] = tid;
       }
 
-      // question_listings, not questions: RLS would drop Pro rows entirely,
-      // and this view nulls question_text instead. No explanation or MCQ key.
-      const teaserSelect =
-          '${QuestionColumns.id},${QuestionColumns.lessonId},'
-          '${QuestionColumns.topicId},${QuestionColumns.questionText},'
-          '${QuestionColumns.marks},${QuestionColumns.requiredPlan},'
-          '${QuestionColumns.kind},${QuestionColumns.difficulty},'
-          '${QuestionColumns.hasDirectAnswer},${QuestionColumns.hasExplanation},'
-          '${QuestionColumns.publicCode}';
       final questionById = <String, Map<String, dynamic>>{};
-      // Nested function: visible only in this method, so topic + paper
-      // lookups share one map without a file-level helper.
       void addQuestions(List<Map<String, dynamic>> rows) {
         for (final row in rows) {
           final id = row[QuestionColumns.id] as String?;
@@ -238,52 +280,25 @@ class PyqRepository {
         }
       }
 
-      addQuestions(
-        await _inFilterSelect(
-          table: Tables.questionListings,
-          column: QuestionColumns.topicId,
-          ids: topicIds,
-          select: teaserSelect,
-          activeOnly: true,
-        ),
-      );
+      addQuestions(topicQuestionRows);
 
-      // Untagged stems still belong to a paper (university + subject + year).
-      final paperRows = await _client
-          .from(Tables.examPapers)
-          .select(ExamPaperColumns.id)
-          .eq(ExamPaperColumns.subjectId, subjectId);
-      final paperIds = [
-        for (final raw
-            in (paperRows as List<dynamic>).cast<Map<String, dynamic>>())
-          if (raw[ExamPaperColumns.id] is String)
-            raw[ExamPaperColumns.id] as String,
-      ];
-      if (paperIds.isNotEmpty) {
-        final appearanceRows = await _inFilterSelect(
-          table: Tables.questionAppearances,
-          column: AppearanceColumns.examPaperId,
-          ids: paperIds,
-          select: AppearanceColumns.questionId,
-          orderColumns: const [
-            AppearanceColumns.questionId,
-            AppearanceColumns.examPaperId,
-          ],
-        );
+      if (appearanceRows.isNotEmpty) {
         final missingIds = <String>{
           for (final raw in appearanceRows)
             if (raw[AppearanceColumns.questionId] is String)
               raw[AppearanceColumns.questionId] as String,
         }.difference(questionById.keys.toSet());
-        addQuestions(
-          await _inFilterSelect(
-            table: Tables.questionListings,
-            column: QuestionColumns.id,
-            ids: missingIds.toList(),
-            select: teaserSelect,
-            activeOnly: true,
-          ),
-        );
+        if (missingIds.isNotEmpty) {
+          addQuestions(
+            await _inFilterSelect(
+              table: Tables.questionListings,
+              column: QuestionColumns.id,
+              ids: missingIds.toList(),
+              select: _teaserSelect,
+              activeOnly: true,
+            ),
+          );
+        }
       }
 
       final all = questionById.values.map(PyqTeaser.fromJson).toList();
@@ -450,47 +465,82 @@ class PyqRepository {
     required String questionId,
     required PlanTier plan,
   }) async {
-    if (_client.auth.currentUser == null) {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
       return const Failure('Not signed in.');
     }
     try {
-      final teaserRows = await _client
-          .from(Tables.pyqTeasers)
-          .select()
-          .eq(PyqTeaserColumns.id, questionId)
-          .limit(1);
-      final teasers = (teaserRows as List<dynamic>)
-          .cast<Map<String, dynamic>>();
-      if (teasers.isEmpty) {
+      // Fetch teaser + detail columns from `question_listings` alongside
+      // appearances, textbook citations, question links, and progress in one
+      // parallel batch (instead of 7 sequential round-trips).
+      const detailSelect =
+          '$_teaserSelect,'
+          '${QuestionColumns.optionA},${QuestionColumns.optionB},'
+          '${QuestionColumns.optionC},${QuestionColumns.optionD},'
+          '${QuestionColumns.correctOption},${QuestionColumns.explanationText},'
+          '${QuestionColumns.explanationDeep},${QuestionColumns.sampleAnswer},'
+          '${QuestionColumns.answersVisible}';
+
+      late final List<dynamic> qRows;
+      late final List<dynamic> appearancesRows;
+      late final List<dynamic> refRows;
+      late final List<dynamic> qRes;
+      late final List<dynamic> progressRows;
+
+      await Future.wait([
+        _client
+            .from(Tables.questionListings)
+            .select(detailSelect)
+            .eq(QuestionColumns.id, questionId)
+            .limit(1)
+            .then((v) => qRows = v as List<dynamic>),
+        _client
+            .from(Tables.questionAppearances)
+            .select(
+              '${AppearanceColumns.examPaperEmbed}:${Tables.examPapers}('
+              '${ExamPaperColumns.examYear},${ExamPaperColumns.examMonth},'
+              '${ExamPaperColumns.paperName})',
+            )
+            .eq(AppearanceColumns.questionId, questionId)
+            .then((v) => appearancesRows = v as List<dynamic>),
+        _client
+            .from(Tables.questionTextbookRefs)
+            .select(
+              '${TextbookRefColumns.page},${TextbookRefColumns.sectionHeading},'
+              '${TextbookRefColumns.textbookEmbed}:${Tables.textbooks}('
+              '${TextbookColumns.title},${TextbookColumns.authors},'
+              '${TextbookColumns.edition},${TextbookColumns.sheetKey})',
+            )
+            .eq(TextbookRefColumns.questionId, questionId)
+            .then((v) => refRows = v as List<dynamic>),
+        _client
+            .from(Tables.questionResources)
+            .select()
+            .eq(ResourceColumns.questionId, questionId)
+            .order(ResourceColumns.displayOrder)
+            .then((v) => qRes = v as List<dynamic>),
+        _client
+            .from(Tables.questionProgress)
+            .select(QuestionProgressColumns.learntAt)
+            .eq(QuestionProgressColumns.userId, userId)
+            .eq(QuestionProgressColumns.questionId, questionId)
+            .limit(1)
+            .then((v) => progressRows = v as List<dynamic>),
+      ]);
+
+      final qList = qRows.cast<Map<String, dynamic>>();
+      if (qList.isEmpty) {
         return const Failure('This question is not available.');
       }
-      final teaser = PyqTeaser.fromJson(teasers.first);
+      final q = qList.first;
+      final appearances = appearancesRows
+          .cast<Map<String, dynamic>>()
+          .map(ExamAppearance.fromJson)
+          .toList();
+      final teaser = PyqTeaser.fromJson(q).copyWith(
+        appearanceCount: appearances.length,
+      );
       final lessonId = teaser.lessonId;
-
-      final appearancesRows = await _client
-          .from(Tables.questionAppearances)
-          .select(
-            '${AppearanceColumns.examPaperEmbed}:${Tables.examPapers}('
-            '${ExamPaperColumns.examYear},${ExamPaperColumns.examMonth},'
-            '${ExamPaperColumns.paperName})',
-          )
-          .eq(AppearanceColumns.questionId, questionId);
-
-      final refRows = await _client
-          .from(Tables.questionTextbookRefs)
-          .select(
-            '${TextbookRefColumns.page},${TextbookRefColumns.sectionHeading},'
-            '${TextbookRefColumns.textbookEmbed}:${Tables.textbooks}('
-            '${TextbookColumns.title},${TextbookColumns.authors},'
-            '${TextbookColumns.edition},${TextbookColumns.sheetKey})',
-          )
-          .eq(TextbookRefColumns.questionId, questionId);
-
-      final qRes = await _client
-          .from(Tables.questionResources)
-          .select()
-          .eq(ResourceColumns.questionId, questionId)
-          .order(ResourceColumns.displayOrder);
 
       var lessonRes = <dynamic>[];
       if (lessonId != null) {
@@ -503,68 +553,31 @@ class PyqRepository {
                 as List<dynamic>;
       }
 
-      String? optionA;
-      String? optionB;
-      String? optionC;
-      String? optionD;
-      String? correctOption;
-      String? explanationText;
-      String? explanationDeep;
-      String? sample;
-      var canReadSample = false;
-      final qRows = await _client
-          .from(Tables.questionListings)
-          .select(
-            '${QuestionColumns.optionA},${QuestionColumns.optionB},'
-            '${QuestionColumns.optionC},${QuestionColumns.optionD},'
-            '${QuestionColumns.correctOption},${QuestionColumns.explanationText},'
-            '${QuestionColumns.explanationDeep},${QuestionColumns.sampleAnswer},'
-            '${QuestionColumns.answersVisible}',
-          )
-          .eq(QuestionColumns.id, questionId)
-          .limit(1);
-      final qList = (qRows as List<dynamic>).cast<Map<String, dynamic>>();
-      if (qList.isNotEmpty) {
-        final q = qList.first;
-        optionA = q[QuestionColumns.optionA] as String?;
-        optionB = q[QuestionColumns.optionB] as String?;
-        optionC = q[QuestionColumns.optionC] as String?;
-        optionD = q[QuestionColumns.optionD] as String?;
-        correctOption = q[QuestionColumns.correctOption] as String?;
-        explanationText = q[QuestionColumns.explanationText] as String?;
-        explanationDeep = q[QuestionColumns.explanationDeep] as String?;
-        sample = q[QuestionColumns.sampleAnswer] as String?;
-        canReadSample = q[QuestionColumns.answersVisible] == true;
-      }
+      final progress = progressRows.cast<Map<String, dynamic>>();
+      final learnt =
+          progress.isNotEmpty &&
+          progress.first[QuestionProgressColumns.learntAt] != null;
 
-      final userId = _client.auth.currentUser!.id;
-      final progressRows = await _client
-          .from(Tables.questionProgress)
-          .select('learnt_at')
-          .eq('user_id', userId)
-          .eq('question_id', questionId)
-          .limit(1);
-      final progress = (progressRows as List<dynamic>)
-          .cast<Map<String, dynamic>>();
-      final learnt = progress.isNotEmpty && progress.first['learnt_at'] != null;
-
-      await _client.rpc(
-        RpcFunctions.recordStudyEvent,
-        params: {
-          StudyEventParams.kind: 'opened_pyq',
-          StudyEventParams.questionId: questionId,
-          StudyEventParams.lessonId: lessonId,
-        },
+      // Fire-and-forget analytics event so the reader renders without waiting
+      // on an extra RPC round-trip.
+      unawaited(
+        _client
+            .rpc(
+              RpcFunctions.recordStudyEvent,
+              params: {
+                StudyEventParams.kind: 'opened_pyq',
+                StudyEventParams.questionId: questionId,
+                StudyEventParams.lessonId: lessonId,
+              },
+            )
+            .then((_) {}, onError: (_) {}),
       );
 
       return Success(
         PyqDetail(
           teaser: teaser,
-          appearances: (appearancesRows as List<dynamic>)
-              .cast<Map<String, dynamic>>()
-              .map(ExamAppearance.fromJson)
-              .toList(),
-          textbookRefs: (refRows as List<dynamic>)
+          appearances: appearances,
+          textbookRefs: refRows
               .cast<Map<String, dynamic>>()
               .map(TextbookCitation.fromJson)
               .toList(),
@@ -572,20 +585,20 @@ class PyqRepository {
               .cast<Map<String, dynamic>>()
               .map(ResourceLink.fromJson)
               .toList(),
-          questionResources: (qRes as List<dynamic>)
+          questionResources: qRes
               .cast<Map<String, dynamic>>()
               .map(ResourceLink.fromJson)
               .toList(),
-          sampleAnswer: sample,
-          canReadSample: canReadSample,
+          sampleAnswer: q[QuestionColumns.sampleAnswer] as String?,
+          canReadSample: q[QuestionColumns.answersVisible] == true,
           questionLearnt: learnt,
-          optionA: optionA,
-          optionB: optionB,
-          optionC: optionC,
-          optionD: optionD,
-          correctOption: correctOption,
-          explanationText: explanationText,
-          explanationDeep: explanationDeep,
+          optionA: q[QuestionColumns.optionA] as String?,
+          optionB: q[QuestionColumns.optionB] as String?,
+          optionC: q[QuestionColumns.optionC] as String?,
+          optionD: q[QuestionColumns.optionD] as String?,
+          correctOption: q[QuestionColumns.correctOption] as String?,
+          explanationText: q[QuestionColumns.explanationText] as String?,
+          explanationDeep: q[QuestionColumns.explanationDeep] as String?,
         ),
       );
     } catch (e) {
@@ -608,12 +621,12 @@ class PyqRepository {
   }) async {
     if (ids.isEmpty) return const [];
     const chunkSize = 80;
+    const maxParallelChunks = 4;
     const pageSize = 1000;
     final orders = orderColumns.isEmpty ? const ['id'] : orderColumns;
-    final rows = <Map<String, dynamic>>[];
-    for (var i = 0; i < ids.length; i += chunkSize) {
-      final end = i + chunkSize > ids.length ? ids.length : i + chunkSize;
-      final chunk = ids.sublist(i, end);
+
+    Future<List<Map<String, dynamic>>> fetchChunk(List<String> chunk) async {
+      final chunkRows = <Map<String, dynamic>>[];
       var from = 0;
       while (true) {
         var query = _client.from(table).select(select).inFilter(column, chunk);
@@ -626,9 +639,27 @@ class PyqRepository {
         }
         final page = await ordered.range(from, from + pageSize - 1);
         final list = List<Map<String, dynamic>>.from(page as List);
-        rows.addAll(list);
+        chunkRows.addAll(list);
         if (list.length < pageSize) break;
         from += pageSize;
+      }
+      return chunkRows;
+    }
+
+    final chunks = <List<String>>[
+      for (var i = 0; i < ids.length; i += chunkSize)
+        ids.sublist(i, i + chunkSize > ids.length ? ids.length : i + chunkSize),
+    ];
+    final rows = <Map<String, dynamic>>[];
+    for (var b = 0; b < chunks.length; b += maxParallelChunks) {
+      final batchEnd = b + maxParallelChunks > chunks.length
+          ? chunks.length
+          : b + maxParallelChunks;
+      final batchResults = await Future.wait([
+        for (var c = b; c < batchEnd; c++) fetchChunk(chunks[c]),
+      ]);
+      for (final chunkRows in batchResults) {
+        rows.addAll(chunkRows);
       }
     }
     return rows;

@@ -19,8 +19,11 @@ class ReadingTextZoom extends ChangeNotifier {
   bool get canIncrease => scale < maxScale;
 
   void setScale(double next) {
-    final clamped = next.clamp(minScale, maxScale).toDouble();
-    if (clamped == scale) return;
+    // Quantize to 2.5% steps so 120Hz two-finger pinch jitter doesn't trigger
+    // 120 full Markdown text relayouts per second.
+    final quantized = ((next * 40).round() / 40).clamp(minScale, maxScale);
+    final clamped = quantized.toDouble();
+    if ((clamped - scale).abs() < 0.001) return;
     scale = clamped;
     notifyListeners();
   }

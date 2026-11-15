@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/comic_colors.dart';
 import '../../../../core/theme/player_colors.dart';
 import '../../../../core/theme/spacing.dart';
@@ -68,6 +70,18 @@ class PyqTeaserCard extends ConsumerWidget {
         ? null
         : comic.proGold;
 
+    void handleLockedTap() {
+      // Tests may mount [PyqTeaserCard] inside a plain [MaterialApp] or a
+      // minimal [GoRouter] that has no `/upgrade` route configured.
+      final router = GoRouter.maybeOf(context);
+      if (router == null) return;
+      final target = AppRoutes.upgradePath(teaser.requiredPlan);
+      final matches = router.configuration.findMatch(Uri.parse(target));
+      if (matches.isNotEmpty) {
+        router.push(target);
+      }
+    }
+
     return ComicCard(
       onTap: locked ? null : onTap,
       child: Column(
@@ -113,9 +127,20 @@ class PyqTeaserCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: Spacing.sm),
-          if (locked)
-            const _MaskedStem()
-          else
+          if (locked) ...[
+            const _MaskedStem(),
+            const SizedBox(height: Spacing.xs),
+            TextButton.icon(
+              onPressed: handleLockedTap,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                alignment: Alignment.centerLeft,
+              ),
+              icon: Icon(Icons.lock_outline, size: 15, color: scheme.primary),
+              label: Text('Unlock with ${teaser.requiredPlan.label}'),
+            ),
+          ] else
             Text(
               teaser.questionText,
               // The reader shows the full stem; a 10-mark essay would otherwise

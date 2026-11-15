@@ -33,6 +33,7 @@ class BookmarksScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('My Bookmarks'),
         leading: IconButton(
+          tooltip: 'Back',
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             if (context.canPop()) {
@@ -61,7 +62,12 @@ class BookmarksScreen extends ConsumerWidget {
             final questions = ids == null
                 ? items
                 : items.where((item) => ids.contains(item.questionId)).toList();
-            final lessons = lessonsAsync.value ?? const <BookmarkedLesson>[];
+            final lessonIds = ref.watch(bookmarkedLessonIdsProvider).value;
+            final lessons = lessonIds == null
+                ? (lessonsAsync.value ?? const <BookmarkedLesson>[])
+                : (lessonsAsync.value ?? const <BookmarkedLesson>[])
+                      .where((item) => lessonIds.contains(item.lessonId))
+                      .toList();
 
             if (questions.isEmpty && lessons.isEmpty) {
               return ListView(
@@ -80,37 +86,75 @@ class BookmarksScreen extends ConsumerWidget {
               );
             }
 
-            return ListView(
-              padding: const EdgeInsets.all(Spacing.md),
-              children: [
+            // Allocate the reader sequence once instead of O(N^2) per row, and
+            // build rows lazily via CustomScrollView + SliverList.builder.
+            final questionIds = [
+              for (final question in questions) question.questionId,
+            ];
+
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
                 if (questions.isNotEmpty) ...[
-                  _SectionLabel(
-                    'Questions'
-                    '${questions.length > 1 ? ' · ${questions.length}' : ''}',
-                  ),
-                  for (var i = 0; i < questions.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: Spacing.sm),
-                      child: _BookmarkTile(
-                        item: questions[i],
-                        index: i,
-                        questionIds: [
-                          for (final question in questions) question.questionId,
-                        ],
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      Spacing.md,
+                      Spacing.md,
+                      Spacing.md,
+                      0,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: _SectionLabel(
+                        'Questions'
+                        '${questions.length > 1 ? ' · ${questions.length}' : ''}',
                       ),
                     ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+                    sliver: SliverList.builder(
+                      itemCount: questions.length,
+                      itemBuilder: (context, i) => Padding(
+                        padding: const EdgeInsets.only(bottom: Spacing.sm),
+                        child: _BookmarkTile(
+                          item: questions[i],
+                          index: i,
+                          questionIds: questionIds,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
                 if (lessons.isNotEmpty) ...[
-                  const SizedBox(height: Spacing.md),
-                  _SectionLabel(
-                    'Lessons'
-                    '${lessons.length > 1 ? ' · ${lessons.length}' : ''}',
-                  ),
-                  for (final item in lessons)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: Spacing.sm),
-                      child: _LessonTile(item: item),
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(
+                      Spacing.md,
+                      questions.isEmpty ? Spacing.md : Spacing.lg,
+                      Spacing.md,
+                      0,
                     ),
+                    sliver: SliverToBoxAdapter(
+                      child: _SectionLabel(
+                        'Lessons'
+                        '${lessons.length > 1 ? ' · ${lessons.length}' : ''}',
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      Spacing.md,
+                      0,
+                      Spacing.md,
+                      Spacing.md,
+                    ),
+                    sliver: SliverList.builder(
+                      itemCount: lessons.length,
+                      itemBuilder: (context, i) => Padding(
+                        padding: const EdgeInsets.only(bottom: Spacing.sm),
+                        child: _LessonTile(item: lessons[i]),
+                      ),
+                    ),
+                  ),
                 ],
               ],
             );
@@ -180,7 +224,16 @@ class _BookmarkTile extends StatelessWidget {
             : Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
         trailing: BookmarkIconButton(questionId: item.questionId),
         onTap: item.isPlanLocked
-            ? null
+            ? () {
+                final router = GoRouter.maybeOf(context);
+                if (router == null) return;
+                final matches = router.configuration.findMatch(
+                  Uri.parse(AppRoutes.upgrade),
+                );
+                if (matches.isNotEmpty) {
+                  router.push(AppRoutes.upgrade);
+                }
+              }
             : () => openPyqReader(
                 context,
                 questionId: item.questionId,

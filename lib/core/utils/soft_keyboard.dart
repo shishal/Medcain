@@ -1,5 +1,6 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Asks the platform to show the software keyboard.
 ///
@@ -12,4 +13,10 @@ void requestSoftKeyboard() {
   SchedulerBinding.instance.addPostFrameCallback((_) {
     SystemChannels.textInput.invokeMethod<void>('TextInput.show');
   });
+}
+
+/// Closes the software keyboard when tapping outside a focused [TextField] —
+/// especially important on iOS numeric phone pads, which have no Done button.
+void dismissSoftKeyboard(PointerDownEvent _) {
+  FocusManager.instance.primaryFocus?.unfocus();
 }

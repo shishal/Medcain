@@ -24,6 +24,7 @@ class NotificationsInboxScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Notifications'),
         leading: IconButton(
+          tooltip: 'Back',
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             if (context.canPop()) {
@@ -81,13 +82,21 @@ class NotificationsInboxScreen extends ConsumerWidget {
   }
 }
 
-class _AnnouncementTile extends ConsumerWidget {
+class _AnnouncementTile extends ConsumerStatefulWidget {
   const _AnnouncementTile({required this.item});
 
   final AppAnnouncement item;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_AnnouncementTile> createState() => _AnnouncementTileState();
+}
+
+class _AnnouncementTileState extends ConsumerState<_AnnouncementTile> {
+  var _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
     final scheme = Theme.of(context).colorScheme;
     final comic = ComicColors.of(context);
     final textTheme = Theme.of(context).textTheme;
@@ -100,7 +109,7 @@ class _AnnouncementTile extends ConsumerWidget {
               scheme.primary.withValues(alpha: 0.08),
               comic.stickerLift,
             ),
-      onTap: () => _open(context, ref),
+      onTap: _open,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -161,8 +170,8 @@ class _AnnouncementTile extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   item.body,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: _expanded ? null : 3,
+                  overflow: _expanded ? null : TextOverflow.ellipsis,
                   style: textTheme.bodyMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -175,22 +184,62 @@ class _AnnouncementTile extends ConsumerWidget {
     );
   }
 
-  Future<void> _open(BuildContext context, WidgetRef ref) async {
-    final result = await ref
-        .read(announcementsProvider.notifier)
-        .markRead(item.id);
-    if (!context.mounted) return;
-
-    if (result case Failure(:final message)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-      return;
+  Future<void> _open() async {
+    final item = widget.item;
+    setState(() => _expanded = !_expanded);
+    if (!item.isRead) {
+      final result = await ref
+          .read(announcementsProvider.notifier)
+          .markRead(item.id);
+      if (!mounted) return;
+      if (result case Failure(:final message)) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+        return;
+      }
     }
 
     final link = item.deepLink?.trim();
-    if (link != null && link.startsWith('/')) {
-      context.push(link);
+    if (link == null || link.isEmpty) return;
+    _navigateSafeDeepLink(context, link);
+  }
+
+  /// Allows only known in-app student routes (blocking `//host`, `/admin`,
+  /// `/splash`, `/login`, or malformed paths) and uses `go` for shell tabs.
+  static void _navigateSafeDeepLink(BuildContext context, String raw) {
+    if (!raw.startsWith('/') || raw.startsWith('//')) return;
+    final uri = Uri.tryParse(raw);
+    if (uri == null || uri.hasScheme || uri.host.isNotEmpty) return;
+    final path = uri.path;
+
+    // Shell branches live inside StatefulShellRoute and must use `go`.
+    const shellRoutes = {
+      AppRoutes.home,
+      AppRoutes.practice,
+      AppRoutes.profile,
+    };
+    if (shellRoutes.contains(path)) {
+      context.go(raw);
+      return;
+    }
+
+    const pushPrefixes = [
+      AppRoutes.upgrade,
+      AppRoutes.bookmarks,
+      AppRoutes.progress,
+      AppRoutes.search,
+      AppRoutes.notifications,
+      '/subjects/',
+      '/topics/',
+      '/lessons/',
+      '/pyq/',
+    ];
+    final allowed = pushPrefixes.any(
+      (prefix) => path == prefix || path.startsWith(prefix),
+    );
+    if (allowed) {
+      context.push(raw);
     }
   }
 

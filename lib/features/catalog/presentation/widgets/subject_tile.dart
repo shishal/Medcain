@@ -36,16 +36,21 @@ class SubjectStickerGrid extends StatelessWidget {
       );
     }
 
+    final coverageById = {for (final row in coverage) row.id: row};
+    final textScale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.35);
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
       itemCount: subjects.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: Spacing.md,
         crossAxisSpacing: Spacing.md,
-        childAspectRatio: 1.08,
+        // Scale card height with accessibility font size so `Spacer()` never
+        // collapses and overflows on compact 360dp screens at 1.3x+ text scale.
+        mainAxisExtent: 152 * textScale,
       ),
       itemBuilder: (context, i) {
         final subject = subjects[i];
@@ -53,19 +58,12 @@ class SubjectStickerGrid extends StatelessWidget {
           index: i,
           child: SubjectSticker(
             subject: subject,
-            coverage: showLessonProgress ? _match(subject) : null,
+            coverage: showLessonProgress ? coverageById[subject.id] : null,
             showLessonProgress: showLessonProgress,
           ),
         );
       },
     );
-  }
-
-  SubjectCoverage? _match(CatalogSubject subject) {
-    for (final row in coverage) {
-      if (row.id == subject.id) return row;
-    }
-    return null;
   }
 }
 

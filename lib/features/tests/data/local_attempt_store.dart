@@ -86,6 +86,17 @@ class LocalAttemptStore {
     return snapshots;
   }
 
+  Future<void> clearAll() async {
+    try {
+      final dir = await _attemptsDir();
+      if (await dir.exists()) {
+        await dir.delete(recursive: true);
+      }
+    } on Object {
+      // Best-effort cleanup on sign-out; never block logging out.
+    }
+  }
+
   Future<Directory> _attemptsDir() async {
     final root = await _documentsDirectory();
     return Directory('${root.path}/attempts');

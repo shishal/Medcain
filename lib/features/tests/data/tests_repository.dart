@@ -98,43 +98,47 @@ class TestsRepository {
     }
 
     try {
-      final testRows = await _client
-          .from(Tables.tests)
-          .select(
-            '${TestColumns.id},'
-            '${TestColumns.title},'
-            '${TestColumns.feedbackTiming},'
-            '${TestColumns.showExplanationLevel},'
-            '${TestColumns.isEphemeralPractice},'
-            '${TestColumns.isSectional},'
-            '${TestColumns.sectionCount},'
-            '${TestColumns.questionsPerSection},'
-            '${TestColumns.sectionDurationMinutes},'
-            '${TestColumns.totalDurationMinutes},'
-            '${TestColumns.timerEnabled}',
-          )
-          .eq(TestColumns.id, testId)
-          .limit(1);
+      late final List<dynamic> testRows;
+      late final List<dynamic> questionRows;
+      await Future.wait([
+        _client
+            .from(Tables.tests)
+            .select(
+              '${TestColumns.id},'
+              '${TestColumns.title},'
+              '${TestColumns.feedbackTiming},'
+              '${TestColumns.showExplanationLevel},'
+              '${TestColumns.isEphemeralPractice},'
+              '${TestColumns.isSectional},'
+              '${TestColumns.sectionCount},'
+              '${TestColumns.questionsPerSection},'
+              '${TestColumns.sectionDurationMinutes},'
+              '${TestColumns.totalDurationMinutes},'
+              '${TestColumns.timerEnabled}',
+            )
+            .eq(TestColumns.id, testId)
+            .limit(1)
+            .then((v) => testRows = v as List<dynamic>),
+        _client
+            .from(Tables.testQuestions)
+            .select(
+              '${TestQuestionColumns.questionId},'
+              '${TestQuestionColumns.orderIndex},'
+              '${TestQuestionColumns.sectionNumber}',
+            )
+            .eq(TestQuestionColumns.testId, testId)
+            .order(TestQuestionColumns.orderIndex)
+            .then((v) => questionRows = v as List<dynamic>),
+      ]);
 
-      final tests = (testRows as List<dynamic>).cast<Map<String, dynamic>>();
+      final tests = testRows.cast<Map<String, dynamic>>();
       if (tests.isEmpty) {
         return const Failure(
           'This test is not available on your current plan.',
         );
       }
 
-      final questionRows = await _client
-          .from(Tables.testQuestions)
-          .select(
-            '${TestQuestionColumns.questionId},'
-            '${TestQuestionColumns.orderIndex},'
-            '${TestQuestionColumns.sectionNumber}',
-          )
-          .eq(TestQuestionColumns.testId, testId)
-          .order(TestQuestionColumns.orderIndex);
-
-      final slots = (questionRows as List<dynamic>)
-          .cast<Map<String, dynamic>>();
+      final slots = questionRows.cast<Map<String, dynamic>>();
       final bodies = await _listingById([
         for (final row in slots)
           if (row[TestQuestionColumns.questionId] is String)
@@ -168,31 +172,43 @@ class TestsRepository {
   }
 
   /// Question bodies through `question_listings`, which redacts by plan.
+  /// Locked rows (`is_locked == true` or null `question_text`) are excluded so
+  /// an expired plan never renders a blank card with a fake default answer key.
   Future<Map<String, Map<String, dynamic>>> _listingById(
     List<String> ids,
   ) async {
     if (ids.isEmpty) return const {};
-    final rows = await _client
-        .from(Tables.questionListings)
-        .select(
-          '${QuestionColumns.id},'
-          '${QuestionColumns.questionText},'
-          '${QuestionColumns.optionA},'
-          '${QuestionColumns.optionB},'
-          '${QuestionColumns.optionC},'
-          '${QuestionColumns.optionD},'
-          '${QuestionColumns.correctOption},'
-          '${QuestionColumns.explanationText},'
-          '${QuestionColumns.explanationDeep},'
-          '${QuestionColumns.explanationVideoUrl},'
-          '${QuestionColumns.imageUrl}',
-        )
-        .inFilter(QuestionColumns.id, ids);
-    return {
-      for (final row in (rows as List<dynamic>).cast<Map<String, dynamic>>())
-        if (row[QuestionColumns.id] is String)
-          row[QuestionColumns.id] as String: row,
-    };
+    const chunkSize = 80;
+    final byId = <String, Map<String, dynamic>>{};
+    for (var i = 0; i < ids.length; i += chunkSize) {
+      final end = i + chunkSize > ids.length ? ids.length : i + chunkSize;
+      final rows = await _client
+          .from(Tables.questionListings)
+          .select(
+            '${QuestionColumns.id},'
+            '${QuestionColumns.questionText},'
+            '${QuestionColumns.optionA},'
+            '${QuestionColumns.optionB},'
+            '${QuestionColumns.optionC},'
+            '${QuestionColumns.optionD},'
+            '${QuestionColumns.correctOption},'
+            '${QuestionColumns.explanationText},'
+            '${QuestionColumns.explanationDeep},'
+            '${QuestionColumns.explanationVideoUrl},'
+            '${QuestionColumns.imageUrl},'
+            '${QuestionColumns.isLocked}',
+          )
+          .inFilter(QuestionColumns.id, ids.sublist(i, end));
+      for (final row in (rows as List<dynamic>).cast<Map<String, dynamic>>()) {
+        final id = row[QuestionColumns.id];
+        final stem = row[QuestionColumns.questionText];
+        final locked = row[QuestionColumns.isLocked] == true;
+        if (id is String && !locked && stem is String && stem.isNotEmpty) {
+          byId[id] = row;
+        }
+      }
+    }
+    return byId;
   }
 
   /// Existing in-progress attempt for this test, or null if none.
@@ -259,7 +275,8 @@ class TestsRepository {
           .select(_attemptListSelect)
           .eq(AttemptColumns.userId, userId)
           .eq(AttemptColumns.status, AttemptStatus.inProgress.dbValue)
-          .order(AttemptColumns.startedAt, ascending: false);
+          .order(AttemptColumns.startedAt, ascending: false)
+          .limit(10);
 
       final attempts = (rows as List<dynamic>)
           .cast<Map<String, dynamic>>()

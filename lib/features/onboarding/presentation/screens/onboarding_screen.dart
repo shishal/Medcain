@@ -47,11 +47,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _submit() async {
     final name = _nameController.text.trim();
-    if (name.isEmpty ||
-        _universityId == null ||
-        _collegeId == null ||
-        _phaseId == null) {
-      setState(() => _error = 'Fill in every field to continue.');
+    if (name.isEmpty) {
+      setState(() => _error = 'Add your name.');
+      return;
+    }
+    if (_phaseId == null) {
+      setState(() => _error = 'Pick your MBBS year.');
+      return;
+    }
+    if (_universityId == null) {
+      setState(() => _error = 'Pick your university.');
+      return;
+    }
+    if (_collegeId == null) {
+      setState(() => _error = 'Pick your college.');
       return;
     }
 
@@ -110,11 +119,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ? const AsyncValue<List<College>>.data([])
         : ref.watch(collegesProvider(_universityId!));
 
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(Spacing.lg),
-          children: [
+    return PopScope(
+      canPop: _step == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _step > 0) {
+          setState(() {
+            _error = null;
+            _step -= 1;
+          });
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(Spacing.lg),
+            children: [
             const Center(
               child: ComicMascot(
                 asset: BrandAssets.mascotStudy,
@@ -161,6 +180,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 textInputAction: TextInputAction.next,
                 stylusHandwritingEnabled: false,
                 onTap: requestSoftKeyboard,
+                onTapOutside: dismissSoftKeyboard,
+                onSubmitted: (_) => _next(),
                 decoration: const InputDecoration(labelText: 'Name'),
               ),
             if (_step == 2) ...[
@@ -309,6 +330,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }

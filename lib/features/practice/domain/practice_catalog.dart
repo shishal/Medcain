@@ -12,6 +12,10 @@ class PracticeCatalog {
   final List<Topic> topics;
   final List<PracticeTag> tags;
 
+  /// Expando caches the grouped list per [PracticeCatalog] instance while
+  /// keeping `const PracticeCatalog(...)` valid in tests and defaults.
+  static final _phaseCache = Expando<List<SubjectPhaseGroup>>();
+
   List<Topic> topicsForSubjects(Set<String> subjectIds) {
     if (subjectIds.isEmpty) return topics;
     return topics.where((t) => subjectIds.contains(t.subjectId)).toList();
@@ -19,6 +23,15 @@ class PracticeCatalog {
 
   /// One group when years aren't loaded, otherwise one group per year.
   List<SubjectPhaseGroup> get subjectsByPhase {
+    if (subjects.isEmpty) return const [];
+    final cached = _phaseCache[this];
+    if (cached != null) return cached;
+    final built = _buildSubjectsByPhase();
+    _phaseCache[this] = built;
+    return built;
+  }
+
+  List<SubjectPhaseGroup> _buildSubjectsByPhase() {
     final sorted = [...subjects]
       ..sort((a, b) {
         final byPhase = a.phaseOrder.compareTo(b.phaseOrder);

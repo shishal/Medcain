@@ -47,7 +47,7 @@ final class PracticePlanContextNotifierProvider
 }
 
 String _$practicePlanContextNotifierHash() =>
-    r'd0b4229da6680c15f25d6c34ae52d35f1dc01bec';
+    r'4a89b691c9ef9813739d816f522167302b7c1c47';
 
 /// Current plan's practice caps plus today's practice usage.
 ///

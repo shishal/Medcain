@@ -70,9 +70,12 @@ Deno.serve(async (req) => {
     }, 429);
   }
 
+  // Only purge expired unverified challenges so verified/consumed/blocked rows
+  // remain for audit and whatsapp_message_id replay deduplication.
   const { error: deleteError } = await service
     .from('whatsapp_auth_challenges')
     .delete()
+    .eq('status', 'pending')
     .lt('expires_at', new Date().toISOString());
   if (deleteError) console.error('delete expired', deleteError.message);
 

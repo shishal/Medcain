@@ -99,16 +99,18 @@ class _ComicMascotState extends State<ComicMascot>
 
     if (!widget.bounce) return image;
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final t = Curves.easeInOut.transform(_controller.value);
-        return Transform.translate(
-          offset: Offset(0, -7 * t),
-          child: Transform.rotate(angle: 0.04 * (t - 0.5), child: child),
-        );
-      },
-      child: image,
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          final t = Curves.easeInOut.transform(_controller.value);
+          return Transform.translate(
+            offset: Offset(0, -7 * t),
+            child: Transform.rotate(angle: 0.04 * (t - 0.5), child: child),
+          );
+        },
+        child: image,
+      ),
     );
   }
 }

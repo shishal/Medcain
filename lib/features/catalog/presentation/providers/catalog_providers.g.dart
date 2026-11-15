@@ -26,7 +26,7 @@ final class UniversitiesProvider
         argument: null,
         retry: null,
         name: r'universitiesProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -46,7 +46,7 @@ final class UniversitiesProvider
   }
 }
 
-String _$universitiesHash() => r'bf9520eaaeb7096b1ec63399e6979c913d327879';
+String _$universitiesHash() => r'e026971e4e8f1a8895988bd41192f91d3643e496';
 
 @ProviderFor(mbbsPhases)
 final mbbsPhasesProvider = MbbsPhasesProvider._();
@@ -65,7 +65,7 @@ final class MbbsPhasesProvider
         argument: null,
         retry: null,
         name: r'mbbsPhasesProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -85,7 +85,7 @@ final class MbbsPhasesProvider
   }
 }
 
-String _$mbbsPhasesHash() => r'9995a086bb968c8b7222d240193b6f4ffd1915e8';
+String _$mbbsPhasesHash() => r'42d89ec7b6d301af8a9d02782c71081a1c9d338f';
 
 @ProviderFor(colleges)
 final collegesProvider = CollegesFamily._();
@@ -104,7 +104,7 @@ final class CollegesProvider
   }) : super(
          retry: null,
          name: r'collegesProvider',
-         isAutoDispose: true,
+         isAutoDispose: false,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -142,7 +142,7 @@ final class CollegesProvider
   }
 }
 
-String _$collegesHash() => r'e1718c99f6b6811f79292192bd06d80d5c678946';
+String _$collegesHash() => r'37536d66dd638670b2397508c5598aa151fb1b10';
 
 final class CollegesFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<College>>, String> {
@@ -152,7 +152,7 @@ final class CollegesFamily extends $Family
         name: r'collegesProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: true,
+        isAutoDispose: false,
       );
 
   CollegesProvider call(String universityId) =>
@@ -201,7 +201,7 @@ final class PhaseSubjectsProvider
   }
 }
 
-String _$phaseSubjectsHash() => r'b7777e338b450ca053a01f2aae487e00ca0e96e3';
+String _$phaseSubjectsHash() => r'fdc2c48cd90eeca9e64b42aedcc4265813c15dc6';
 
 @ProviderFor(subjectTopics)
 final subjectTopicsProvider = SubjectTopicsFamily._();
@@ -260,7 +260,7 @@ final class SubjectTopicsProvider
   }
 }
 
-String _$subjectTopicsHash() => r'919f5f9478c998d41682f2b1f11c329b98b25b26';
+String _$subjectTopicsHash() => r'aa42872344a128276291d592b79df033d9287fdb';
 
 final class SubjectTopicsFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<CatalogTopic>>, String> {
@@ -337,7 +337,7 @@ final class TopicLessonsProvider
   }
 }
 
-String _$topicLessonsHash() => r'1065659d7306d55c6e9705c97bc30e7616e2bc4c';
+String _$topicLessonsHash() => r'0cef956706d3acedcba45c033465e9a85a4c87a2';
 
 final class TopicLessonsFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<CatalogLesson>>, String> {
@@ -397,7 +397,7 @@ final class UniversityCoverageProvider
 }
 
 String _$universityCoverageHash() =>
-    r'278e83c4ce4cfbabf692523606fc4f6885abb50f';
+    r'6d93cc60edbfd04432f7ea563ae562b2c5403c90';
 
 @ProviderFor(lessonDetail)
 final lessonDetailProvider = LessonDetailFamily._();

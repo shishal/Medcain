@@ -1,9 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../../../core/theme/player_colors.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../core/utils/open_external_link.dart';
 import '../../../../core/widgets/markdown_copy.dart';
 import '../../domain/player_session_state.dart';
-import '../../../../core/theme/player_colors.dart';
 
 /// Shown only when [PlayerSessionState.revealsFeedback] is true (Tutor Mode).
 class TutorFeedbackPanel extends StatelessWidget {
@@ -49,6 +50,14 @@ class TutorFeedbackPanel extends StatelessWidget {
               if (reveal.explanationText != null) ...[
                 const SizedBox(height: Spacing.sm),
                 MarkdownCopy(data: reveal.explanationText!),
+              ],
+              if (reveal.videoUrl != null) ...[
+                const SizedBox(height: Spacing.xs),
+                TextButton.icon(
+                  onPressed: () => openExternalLink(context, reveal.videoUrl!),
+                  icon: const Icon(Icons.play_circle_outline, size: 18),
+                  label: const Text('Watch explanation'),
+                ),
               ],
             ],
           ),

@@ -117,6 +117,9 @@ class YearPaperOutlineScreen extends ConsumerWidget {
           return _OutlineBody(
             year: year,
             paperLabel: paperTitle,
+            hasActiveFilter: filter.isActive,
+            onClearFilter: () =>
+                ref.read(subjectPyqFiltersProvider(subjectId).notifier).clear(),
             longAnswer: forTab(PaperOutlineTab.longAnswer),
             shortNotes: forTab(PaperOutlineTab.shortNotes),
             mcq: forTab(PaperOutlineTab.mcq),
@@ -141,6 +144,8 @@ class _OutlineBody extends StatefulWidget {
   const _OutlineBody({
     required this.year,
     this.paperLabel,
+    this.hasActiveFilter = false,
+    this.onClearFilter,
     required this.longAnswer,
     required this.shortNotes,
     required this.mcq,
@@ -149,6 +154,8 @@ class _OutlineBody extends StatefulWidget {
 
   final int year;
   final String? paperLabel;
+  final bool hasActiveFilter;
+  final VoidCallback? onClearFilter;
   final List<PyqTeaser> longAnswer;
   final List<PyqTeaser> shortNotes;
   final List<PyqTeaser> mcq;
@@ -195,6 +202,35 @@ class _OutlineBodyState extends State<_OutlineBody>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.hasActiveFilter)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.md,
+              Spacing.xs,
+              Spacing.sm,
+              0,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.filter_alt_rounded,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: Spacing.xs),
+                Expanded(
+                  child: Text(
+                    'Subject filters active',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ),
+                TextButton(
+                  onPressed: widget.onClearFilter,
+                  child: const Text('Clear filters'),
+                ),
+              ],
+            ),
+          ),
         TabBar(
           controller: _tabs,
           isScrollable: true,
@@ -246,6 +282,7 @@ class _OutlineQuestionList extends StatelessWidget {
         message: tab.emptyMessage(year, paperLabel),
       );
     }
+    final questionIds = [for (final item in teasers) item.id];
     return ListView.builder(
       padding: const EdgeInsets.all(Spacing.md),
       itemCount: teasers.length,
@@ -259,7 +296,7 @@ class _OutlineQuestionList extends StatelessWidget {
             onTap: () => openPyqReader(
               context,
               questionId: teaser.id,
-              questionIds: [for (final item in teasers) item.id],
+              questionIds: questionIds,
             ),
           ),
         );

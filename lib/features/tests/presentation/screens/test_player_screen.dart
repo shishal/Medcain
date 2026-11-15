@@ -39,10 +39,15 @@ class _TestPlayerScreenState extends ConsumerState<TestPlayerScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(playerSessionProvider(widget.testId).notifier).resumeTicker();
+    });
   }
 
   @override
   void deactivate() {
+    ref.read(playerSessionProvider(widget.testId).notifier).pauseTicker();
     _flush();
     super.deactivate();
   }
@@ -164,12 +169,18 @@ class _TestPlayerScreenState extends ConsumerState<TestPlayerScreen>
           }
 
           if (session.isPendingSubmit) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              ref
-                  .read(playerSessionProvider(testId).notifier)
-                  .ensureSubmitting();
-            });
-            return _SubmittingBody(errorMessage: session.submitError);
+            final notifier = ref.read(playerSessionProvider(testId).notifier);
+            if (!notifier.isSubmitTerminalFailure) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                notifier.ensureSubmitting();
+              });
+            }
+            return _SubmittingBody(
+              errorMessage: session.submitError,
+              isTerminalFailure: notifier.isSubmitTerminalFailure,
+              onRetry: () => notifier.ensureSubmitting(forceRetry: true),
+              onExit: () => _exit(context),
+            );
           }
 
           return TestPlayerView(
@@ -227,12 +238,36 @@ class _TestPlayerScreenState extends ConsumerState<TestPlayerScreen>
 }
 
 class _SubmittingBody extends StatelessWidget {
-  const _SubmittingBody({this.errorMessage});
+  const _SubmittingBody({
+    this.errorMessage,
+    this.isTerminalFailure = false,
+    this.onRetry,
+    this.onExit,
+  });
 
   final String? errorMessage;
+  final bool isTerminalFailure;
+  final VoidCallback? onRetry;
+  final VoidCallback? onExit;
 
   @override
   Widget build(BuildContext context) {
+    if (isTerminalFailure && errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Submit test'),
+          automaticallyImplyLeading: false,
+        ),
+        body: AsyncErrorView(
+          message: errorMessage!,
+          actionLabel: 'Retry',
+          onAction: onRetry,
+          secondaryLabel: 'Back',
+          onSecondary: onExit,
+        ),
+      );
+    }
+
     return Scaffold(
       body: Center(
         child: Padding(
@@ -252,6 +287,13 @@ class _SubmittingBody extends StatelessWidget {
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (onExit != null) ...[
+                  const SizedBox(height: Spacing.md),
+                  TextButton(
+                    onPressed: onExit,
+                    child: const Text('Save & return home'),
+                  ),
+                ],
               ],
             ],
           ),

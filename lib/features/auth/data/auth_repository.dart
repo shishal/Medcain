@@ -20,6 +20,7 @@ class AuthRepository {
   AuthRepository(this._client);
 
   final SupabaseClient _client;
+  Future<Result<ClaimActiveDeviceResult>>? _inFlightClaim;
 
   bool get isSignedIn => _client.auth.currentSession != null;
 
@@ -152,11 +153,21 @@ class AuthRepository {
   }
 
   /// Registers this install when the plan has a free device slot.
-  Future<Result<ClaimActiveDeviceResult>> claimActiveDevice() async {
+  /// Coalesces concurrent calls (e.g. `AuthSession.initialSession` + `SplashScreen`).
+  Future<Result<ClaimActiveDeviceResult>> claimActiveDevice() {
     if (_client.auth.currentSession == null) {
-      return const Failure('Not signed in.');
+      return Future.value(const Failure('Not signed in.'));
     }
+    final existing = _inFlightClaim;
+    if (existing != null) return existing;
+    final future = _runClaimActiveDevice().whenComplete(() {
+      _inFlightClaim = null;
+    });
+    _inFlightClaim = future;
+    return future;
+  }
 
+  Future<Result<ClaimActiveDeviceResult>> _runClaimActiveDevice() async {
     try {
       final deviceId = await getOrCreateDeviceId();
       final raw = await _client.rpc(

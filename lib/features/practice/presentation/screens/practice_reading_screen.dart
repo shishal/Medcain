@@ -6,6 +6,7 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/widgets/async_status_views.dart';
+import '../../../../core/widgets/reading_text_zoom.dart';
 import '../../../security/domain/capture_event.dart';
 import '../../../security/presentation/widgets/content_capture_guard.dart';
 import '../../../tests/data/tests_repository.dart';
@@ -27,6 +28,7 @@ class PracticeReadingScreen extends ConsumerStatefulWidget {
 }
 
 class _PracticeReadingScreenState extends ConsumerState<PracticeReadingScreen> {
+  final _zoom = ReadingTextZoom();
   TestPlayerBundle? _bundle;
   String? _errorMessage;
   var _loading = true;
@@ -36,6 +38,12 @@ class _PracticeReadingScreenState extends ConsumerState<PracticeReadingScreen> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _zoom.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -85,14 +93,21 @@ class _PracticeReadingScreenState extends ConsumerState<PracticeReadingScreen> {
   @override
   Widget build(BuildContext context) {
     final bundle = _bundle;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final count = bundle?.questions.length ?? 0;
+    final titleText = count > 0 ? 'Reading · $count MCQs' : 'Reading';
 
     return ContentCaptureGuard(
       screen: ContentScreens.practiceReading,
       watermark: false,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Reading'),
-          leading: IconButton(icon: const Icon(Icons.close), onPressed: _close),
+          title: Text(titleText),
+          leading: IconButton(
+            tooltip: 'Close',
+            icon: const Icon(Icons.close),
+            onPressed: _close,
+          ),
         ),
         body: _loading
             ? const AsyncLoadingView()
@@ -110,18 +125,33 @@ class _PracticeReadingScreenState extends ConsumerState<PracticeReadingScreen> {
                 actionLabel: 'Back',
                 onAction: _close,
               )
-            : ListView.separated(
-                padding: const EdgeInsets.all(Spacing.lg),
-                itemCount: bundle.questions.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: Spacing.lg),
-                itemBuilder: (context, index) {
-                  return ReadingQuestionCard(
-                    number: index + 1,
-                    question: bundle.questions[index],
-                    explanationLevel: bundle.explanationLevel,
-                  );
-                },
+            : Stack(
+                children: [
+                  ListView.separated(
+                    padding: EdgeInsets.fromLTRB(
+                      Spacing.lg,
+                      Spacing.lg,
+                      Spacing.lg,
+                      Spacing.lg + 64 + bottomInset,
+                    ),
+                    itemCount: bundle.questions.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: Spacing.lg),
+                    itemBuilder: (context, index) {
+                      return ReadingQuestionCard(
+                        number: index + 1,
+                        question: bundle.questions[index],
+                        explanationLevel: bundle.explanationLevel,
+                        zoom: _zoom,
+                      );
+                    },
+                  ),
+                  Positioned(
+                    right: Spacing.md,
+                    bottom: Spacing.md + bottomInset,
+                    child: ReadingZoomControls(zoom: _zoom),
+                  ),
+                ],
               ),
       ),
     );

@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -59,6 +59,15 @@ GoRouter goRouter(Ref ref) {
   return GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: refreshListenable,
+    errorBuilder: (context, state) => Scaffold(
+      appBar: AppBar(title: const Text('Page not found')),
+      body: Center(
+        child: FilledButton(
+          onPressed: () => context.go(AppRoutes.home),
+          child: const Text('Back to home'),
+        ),
+      ),
+    ),
     redirect: (context, state) {
       final isAuthenticated = ref.read(authSessionProvider);
       final profileAsync = ref.read(userProfileProvider);

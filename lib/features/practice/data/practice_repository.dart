@@ -97,7 +97,15 @@ class PracticeRepository {
     }
 
     try {
-      final limitsRaw = await _client.rpc(RpcFunctions.currentPlanDetail);
+      final rawFuture = _client.rpc(RpcFunctions.currentPlanDetail);
+      final usageFuture = _client
+          .from(Tables.dailyPracticeUsage)
+          .select(DailyPracticeUsageColumns.questionsUsed)
+          .eq(DailyPracticeUsageColumns.userId, userId)
+          .eq(DailyPracticeUsageColumns.usageDate, _todayIsoDate())
+          .limit(1);
+      final limitsRaw = await rawFuture;
+      final usageRows = await usageFuture as List<dynamic>;
       if (limitsRaw is! Map) {
         return const Failure(
           'Could not load your plan limits. Please try again.',
@@ -105,15 +113,7 @@ class PracticeRepository {
       }
       final limitsRow = Map<String, dynamic>.from(limitsRaw);
 
-      final usageRows = await _client
-          .from(Tables.dailyPracticeUsage)
-          .select(DailyPracticeUsageColumns.questionsUsed)
-          .eq(DailyPracticeUsageColumns.userId, userId)
-          .eq(DailyPracticeUsageColumns.usageDate, _todayIsoDate())
-          .limit(1);
-
-      final usageList = (usageRows as List<dynamic>)
-          .cast<Map<String, dynamic>>();
+      final usageList = usageRows.cast<Map<String, dynamic>>();
       final used = usageList.isEmpty
           ? 0
           : _asInt(usageList.first[DailyPracticeUsageColumns.questionsUsed]);

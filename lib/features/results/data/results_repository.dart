@@ -58,18 +58,30 @@ class ResultsRepository {
     }
 
     try {
-      final attemptRows = await _client
-          .from(Tables.attempts)
-          .select(
-            '${AttemptColumns.id},'
-            '${AttemptColumns.testId},'
-            '${AttemptColumns.status}',
-          )
-          .eq(AttemptColumns.id, attemptId)
-          .limit(1);
+      late final List<dynamic> attemptRows;
+      late final List<dynamic> answerRows;
+      await Future.wait([
+        _client
+            .from(Tables.attempts)
+            .select(
+              '${AttemptColumns.id},'
+              '${AttemptColumns.testId},'
+              '${AttemptColumns.status}',
+            )
+            .eq(AttemptColumns.id, attemptId)
+            .limit(1)
+            .then((v) => attemptRows = v as List<dynamic>),
+        _client
+            .from(Tables.attemptAnswers)
+            .select(
+              '${AttemptAnswerColumns.questionId},'
+              '${AttemptAnswerColumns.selectedOption}',
+            )
+            .eq(AttemptAnswerColumns.attemptId, attemptId)
+            .then((v) => answerRows = v as List<dynamic>),
+      ]);
 
-      final attempts = (attemptRows as List<dynamic>)
-          .cast<Map<String, dynamic>>();
+      final attempts = attemptRows.cast<Map<String, dynamic>>();
       if (attempts.isEmpty) {
         return const Failure('Those results are not available.');
       }
@@ -84,18 +96,33 @@ class ResultsRepository {
 
       final testId = attempt[AttemptColumns.testId] as String;
 
-      final testRows = await _client
-          .from(Tables.tests)
-          .select(
-            '${TestColumns.id},'
-            '${TestColumns.title},'
-            '${TestColumns.showExplanationLevel},'
-            '${TestColumns.isEphemeralPractice}',
-          )
-          .eq(TestColumns.id, testId)
-          .limit(1);
+      late final List<dynamic> testRows;
+      late final List<dynamic> questionRows;
+      await Future.wait([
+        _client
+            .from(Tables.tests)
+            .select(
+              '${TestColumns.id},'
+              '${TestColumns.title},'
+              '${TestColumns.showExplanationLevel},'
+              '${TestColumns.isEphemeralPractice}',
+            )
+            .eq(TestColumns.id, testId)
+            .limit(1)
+            .then((v) => testRows = v as List<dynamic>),
+        _client
+            .from(Tables.testQuestions)
+            .select(
+              '${TestQuestionColumns.questionId},'
+              '${TestQuestionColumns.orderIndex},'
+              '${TestQuestionColumns.sectionNumber}',
+            )
+            .eq(TestQuestionColumns.testId, testId)
+            .order(TestQuestionColumns.orderIndex)
+            .then((v) => questionRows = v as List<dynamic>),
+      ]);
 
-      final tests = (testRows as List<dynamic>).cast<Map<String, dynamic>>();
+      final tests = testRows.cast<Map<String, dynamic>>();
       final test = tests.isEmpty ? null : tests.first;
       // Catalog default is `full`. If the test row is hidden by RLS we still
       // proceed — missing question embeds become plan-locked placeholders.
@@ -106,18 +133,7 @@ class ResultsRepository {
       final isPractice =
           test?[TestColumns.isEphemeralPractice] as bool? ?? false;
 
-      final questionRows = await _client
-          .from(Tables.testQuestions)
-          .select(
-            '${TestQuestionColumns.questionId},'
-            '${TestQuestionColumns.orderIndex},'
-            '${TestQuestionColumns.sectionNumber}',
-          )
-          .eq(TestQuestionColumns.testId, testId)
-          .order(TestQuestionColumns.orderIndex);
-
-      final slotRows = (questionRows as List<dynamic>)
-          .cast<Map<String, dynamic>>();
+      final slotRows = questionRows.cast<Map<String, dynamic>>();
       final bodies = await _listingById([
         for (final row in slotRows)
           if (row[TestQuestionColumns.questionId] is String)
@@ -135,17 +151,8 @@ class ResultsRepository {
           .whereType<ReviewSlot>()
           .toList();
 
-      final answerRows = await _client
-          .from(Tables.attemptAnswers)
-          .select(
-            '${AttemptAnswerColumns.questionId},'
-            '${AttemptAnswerColumns.selectedOption}',
-          )
-          .eq(AttemptAnswerColumns.attemptId, attemptId);
-
       final answers = <String, QuestionOption?>{};
-      for (final row
-          in (answerRows as List<dynamic>).cast<Map<String, dynamic>>()) {
+      for (final row in answerRows.cast<Map<String, dynamic>>()) {
         final questionId = row[AttemptAnswerColumns.questionId] as String?;
         if (questionId == null) continue;
         answers[questionId] = parseSelectedOption(
@@ -187,13 +194,11 @@ class ResultsRepository {
     final ids = answers.keys.toList();
     final questionById = <String, PlayerQuestion>{};
     if (ids.isNotEmpty) {
-      final rows = await _client
-          .from(Tables.questionListings)
-          .select(_questionColumns)
-          .inFilter(QuestionColumns.id, ids);
-
+      final byId = await _listingById(ids);
       var order = 0;
-      for (final row in (rows as List<dynamic>).cast<Map<String, dynamic>>()) {
+      for (final id in ids) {
+        final row = byId[id];
+        if (row == null) continue;
         final json = {
           ...row,
           TestQuestionColumns.orderIndex: order,
@@ -215,19 +220,31 @@ class ResultsRepository {
     ];
   }
 
+  /// Excludes plan-locked teaser rows (`is_locked == true` or null stem) so
+  /// `SolutionReviewScreen` renders its locked upgrade placeholder instead of
+  /// blank text with a fake default answer key.
   Future<Map<String, Map<String, dynamic>>> _listingById(
     List<String> ids,
   ) async {
     if (ids.isEmpty) return const {};
-    final rows = await _client
-        .from(Tables.questionListings)
-        .select(_questionColumns)
-        .inFilter(QuestionColumns.id, ids);
-    return {
-      for (final row in (rows as List<dynamic>).cast<Map<String, dynamic>>())
-        if (row[QuestionColumns.id] is String)
-          row[QuestionColumns.id] as String: row,
-    };
+    const chunkSize = 80;
+    final byId = <String, Map<String, dynamic>>{};
+    for (var i = 0; i < ids.length; i += chunkSize) {
+      final end = i + chunkSize > ids.length ? ids.length : i + chunkSize;
+      final rows = await _client
+          .from(Tables.questionListings)
+          .select(_questionColumns)
+          .inFilter(QuestionColumns.id, ids.sublist(i, end));
+      for (final row in (rows as List<dynamic>).cast<Map<String, dynamic>>()) {
+        final id = row[QuestionColumns.id];
+        final stem = row[QuestionColumns.questionText];
+        final locked = row[QuestionColumns.isLocked] == true;
+        if (id is String && !locked && stem is String && stem.isNotEmpty) {
+          byId[id] = row;
+        }
+      }
+    }
+    return byId;
   }
 
   static const _questionColumns =
@@ -241,7 +258,8 @@ class ResultsRepository {
       '${QuestionColumns.explanationText},'
       '${QuestionColumns.explanationDeep},'
       '${QuestionColumns.explanationVideoUrl},'
-      '${QuestionColumns.imageUrl}';
+      '${QuestionColumns.imageUrl},'
+      '${QuestionColumns.isLocked}';
 
   static Map<String, dynamic>? _asJsonMap(Object? raw) {
     if (raw is Map<String, dynamic>) return raw;

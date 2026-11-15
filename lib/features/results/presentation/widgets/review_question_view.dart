@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../core/widgets/question_stem_image.dart';
 import '../../domain/attempt_review.dart';
 import 'review_option_list.dart';
 
@@ -19,9 +20,10 @@ class ReviewQuestionView extends StatelessWidget {
     }
 
     final question = item.question!;
-    final imageUrl = question.imageUrl?.trim();
 
     return ListView(
+      // Reset scroll position to the top whenever the user switches questions.
+      key: ValueKey(item.questionId),
       padding: const EdgeInsets.all(Spacing.md),
       children: [
         Text(
@@ -34,18 +36,7 @@ class ReviewQuestionView extends StatelessWidget {
           question.questionText,
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        if (imageUrl != null && imageUrl.isNotEmpty) ...[
-          const SizedBox(height: Spacing.md),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(Spacing.sm),
-            child: Image.network(
-              imageUrl,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox.shrink(),
-            ),
-          ),
-        ],
+        QuestionStemImage(imageUrl: question.imageUrl),
         const SizedBox(height: Spacing.md),
         ReviewOptionList(item: item),
         const SizedBox(height: Spacing.md),

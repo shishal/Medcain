@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/utils/result.dart';
+import '../../../tests/data/local_attempt_store.dart';
 import '../../data/auth_repository.dart';
 import '../../domain/device_session.dart';
 
@@ -54,6 +55,7 @@ class AuthSession extends _$AuthSession {
   }
 
   Future<void> signOut() async {
+    await ref.read(localAttemptStoreProvider).clearAll();
     await ref.read(authRepositoryProvider).signOut();
   }
 
@@ -70,6 +72,7 @@ class AuthSession extends _$AuthSession {
     ref.read(deviceSessionNoticeProvider.notifier).setMessage(
       DeviceSessionMessages.signedInElsewhere,
     );
+    await ref.read(localAttemptStoreProvider).clearAll();
     await ref.read(authRepositoryProvider).signOut();
   }
 }

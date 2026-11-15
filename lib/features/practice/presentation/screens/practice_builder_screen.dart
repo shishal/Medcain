@@ -182,6 +182,10 @@ class _PracticeBuilderScreenState extends ConsumerState<PracticeBuilderScreen> {
                     isSubmitting: _isSubmitting,
                     label: draft.isReading ? 'Start reading' : 'Start practice',
                     quotaExhausted: planContext.dailyQuotaExhausted,
+                    showUpgradeOnExhausted:
+                        planContext.limits.plan == PlanTier.free,
+                    onUpgrade: () =>
+                        context.go(AppRoutes.upgradePath(PlanTier.pro)),
                     onStart: _isSubmitting || planContext.dailyQuotaExhausted
                         ? null
                         : () => _submit(
@@ -206,6 +210,8 @@ class _StartBar extends StatelessWidget {
     required this.isSubmitting,
     required this.label,
     required this.quotaExhausted,
+    this.showUpgradeOnExhausted = false,
+    this.onUpgrade,
     required this.onStart,
   });
 
@@ -213,6 +219,8 @@ class _StartBar extends StatelessWidget {
   final bool isSubmitting;
   final String label;
   final bool quotaExhausted;
+  final bool showUpgradeOnExhausted;
+  final VoidCallback? onUpgrade;
   final VoidCallback? onStart;
 
   @override
@@ -247,19 +255,26 @@ class _StartBar extends StatelessWidget {
                     ?.copyWith(color: colorScheme.error),
               ),
             ),
-          FilledButton(
-            onPressed: onStart,
-            child: isSubmitting
-                ? SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  )
-                : Text(label),
-          ),
+          if (quotaExhausted && showUpgradeOnExhausted && onUpgrade != null)
+            FilledButton.icon(
+              onPressed: onUpgrade,
+              icon: const Icon(Icons.lock_open_outlined, size: 18),
+              label: const Text('Upgrade to Pro for unlimited practice'),
+            )
+          else
+            FilledButton(
+              onPressed: onStart,
+              child: isSubmitting
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    )
+                  : Text(label),
+            ),
         ],
       ),
     );

@@ -109,6 +109,7 @@ class _AcademicEditorState extends ConsumerState<AcademicEditor> {
           keyboardType: TextInputType.name,
           textCapitalization: TextCapitalization.words,
           onTap: requestSoftKeyboard,
+          onTapOutside: dismissSoftKeyboard,
           decoration: const InputDecoration(labelText: 'Name'),
         ),
         const SizedBox(height: Spacing.md),
