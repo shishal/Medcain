@@ -63,6 +63,7 @@
     home: renderHome,
     questions: renderQuestions,
     question: renderQuestion,
+    import: renderImport,
     catalog: renderCatalog,
     users: renderUsers,
     user: renderUser,
@@ -430,6 +431,7 @@
       <p class="lede">Operator tools. Students never see these pages.</p>
       <div class="tiles">
         <a class="tile" href="/admin/questions/"><strong>Questions</strong><span>Search, edit, and add</span></a>
+        <a class="tile" href="/admin/import/"><strong>Import</strong><span>Upload a Questions sheet</span></a>
         <a class="tile" href="/admin/catalog/"><strong>Catalog</strong><span>Universities, colleges, subjects</span></a>
         <a class="tile" href="/admin/users/"><strong>Users</strong><span>Profile, plan, block, admin</span></a>
         <a class="tile" href="/admin/announcements/"><strong>Announcements</strong><span>In-app inbox on Home</span></a>
@@ -474,6 +476,7 @@
           <div class="actions span-2">
             <button class="btn btn-primary" type="submit">Search</button>
             <a class="btn btn-ghost" href="/admin/question/">New question</a>
+            <a class="btn btn-ghost" href="/admin/import/">Import</a>
           </div>
         </form>
         <div id="results"></div>
@@ -1812,6 +1815,385 @@
 
     await reload();
     draw();
+  }
+
+  async function renderImport() {
+    const templateHeaders = [
+      'course', 'state',
+      'university_alias', 'university_name',
+      'college_alias', 'college_name',
+      'exam_type', 'year', 'month', 'paper_number',
+      'subject_name', 'chapter_name', 'topic_name',
+      'question_type', 'marks', 'question_id', 'question_text',
+      'option_a', 'option_b', 'option_c', 'option_d', 'correct_option',
+      'answers', 'exp_1', 'exp_2',
+      'textbook_title', 'textbook_authors', 'textbook_edition',
+      'page', 'section_heading',
+      'difficulty', 'required_plan', 'is_active',
+      'resource_title', 'resource_url', 'resource_source_label', 'resource_is_free',
+    ];
+    const [subjects, universities] = await Promise.all([
+      rpc('admin_list_subjects'),
+      rpc('admin_list_universities'),
+    ]);
+    let parsed = null;
+    let checkedKey = '';
+    let lastResult = null;
+
+    function csvCell(value) {
+      const text = String(value ?? '');
+      if (/[",\n\r]/.test(text)) return `"${text.replaceAll('"', '""')}"`;
+      return text;
+    }
+
+    function cellText(value) {
+      if (value == null) return '';
+      return String(value).replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+    }
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let cell = '';
+      let quoted = false;
+      const src = String(text).replace(/^\uFEFF/, '');
+      for (let i = 0; i < src.length; i += 1) {
+        const char = src[i];
+        if (quoted) {
+          if (char === '"') {
+            if (src[i + 1] === '"') {
+              cell += '"';
+              i += 1;
+            } else {
+              quoted = false;
+            }
+          } else {
+            cell += char;
+          }
+        } else if (char === '"') {
+          quoted = true;
+        } else if (char === ',') {
+          row.push(cell);
+          cell = '';
+        } else if (char === '\n' || char === '\r') {
+          if (char === '\r' && src[i + 1] === '\n') i += 1;
+          row.push(cell);
+          cell = '';
+          rows.push(row);
+          row = [];
+        } else {
+          cell += char;
+        }
+      }
+      if (cell.length || row.length) {
+        row.push(cell);
+        rows.push(row);
+      }
+      return rows;
+    }
+
+    function tableToRows(matrix) {
+      if (!matrix.length || matrix[0].every((item) => cellText(item) === '')) {
+        throw new Error('The file has no header row.');
+      }
+      const headers = matrix[0].map((item) => cellText(item));
+      if (headers.some((header) => header === '')) {
+        throw new Error('The header row has an empty column.');
+      }
+      const seen = new Set();
+      for (const header of headers) {
+        if (seen.has(header)) throw new Error(`The column "${header}" is repeated.`);
+        seen.add(header);
+      }
+      const rows = [];
+      for (let i = 1; i < matrix.length; i += 1) {
+        const line = matrix[i] || [];
+        const obj = { _row_number: i + 1 };
+        let blank = true;
+        headers.forEach((header, index) => {
+          const text = cellText(line[index]);
+          obj[header] = text;
+          if (text !== '') blank = false;
+        });
+        if (!blank) rows.push(obj);
+      }
+      if (!rows.length) throw new Error('The file has no questions.');
+      if (rows.length > 300) throw new Error('A file can hold 300 questions. Split this one.');
+      return { headers, rows };
+    }
+
+    function readDefaults() {
+      return {
+        subject_id: val('subject_id'),
+        university_id: val('university_id'),
+        college_id: val('college_id'),
+        year: val('year'),
+        month: val('month'),
+        exam_type: val('exam_type'),
+        paper_number: val('paper_number'),
+        difficulty: val('difficulty'),
+        required_plan: val('required_plan'),
+        is_active: val('is_active'),
+      };
+    }
+
+    function payloadKey() {
+      return JSON.stringify({ rows: parsed ? parsed.rows : [], defaults: readDefaults() });
+    }
+
+    function downloadText(filename, text) {
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function invalidate() {
+      checkedKey = '';
+      const button = document.getElementById('import-file');
+      if (button) button.disabled = true;
+    }
+
+    function setBusy(busy) {
+      document.getElementById('check-file').disabled = busy;
+      document.getElementById('download-template').disabled = busy;
+      if (busy) document.getElementById('import-file').disabled = true;
+    }
+
+    function setStatus(text) {
+      const slot = document.getElementById('file-status');
+      if (slot) slot.textContent = text;
+    }
+
+    function drawResult(data, applied) {
+      const preview = document.getElementById('preview');
+      const errors = data.errors || [];
+      const go = document.getElementById('import-file');
+      if (!data.ok) {
+        const shown = errors.slice(0, 40);
+        const more = errors.length - shown.length;
+        preview.innerHTML = `
+          <p class="msg error">${errors.length} problem${errors.length === 1 ? '' : 's'}. Nothing was written.</p>
+          <ul>${shown.map((item) => `<li>${esc(item)}</li>`).join('')}</ul>
+          ${more > 0 ? `<p class="hint">And ${more} more.</p>` : ''}
+        `;
+        go.disabled = true;
+        return;
+      }
+      const questions = data.questions || [];
+      const shown = questions.slice(0, 40);
+      const more = questions.length - shown.length;
+      const summary = applied
+        ? `Imported ${data.creates} new question${data.creates === 1 ? '' : 's'} and updated ${data.updates}.`
+        : `${data.creates} new question${data.creates === 1 ? '' : 's'}, ${data.updates} update${data.updates === 1 ? '' : 's'}, ${data.row_count} rows. Nothing has been written yet.`;
+      const body = shown.map((item) => `
+        <tr>
+          <td>${esc(item.row_no)}</td>
+          <td>${item.action === 'create' ? 'New' : 'Update'}</td>
+          <td>${esc(item.question_id || '—')}</td>
+          <td>${esc(item.papers)}</td>
+          <td class="stem">${esc(item.question_text || '')}</td>
+        </tr>
+      `).join('');
+      preview.innerHTML = `
+        <p class="msg ok">${esc(summary)}</p>
+        ${applied ? '<p><button class="btn btn-ghost" type="button" id="download-codes">Download sheet with question ids</button></p>' : ''}
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Row</th><th></th><th>Code</th><th>Papers</th><th>Question</th></tr></thead>
+            <tbody>${body || '<tr><td colspan="5">No questions.</td></tr>'}</tbody>
+          </table>
+        </div>
+        ${more > 0 ? `<p class="hint">And ${more} more.</p>` : ''}
+      `;
+      go.disabled = applied || (Number(data.creates) + Number(data.updates)) === 0;
+    }
+
+    async function fillColleges(universityId) {
+      if (!universityId) {
+        replaceSelect('college_id', [], '', 'Use the sheet');
+        const select = document.getElementById('college_id');
+        if (select) select.disabled = true;
+        return;
+      }
+      const rows = await rpc('admin_list_colleges', { p_university_id: universityId });
+      replaceSelect(
+        'college_id',
+        rows.map((item) => [item.id, `${item.short_form} · ${item.name}`]),
+        '',
+        'Use the sheet',
+      );
+    }
+
+    function readFile(file, asText) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Could not read that file.'));
+        if (asText) reader.readAsText(file);
+        else reader.readAsArrayBuffer(file);
+      });
+    }
+
+    async function loadFile(file) {
+      invalidate();
+      parsed = null;
+      lastResult = null;
+      document.getElementById('preview').innerHTML = '';
+      if (!file) {
+        setStatus('');
+        return;
+      }
+      const name = file.name.toLowerCase();
+      try {
+        let matrix;
+        let note = '';
+        if (name.endsWith('.csv')) {
+          matrix = parseCsv(await readFile(file, true));
+        } else if (name.endsWith('.xlsx')) {
+          if (!window.XLSX) throw new Error('Excel support did not load. Save the file as CSV.');
+          const book = window.XLSX.read(await readFile(file, false), { type: 'array' });
+          const sheetName = book.SheetNames[0];
+          if (!sheetName) throw new Error('The workbook has no sheets.');
+          matrix = window.XLSX.utils.sheet_to_json(book.Sheets[sheetName], {
+            header: 1,
+            raw: false,
+            defval: '',
+            blankrows: true,
+          });
+          if (book.SheetNames.length > 1) note = ` Using the first sheet, ${sheetName}.`;
+        } else {
+          throw new Error('Use a .csv or .xlsx file.');
+        }
+        parsed = tableToRows(matrix);
+        parsed.name = file.name;
+        setStatus(`${parsed.rows.length} question row${parsed.rows.length === 1 ? '' : 's'} ready to check.${note}`);
+        message('ok', '');
+      } catch (error) {
+        parsed = null;
+        setStatus('');
+        message('error', error.message || 'Could not read that file.');
+      }
+    }
+
+    app.innerHTML = `
+      <div id="msg"></div>
+      <p class="hint">Upload the same Questions sheet as a CSV or Excel file. Leave the fields below empty to use the sheet. A value here fills a cell only when that cell is empty. Questions that are not in the file stay as they are.</p>
+      <div class="card form-grid">
+        ${field('Subject', selectControl('subject_id', subjects.map((item) => [item.id, item.name]), '', 'Use the sheet'))}
+        ${field('University', selectControl('university_id', universities.map((item) => [item.id, `${item.code} · ${item.name}`]), '', 'Use the sheet'))}
+        ${field('College', selectControl('college_id', [], '', 'Use the sheet'))}
+        ${field('Year', inputControl('year', '', 'inputmode="numeric" placeholder="Use the sheet"'))}
+        ${field('Month', selectControl('month', MONTHS, '', 'Use the sheet'))}
+        ${field('Exam type', selectControl('exam_type', EXAMS, '', 'Use the sheet'))}
+        ${field('Paper', inputControl('paper_number', '', 'placeholder="Paper I"'))}
+        ${field('Difficulty', selectControl('difficulty', DIFFICULTIES, '', 'Use the sheet'))}
+        ${field('Plan', selectControl('required_plan', PLANS, '', 'Use the sheet'))}
+        ${field('Visible', selectControl('is_active', [['true', 'Visible'], ['false', 'Hidden']], '', 'Use the sheet'))}
+        <div class="span-2">
+          <label>File<input id="file" type="file" accept=".csv,.xlsx,text/csv" /></label>
+          <p class="hint" id="file-status"></p>
+        </div>
+        <div class="actions span-2">
+          <button class="btn btn-ghost" type="button" id="download-template">Download template</button>
+          <button class="btn btn-ghost" type="button" id="check-file">Check file</button>
+          <button class="btn btn-primary" type="button" id="import-file" disabled>Import</button>
+        </div>
+      </div>
+      <div id="preview"></div>
+    `;
+    document.getElementById('college_id').disabled = true;
+
+    handlers.change = async (event) => {
+      if (event.target.id === 'file') {
+        await loadFile(event.target.files && event.target.files[0]);
+        return;
+      }
+      invalidate();
+      if (event.target.id === 'university_id') {
+        await fillColleges(val('university_id'));
+      }
+    };
+
+    handlers.click = async (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      if (button.id === 'download-template') {
+        downloadText('Questions.csv', `\uFEFF${templateHeaders.join(',')}\n`);
+      }
+      if (button.id === 'check-file') {
+        if (!parsed) {
+          message('error', 'Choose a CSV or Excel file first.');
+          return;
+        }
+        const key = payloadKey();
+        setBusy(true);
+        try {
+          const data = await rpc('admin_import_questions', {
+            p_rows: parsed.rows,
+            p_defaults: readDefaults(),
+            p_apply: false,
+          });
+          lastResult = data;
+          checkedKey = data.ok ? key : '';
+          drawResult(data, false);
+          message('ok', '');
+        } catch (error) {
+          checkedKey = '';
+          document.getElementById('preview').innerHTML = '';
+          message('error', errorText(error));
+        } finally {
+          setBusy(false);
+        }
+      }
+      if (button.id === 'import-file') {
+        if (!parsed || !checkedKey || payloadKey() !== checkedKey) {
+          message('error', 'The file or the paper fields changed. Check the file again.');
+          invalidate();
+          return;
+        }
+        const creates = Number(lastResult && lastResult.creates) || 0;
+        const updates = Number(lastResult && lastResult.updates) || 0;
+        if (!window.confirm(`Import ${creates} new question${creates === 1 ? '' : 's'} and update ${updates}?`)) return;
+        setBusy(true);
+        try {
+          const data = await rpc('admin_import_questions', {
+            p_rows: parsed.rows,
+            p_defaults: readDefaults(),
+            p_apply: true,
+          });
+          lastResult = data;
+          if (data.ok && data.applied) checkedKey = '';
+          drawResult(data, data.ok === true && data.applied === true);
+          if (!data.ok) message('error', 'Nothing was written.');
+          else message('ok', '');
+        } catch (error) {
+          const go = document.getElementById('import-file');
+          if (go) go.disabled = !checkedKey;
+          message('error', errorText(error));
+        } finally {
+          setBusy(false);
+        }
+      }
+      if (button.id === 'download-codes' && parsed && lastResult && lastResult.codes) {
+        const byRow = new Map(lastResult.codes.map((item) => [item.row_no, item.question_id || '']));
+        const headers = parsed.headers.slice();
+        if (!headers.includes('question_id')) {
+          const at = headers.indexOf('question_text');
+          headers.splice(at === -1 ? headers.length : at, 0, 'question_id');
+        }
+        const lines = [headers.map(csvCell).join(',')];
+        for (const row of parsed.rows) {
+          const copy = { ...row };
+          if (byRow.has(row._row_number)) copy.question_id = byRow.get(row._row_number);
+          lines.push(headers.map((header) => csvCell(copy[header])).join(','));
+        }
+        downloadText('Questions-with-ids.csv', `\uFEFF${lines.join('\n')}\n`);
+      }
+    };
   }
 
   function renderBackup() {

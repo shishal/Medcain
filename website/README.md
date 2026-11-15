@@ -23,7 +23,7 @@ Secret keys stay on the Supabase Edge Functions, not in this image.
 
 `/refunds/` redirects to `/account/`.
 
-`/admin/` is the operator console (questions, catalog, users, announcements,
+`/admin/` is the operator console (questions, sheet import, catalog, users, announcements,
 prices, coupons, backup). It is not linked from the marketing pages. Sign-in is the
 same WhatsApp flow as checkout, and every save goes through an admin-only
 database function. Backup downloads a local file (schema, rows, SQL functions,

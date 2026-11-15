@@ -749,6 +749,13 @@ The Google Sheet and `sync_content_csv` are retired
 questions in the website admin at `/admin/`. A leftover sheet Apply cannot
 insert, update, or delete questions.
 
+`/admin/import/` uploads the same Questions sheet (CSV or Excel, up to 300
+rows) through `admin_import_questions`. Column names are unchanged, including
+`question_id` for the six-digit code. Rows that share a subject, question
+type, and question text are still one question, and each row is another paper.
+Check the file before importing. A clean import creates or updates only the
+rows in the file. It does not delete questions that are missing from the file.
+
 Question identity is `questions.public_code`, six digits (`000123`). It is
 not derived from the stem, so two questions can share a stem. Older imports
 still have `questions.content_sync_source = 'questions_csv_v2'`.
