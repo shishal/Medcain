@@ -1004,9 +1004,17 @@ Entitlement columns on `plans` (checked only in Postgres):
 - Practice: `allow_practice`, `allow_tutor_mode`, `allow_exam_mode`, `max_practice_session_questions`, `daily_practice_question_quota`, and the existing timer / tag / priority / negative-marking toggles
 - Commercial: `amount_paise` (0 means not for sale), `duration_months` (null means no expiry), `duration_label`, `max_registered_devices`, promo text, optional `featured_discount_code`
 
-`plan_allows_question(plan_id, question_id, user_id)` is the predicate for the reader, practice picking, and lesson resources. A question with several sittings matches when any sitting matches. `latest` is the newest `exam_year` per subject inside the other filters, computed at read time. `plan_allows_lesson` opens a lesson when its subject’s MBBS phase is in a filtered plan, or when `preview_only` and the lesson contains a preview question.
+`plan_allows_question(plan_id, question_id, user_id)` is the single-question predicate (search, question resources). The reader and practice use the same rules without calling it once per question. A question with several sittings matches when any sitting matches. `plan_allows_lesson` opens a lesson when its subject’s MBBS phase is in a filtered plan, or when `preview_only` and the lesson contains a preview question.
 
-Students have no `select` on `questions` or `question_sample_answers`. Reads go through `question_listings`, a security-definer view. It is not `security_barrier`: that made a subject load check every question in the bank before the topic filter, and the statement timed out. The view calls `private.my_plan_allows_question`, which students may execute, because Postgres checks function permissions as the querying role. `plan_allows_question` itself stays revoked from `authenticated`, so a student cannot pass another user id.
+Migration `supabase/migrations/20261117210000_plan_slice_fast_path.sql` classifies the plan once via `private.plan_slice_mode`:
+
+- `preview` (`access_mode = preview_only`): in slice means `is_preview`.
+- `open` (filtered, every university, every MBBS phase, every paper year, every exam type, untagged included): in slice means `is_preview` or the kind is allowed. No paper lookup. Seeded Pro and Elite are this shape.
+- `narrow` (own university, selected or latest years, a subset of exam types, or untagged excluded): `private.allowed_paper_ids` resolves the papers once. `latest` is `max(exam_year)` per subject on that set, not inside each question. A question matches when it is a preview, or its kind is allowed and it is untagged on a plan that includes untagged, or it has an appearance on one of those papers.
+
+Do not put a per-question `max(exam_year)` back into `question_listings` or `create_practice_session`.
+
+Students have no `select` on `questions` or `question_sample_answers`. Reads go through `question_listings`, a security-definer view. It is not `security_barrier`: that made a subject load check every question in the bank before the topic filter, and the statement timed out. Preview and open plans match on columns. A narrow plan semi-joins to the one paper set. `plan_allows_question` stays revoked from `authenticated`, so a student cannot pass another user id.
 
 - In the slice, or a preview: text is present. The key and sample answer appear when depth is `answer` or `explanation`. Explanations appear only at `explanation`.
 - Outside the slice with tease on: the card remains, with null text, key, and explanation, and `is_locked` true.
@@ -1014,7 +1022,7 @@ Students have no `select` on `questions` or `question_sample_answers`. Reads go 
 
 `registered_device_limit(user_id)` is `greatest(1, plan device cap, profile raise)`. `claim_active_device` uses that one-argument function.
 
-`create_practice_session` loads the current plan, rejects practice when it is off or the depth is question-only, rejects a tutor or exam mode the plan does not allow, and picks MCQs that `plan_allows_question` accepts. `feedback_timing = 'reading'` is allowed whenever practice is on. That session still spends the daily quota, and the function forces the timer and negative marking off. The app does not start an attempt for it.
+`create_practice_session` loads the current plan, rejects practice when it is off or the depth is question-only, rejects a tutor or exam mode the plan does not allow, and picks MCQs with the same preview / open / narrow rules. Open and preview skip papers. A narrow plan keeps questions that sit on the one paper list. `feedback_timing = 'reading'` is allowed whenever practice is on. That session still spends the daily quota, and the function forces the timer and negative marking off. The app does not start an attempt for it.
 
 Checkout is `checkout_quote(plan_id, code)` and `apply_razorpay_payment(..., plan_id, ...)`. The captured paise must match the plan amount or `discounted_amount_paise`. The payment sets `plan_id` and adds `duration_months` onto the later of now and the current expiry. Razorpay notes carry `plan_id` only. Orders created before this migration, with `notes.plan` and a period, are rejected; assign the plan from the user page instead.
 
