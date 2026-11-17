@@ -32,6 +32,7 @@ abstract final class AppRoutes {
   static const adminQuestionNew = '/admin/question/new';
   static const adminQuestion = '/admin/questions/:questionId';
   static const adminAnnouncements = '/admin/announcements';
+  static const adminAppUpdate = '/admin/app-update';
   static const adminAnnouncementNew = '/admin/announcement/new';
   static const adminAnnouncement = '/admin/announcements/:announcementId';
 

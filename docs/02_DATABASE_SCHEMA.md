@@ -971,6 +971,7 @@ That account signs in with WhatsApp and lands on `/admin`. A student JWT that ca
 | Questions, papers, free preview (`is_preview`) | `admin_save_question`, `admin_save_appearance`, `admin_delete_appearance` |
 | Plans (price, duration, entitlements) | `admin_list_plans`, `admin_save_plan`, `admin_archive_plan`. Assigning a user uses `admin_set_plan(user, plan_id, expires_at)`. |
 | In-app notification | `admin_upsert_announcement` |
+| Force app update | `admin_set_app_update_policy` (read: `app_update_policy`, including anon) |
 
 Every admin RPC calls `assert_admin()` and writes `admin_audit_log`. Password values are stripped if a client puts them in the audit detail.
 
@@ -1027,3 +1028,15 @@ Students have no `select` on `questions` or `question_sample_answers`. Reads go 
 Checkout is `checkout_quote(plan_id, code)` and `apply_razorpay_payment(..., plan_id, ...)`. The captured paise must match the plan amount or `discounted_amount_paise`. The payment sets `plan_id` and adds `duration_months` onto the later of now and the current expiry. Razorpay notes carry `plan_id` only. Orders created before this migration, with `notes.plan` and a period, are rejected; assign the plan from the user page instead.
 
 `plan_tier`, `plan_limits`, and `paid_plan_catalog` stay until a later migration. Checkout and the paywall do not read them.
+
+---
+
+## 14. Force app update
+
+Migration: `supabase/migrations/20261117120000_force_app_update.sql`.
+
+`app_update_policy` is one row. `min_version_code` is the lowest Android `versionCode` (the integer after `+` in `pubspec.yaml`) that may open the app. `0` allows every build. `min_version_name` is the label on the lock screen, such as `1.1.26`.
+
+`app_update_policy()` is executable by `anon` and `authenticated` because the check runs before sign-in. It returns no secrets. `admin_set_app_update_policy` calls `assert_admin()` and writes `admin_audit_log`. The Play Store link is hard-coded in the app (`com.shishal.medico`); this row cannot change it.
+
+Set the number only after that build is on the Play Store. Phones below it, including an admin phone, stop on an update screen. The website admin (`/admin/app-update/`) still works, so the minimum can be set back to `0` from there.

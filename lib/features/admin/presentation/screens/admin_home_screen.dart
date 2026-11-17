@@ -53,6 +53,12 @@ class AdminHomeScreen extends ConsumerWidget {
             onTap: () => context.push(AppRoutes.adminAnnouncements),
           ),
           _Tile(
+            icon: Icons.system_update_outlined,
+            title: 'App update',
+            subtitle: 'Require a Play Store build before the app opens',
+            onTap: () => context.push(AppRoutes.adminAppUpdate),
+          ),
+          _Tile(
             icon: Icons.phone_iphone,
             title: 'Open student app',
             subtitle: 'Home, practice, and profile for this account',

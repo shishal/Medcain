@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../features/admin/presentation/providers/admin_student_preview_provider.dart';
 import '../../features/admin/presentation/screens/admin_announcement_screen.dart';
+import '../../features/admin/presentation/screens/admin_app_update_screen.dart';
 import '../../features/admin/presentation/screens/admin_announcements_screen.dart';
 import '../../features/admin/presentation/screens/admin_home_screen.dart';
 import '../../features/admin/presentation/screens/admin_question_screen.dart';
@@ -169,6 +170,10 @@ GoRouter goRouter(Ref ref) {
       comicGoRoute(
         path: AppRoutes.adminAnnouncements,
         builder: (context, state) => const AdminAnnouncementsScreen(),
+      ),
+      comicGoRoute(
+        path: AppRoutes.adminAppUpdate,
+        builder: (context, state) => const AdminAppUpdateScreen(),
       ),
       comicGoRoute(
         path: AppRoutes.adminAnnouncementNew,

@@ -5,6 +5,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/supabase/tables.dart';
 import '../../../core/utils/result.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../app_update/domain/app_update_policy.dart';
 import '../domain/admin_models.dart';
 
 part 'admin_repository.g.dart';
@@ -207,6 +208,30 @@ class AdminRepository {
       {AdminRpcParams.body: input.toJson()},
       AdminAnnouncement.fromJson,
       'Could not save that notification.',
+    );
+  }
+
+  Future<Result<AppUpdatePolicy>> getAppUpdatePolicy() {
+    return _one(
+      RpcFunctions.appUpdatePolicy,
+      const {},
+      AppUpdatePolicy.fromJson,
+      'Could not load the update rule.',
+    );
+  }
+
+  Future<Result<AppUpdatePolicy>> setAppUpdatePolicy({
+    required int minVersionCode,
+    required String minVersionName,
+  }) {
+    return _one(
+      RpcFunctions.adminSetAppUpdatePolicy,
+      {
+        AdminRpcParams.minVersionCode: minVersionCode,
+        AdminRpcParams.minVersionName: minVersionName,
+      },
+      AppUpdatePolicy.fromJson,
+      'Could not save the update rule.',
     );
   }
 

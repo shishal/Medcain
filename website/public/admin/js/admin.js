@@ -68,6 +68,7 @@
     users: renderUsers,
     user: renderUser,
     announcements: renderAnnouncements,
+    'app-update': renderAppUpdate,
     pricing: renderPricing,
     plans: renderPlans,
     coupons: renderCoupons,
@@ -435,6 +436,7 @@
         <a class="tile" href="/admin/catalog/"><strong>Catalog</strong><span>Universities, colleges, subjects</span></a>
         <a class="tile" href="/admin/users/"><strong>Users</strong><span>Profile, plan, block, admin</span></a>
         <a class="tile" href="/admin/announcements/"><strong>Announcements</strong><span>In-app inbox on Home</span></a>
+        <a class="tile" href="/admin/app-update/"><strong>App update</strong><span>Block builds below a Play version</span></a>
         <a class="tile" href="/admin/plans/"><strong>Plans</strong><span>Price, access, devices, and promos</span></a>
         <a class="tile" href="/admin/pricing/"><strong>Pricing</strong><span>Older period prices, no longer used at checkout</span></a>
         <a class="tile" href="/admin/coupons/"><strong>Coupons</strong><span>Percent-off codes</span></a>
@@ -1467,6 +1469,47 @@
       }
     };
     draw();
+  }
+
+  async function renderAppUpdate() {
+    const policy = await rpc('app_update_policy');
+    handlers.change = null;
+    handlers.click = null;
+    handlers.submit = async (event) => {
+      event.preventDefault();
+      if (event.target.getAttribute('data-form') !== 'app-update') return;
+      const raw = val('min_version_code');
+      const code = Number(raw);
+      if (raw === '' || !Number.isInteger(code) || code < 0) {
+        message('error', 'Enter a build number, or 0 to allow every version.');
+        return;
+      }
+      try {
+        const saved = await rpc('admin_set_app_update_policy', {
+          p_min_version_code: code,
+          p_min_version_name: val('min_version_name'),
+        });
+        message(
+          'ok',
+          code === 0
+            ? 'Every installed build can open the app.'
+            : `Builds below ${saved.min_version_code} must update.`,
+        );
+      } catch (error) {
+        message('error', errorText(error));
+      }
+    };
+    const when = formatWhen(policy && policy.updated_at);
+    app.innerHTML = `
+      <div id="msg"></div>
+      <form class="card form-grid" data-form="app-update">
+        <h2 class="span-2">Minimum Play build</h2>
+        ${field('Minimum build number', inputControl('min_version_code', policy && policy.min_version_code, 'inputmode="numeric" required'))}
+        ${field('Version name shown in the app', inputControl('min_version_name', policy && policy.min_version_name, 'placeholder="1.1.26"'))}
+        <p class="hint span-2">The build number is the integer after + in pubspec.yaml (1.1.25+27 means 27). Phones below that number see only an update screen, and the button opens this app on the Play Store. Publish the build first, then save the number. 0 allows every installed build. This website stays available if the phones are locked.${when ? ` Last saved ${esc(when)}.` : ''}</p>
+        <div class="actions span-2"><button class="btn btn-primary" type="submit">Save</button></div>
+      </form>
+    `;
   }
 
   async function renderPlans() {

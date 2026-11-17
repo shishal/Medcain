@@ -263,6 +263,8 @@ abstract final class RpcFunctions {
   static const adminSetBlocked = 'admin_set_blocked';
   static const adminListAnnouncements = 'admin_list_announcements';
   static const adminUpsertAnnouncement = 'admin_upsert_announcement';
+  static const appUpdatePolicy = 'app_update_policy';
+  static const adminSetAppUpdatePolicy = 'admin_set_app_update_policy';
   static const adminSearchQuestions = 'admin_search_questions';
   static const adminGetQuestion = 'admin_get_question';
   static const adminSaveQuestion = 'admin_save_question';
@@ -299,6 +301,8 @@ abstract final class AdminRpcParams {
   static const action = 'p_action';
   static const targetId = 'p_target_id';
   static const detail = 'p_detail';
+  static const minVersionCode = 'p_min_version_code';
+  static const minVersionName = 'p_min_version_name';
 }
 
 /// Named parameters for [RpcFunctions.claimActiveDevice] /
@@ -509,6 +513,13 @@ abstract final class AnnouncementColumns {
 
   /// PostgREST embed alias: `reads:announcement_reads(read_at)`.
   static const readsEmbed = 'reads';
+}
+
+/// Keys in the jsonb from `app_update_policy` / `admin_set_app_update_policy`.
+abstract final class AppUpdatePolicyColumns {
+  static const minVersionCode = 'min_version_code';
+  static const minVersionName = 'min_version_name';
+  static const updatedAt = 'updated_at';
 }
 
 abstract final class AnnouncementReadColumns {
