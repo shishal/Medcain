@@ -3,18 +3,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/supabase/tables.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
 import '../../../profile/domain/plan_tier.dart';
+import '../../../tests/data/local_attempt_store.dart';
+import '../../../tests/data/tests_repository.dart';
+import '../../../tests/domain/attempt_submit_request.dart';
+import '../../../tests/domain/attempt_status.dart';
+import '../../../tests/presentation/providers/in_progress_attempts_provider.dart';
 import '../../data/practice_repository.dart';
 import '../../domain/plan_limits.dart';
 import '../../domain/practice_builder_draft.dart';
 import '../../domain/practice_catalog.dart';
 import '../../domain/practice_clamp_copy.dart';
+import '../../domain/practice_slot.dart';
 import '../providers/practice_catalog_provider.dart';
 import '../providers/practice_plan_context_provider.dart';
+import '../providers/practice_slot_provider.dart';
 import '../widgets/practice_builder_filter_sheet.dart';
 import '../widgets/practice_builder_form.dart';
 
@@ -56,15 +64,49 @@ class _PracticeBuilderScreenState extends ConsumerState<PracticeBuilderScreen> {
     required PracticeBuilderDraft draft,
     required PracticeCatalog catalog,
     required PracticePlanContext planContext,
+    required PracticeSlot? slot,
   }) async {
+    if (slot != null && slot.isOpen) {
+      final replace = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Start a new practice?'),
+          content: const Text(
+            'This replaces your current practice. Questions you already answered stay marked as attempted.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Start new'),
+            ),
+          ],
+        ),
+      );
+      if (replace != true || !mounted) return;
+    }
+
     setState(() {
       _errorMessage = null;
       _isSubmitting = true;
     });
 
+    // An open session's selections live in a local file until submit. Send
+    // them with the replace call, or the next Unattempted filter would
+    // offer those questions again.
+    final handoff = await _priorAnswersForReplace(slot);
+    if (!mounted || handoff == null) return;
+
     final result = await ref
         .read(practiceRepositoryProvider)
-        .createSession(draft: draft, catalog: catalog);
+        .createSession(
+          draft: draft,
+          catalog: catalog,
+          priorAnswers: handoff.priorAnswers,
+        );
 
     if (!mounted) return;
 
@@ -72,7 +114,13 @@ class _PracticeBuilderScreenState extends ConsumerState<PracticeBuilderScreen> {
 
     switch (result) {
       case Success(:final value):
+        final attemptId = handoff.attemptIdToDelete;
+        if (attemptId != null) {
+          await ref.read(localAttemptStoreProvider).delete(attemptId);
+        }
         ref.invalidate(practicePlanContextProvider);
+        ref.invalidate(practiceSlotProvider);
+        ref.invalidate(inProgressAttemptsProvider);
         if (!mounted) return;
         final toast = PracticeClampCopy.toast(
           requested: draft,
@@ -92,10 +140,69 @@ class _PracticeBuilderScreenState extends ConsumerState<PracticeBuilderScreen> {
     }
   }
 
+  /// Null means the replace stopped (submit of a finished session failed).
+  Future<_ReplaceHandoff?> _priorAnswersForReplace(PracticeSlot? slot) async {
+    if (slot == null || !slot.isOpen) {
+      return const _ReplaceHandoff();
+    }
+
+    final userId = ref.read(testsRepositoryProvider).currentUserId;
+    if (userId == null) return const _ReplaceHandoff();
+
+    final store = ref.read(localAttemptStoreProvider);
+    final snapshot = await store.readOpenForTest(
+      testId: slot.testId,
+      userId: userId,
+    );
+    if (snapshot == null) return const _ReplaceHandoff();
+
+    if (snapshot.localStatus == LocalAttemptStatus.pendingSubmit) {
+      final submitted = await ref
+          .read(testsRepositoryProvider)
+          .submitAttempt(AttemptSubmitRequest.fromSnapshot(snapshot));
+      if (!mounted) return null;
+      switch (submitted) {
+        case Success():
+          await store.delete(snapshot.attemptId);
+          return const _ReplaceHandoff();
+        case Failure(:final message) when isTerminalSubmitFailure(message):
+          await store.delete(snapshot.attemptId);
+          return const _ReplaceHandoff();
+        case Failure(:final message):
+          setState(() {
+            _isSubmitting = false;
+            _errorMessage = message;
+          });
+          return null;
+      }
+    }
+
+    return _ReplaceHandoff(
+      priorAnswers: [
+        for (final entry in snapshot.answers.entries)
+          if (entry.value.selectedOption != null)
+            {
+              AttemptAnswerColumns.questionId: entry.key,
+              AttemptAnswerColumns.selectedOption:
+                  entry.value.selectedOption!.dbValue,
+            },
+      ],
+      attemptIdToDelete: snapshot.attemptId,
+    );
+  }
+
+  void _resume(PracticeSlot slot) {
+    final path = slot.opensReader
+        ? AppRoutes.practiceReadingPath(slot.testId)
+        : AppRoutes.testPlayerPath(slot.testId);
+    context.go(path);
+  }
+
   @override
   Widget build(BuildContext context) {
     final catalogAsync = ref.watch(practiceCatalogProvider);
     final planAsync = ref.watch(practicePlanContextProvider);
+    final slotAsync = ref.watch(practiceSlotProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -131,6 +238,7 @@ class _PracticeBuilderScreenState extends ConsumerState<PracticeBuilderScreen> {
             onPressed: () {
               ref.read(practiceCatalogProvider.notifier).refresh();
               ref.read(practicePlanContextProvider.notifier).refresh();
+              ref.read(practiceSlotProvider.notifier).refresh();
             },
             icon: const Icon(Icons.refresh),
           ),
@@ -160,41 +268,62 @@ class _PracticeBuilderScreenState extends ConsumerState<PracticeBuilderScreen> {
                   ref.read(practicePlanContextProvider.notifier).refresh(),
             ),
             data: (planContext) {
-              // Align stale IDs, then re-clamp to *this* plan — stored JSON
-              // is a hint, not a grant (plan may have changed since last time).
-              final draft = _draft
-                  .alignedWithCatalog(catalog)
-                  .clampedTo(planContext);
-              return Column(
-                children: [
-                  Expanded(
-                    child: PracticeBuilderForm(
-                      draft: draft,
-                      catalog: catalog,
-                      planContext: planContext,
-                      onChanged: (next) => setState(() => _draft = next),
-                      onUpgrade: () =>
-                          context.go(AppRoutes.upgradePath(PlanTier.pro)),
-                    ),
-                  ),
-                  _StartBar(
-                    errorMessage: _errorMessage,
-                    isSubmitting: _isSubmitting,
-                    label: draft.isReading ? 'Start reading' : 'Start practice',
-                    quotaExhausted: planContext.dailyQuotaExhausted,
-                    showUpgradeOnExhausted:
-                        planContext.limits.plan == PlanTier.free,
-                    onUpgrade: () =>
-                        context.go(AppRoutes.upgradePath(PlanTier.pro)),
-                    onStart: _isSubmitting || planContext.dailyQuotaExhausted
-                        ? null
-                        : () => _submit(
-                            draft: draft,
-                            catalog: catalog,
-                            planContext: planContext,
-                          ),
-                  ),
-                ],
+              return slotAsync.when(
+                loading: () => const AsyncLoadingView(),
+                error: (error, _) => AsyncErrorView(
+                  message: UserFacingError.display(error),
+                  onAction: () =>
+                      ref.read(practiceSlotProvider.notifier).refresh(),
+                ),
+                data: (slot) {
+                  // Align stale IDs, then re-clamp to *this* plan — stored JSON
+                  // is a hint, not a grant (plan may have changed since last time).
+                  final draft = _draft
+                      .alignedWithCatalog(catalog)
+                      .clampedTo(planContext);
+                  final open = slot != null && slot.isOpen;
+                  final label = switch ((open, draft.isReading)) {
+                    (true, _) => 'Start new',
+                    (false, true) => 'Start reading',
+                    (false, false) => 'Start practice',
+                  };
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: PracticeBuilderForm(
+                          draft: draft,
+                          catalog: catalog,
+                          planContext: planContext,
+                          onChanged: (next) => setState(() => _draft = next),
+                          onUpgrade: () =>
+                              context.go(AppRoutes.upgradePath(PlanTier.pro)),
+                        ),
+                      ),
+                      _StartBar(
+                        errorMessage: _errorMessage,
+                        isSubmitting: _isSubmitting,
+                        label: label,
+                        quotaExhausted: planContext.dailyQuotaExhausted,
+                        showUpgradeOnExhausted:
+                            planContext.limits.plan == PlanTier.free,
+                        onUpgrade: () =>
+                            context.go(AppRoutes.upgradePath(PlanTier.pro)),
+                        onResume: slot != null && slot.isOpen && !_isSubmitting
+                            ? () => _resume(slot)
+                            : null,
+                        onStart:
+                            _isSubmitting || planContext.dailyQuotaExhausted
+                            ? null
+                            : () => _submit(
+                                draft: draft,
+                                catalog: catalog,
+                                planContext: planContext,
+                                slot: slot,
+                              ),
+                      ),
+                    ],
+                  );
+                },
               );
             },
           );
@@ -202,6 +331,14 @@ class _PracticeBuilderScreenState extends ConsumerState<PracticeBuilderScreen> {
       ),
     );
   }
+}
+
+/// Answers to send with the replace call, and the local file to drop after.
+class _ReplaceHandoff {
+  const _ReplaceHandoff({this.priorAnswers = const [], this.attemptIdToDelete});
+
+  final List<Map<String, String>> priorAnswers;
+  final String? attemptIdToDelete;
 }
 
 class _StartBar extends StatelessWidget {
@@ -212,6 +349,7 @@ class _StartBar extends StatelessWidget {
     required this.quotaExhausted,
     this.showUpgradeOnExhausted = false,
     this.onUpgrade,
+    this.onResume,
     required this.onStart,
   });
 
@@ -221,6 +359,7 @@ class _StartBar extends StatelessWidget {
   final bool quotaExhausted;
   final bool showUpgradeOnExhausted;
   final VoidCallback? onUpgrade;
+  final VoidCallback? onResume;
   final VoidCallback? onStart;
 
   @override
@@ -255,6 +394,10 @@ class _StartBar extends StatelessWidget {
                     ?.copyWith(color: colorScheme.error),
               ),
             ),
+          if (onResume != null) ...[
+            OutlinedButton(onPressed: onResume, child: const Text('Resume')),
+            const SizedBox(height: Spacing.sm),
+          ],
           if (quotaExhausted && showUpgradeOnExhausted && onUpgrade != null)
             FilledButton.icon(
               onPressed: onUpgrade,

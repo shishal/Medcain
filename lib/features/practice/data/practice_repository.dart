@@ -9,6 +9,7 @@ import '../domain/created_practice_session.dart';
 import '../domain/plan_limits.dart';
 import '../domain/practice_builder_draft.dart';
 import '../domain/practice_catalog.dart';
+import '../domain/practice_slot.dart';
 
 part 'practice_repository.g.dart';
 
@@ -134,11 +135,54 @@ class PracticeRepository {
     }
   }
 
-  /// Creates an ephemeral practice test. Limits are enforced in Postgres —
-  /// this method must not compute or send a "trusted" score or cap.
+  /// The one practice row for this student, or null when they have none.
+  Future<Result<PracticeSlot?>> fetchCurrentSlot() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      return const Failure('Not signed in.');
+    }
+
+    try {
+      final rows = await _client
+          .from(Tables.tests)
+          .select(
+            '${TestColumns.id},'
+            '${TestColumns.feedbackTiming},'
+            '${TestColumns.createdAt},'
+            '${Tables.attempts}('
+            '${AttemptColumns.id},'
+            '${AttemptColumns.status},'
+            '${AttemptColumns.startedAt}'
+            ')',
+          )
+          .eq(TestColumns.ownerUserId, userId)
+          .eq(TestColumns.isEphemeralPractice, true)
+          .order(TestColumns.createdAt, ascending: false)
+          .limit(1);
+
+      final list = (rows as List<dynamic>).cast<Map<String, dynamic>>();
+      if (list.isEmpty) return const Success(null);
+      return Success(PracticeSlot.fromTestRow(list.first));
+    } catch (e) {
+      return Failure(
+        UserFacingError.from(
+          e,
+          fallback: 'Could not load your practice session. Please try again.',
+        ),
+      );
+    }
+  }
+
+  /// Creates the student's one practice test, replacing any previous one.
+  ///
+  /// Limits are enforced in Postgres — this method must not compute or send
+  /// a "trusted" score or cap. [priorAnswers] are selections still only on
+  /// this phone; the server ignores any question that is not on the row
+  /// being replaced.
   Future<Result<CreatedPracticeSession>> createSession({
     required PracticeBuilderDraft draft,
     required PracticeCatalog catalog,
+    List<Map<String, String>>? priorAnswers,
   }) async {
     if (_client.auth.currentUser == null) {
       return const Failure('Not signed in.');
@@ -173,6 +217,8 @@ class PracticeRepository {
           CreatePracticeSessionParams.lessonIds: draft.lessonIds.isEmpty
               ? null
               : draft.lessonIds.toList(),
+          if (priorAnswers != null && priorAnswers.isNotEmpty)
+            CreatePracticeSessionParams.priorAnswers: priorAnswers,
         },
       );
 

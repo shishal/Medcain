@@ -66,9 +66,15 @@ When `timer_enabled = false`: no countdown UI, no auto-submit. The student submi
 
 When off: `correct_marks = 1`, `incorrect_marks = 0`, `unattempted_marks = 0` (set this way by the generator function) — the results screen shows this as a clean accuracy percentage rather than a NEET-style score, which is the more useful framing for pure practice. When on: real `+4/-1` marking, for students who want to simulate exam pressure even outside a formal test.
 
-## 6. Regenerating / retaking
+## 6. One practice slot
 
-Unlike catalog tests (which are typically solve-once, matching how the researched competitor apps treat their curated Test Series), **practice sessions are meant to be regenerated freely** — each Practice Builder submission creates a brand-new ephemeral session, subject only to the plan's daily quota. Store the filters used (`practice_filter_criteria`, already on the `tests` row) so the results screen can offer a one-tap **"Practice Similar Again"** button that re-opens the builder pre-filled with the same filters — small feature, disproportionately useful for someone drilling a weak topic repeatedly.
+A student has one practice `tests` row (`is_ephemeral_practice`). A partial unique index on `owner_user_id` enforces it. The builder shows **Resume** while that row is still open — tutor or exam in progress (or not started yet), or a reading session — and **Start new** replaces it after a confirmation. A submitted session has no Resume; the next Start replaces the row. The daily quota still applies to the new session and is not refunded. Results for the session they just finished stay available until that replace. Older practice rows are not kept.
+
+Answered questions are stored in `user_question_attempts`, one row per student per question: the latest selected option, and whether it matched the key. `submit_attempt` writes that row for every selected option, including catalog submits. Replacing an open session also records answers that are still only on the phone (`p_prior_answers`), and only when the question belongs to the row being replaced. A finished-but-unsynced session (`pending_submit`) is submitted first, so it is scored before the row is deleted. Reading mode does not write the ledger.
+
+**Unattempted** means no ledger row. **Previously Incorrect** means the latest row was wrong. A later correct answer removes the question from Previously Incorrect.
+
+`practice_filter_criteria` stays on the one row so the results screen can offer **Practice Similar Again**, which re-opens the builder pre-filled with those filters, until the student starts the next session.
 
 ## 7. Validation checklist
 
@@ -78,6 +84,6 @@ Unlike catalog tests (which are typically solve-once, matching how the researche
 - [ ] In Tutor Mode, answer a question, confirm the option is locked and can't be changed afterward
 - [ ] In Tutor Mode, confirm the palette shows correct/incorrect (not just generic green "answered") once a question is revealed
 - [ ] In Exam Mode, confirm no explanation or correctness is visible anywhere until the session is submitted — this is the same guarantee as a catalog test, don't let Tutor Mode's reveal logic leak into Exam Mode sessions by accident
-- [ ] Filter by "Previously Incorrect", answer everything correctly this time, start a new "Previously Incorrect" session immediately after — confirm questions you just got right are excluded (the filter is live against `attempt_answers`, not a stale snapshot)
+- [ ] Filter by "Previously Incorrect", answer everything correctly this time, start a new "Previously Incorrect" session immediately after — confirm questions you just got right are excluded (the filter reads `user_question_attempts`, the latest answer)
 - [ ] Turn the timer off, complete a session, confirm `time_spent_seconds` was still tracked per question even though nothing was shown to the user
 - [ ] Tap "Practice Similar Again" from a results screen, confirm the builder opens pre-filled with the original session's filters
