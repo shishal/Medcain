@@ -111,7 +111,7 @@ declare
   v_sittings jsonb;
   v_body jsonb;
   v_first record;
-  v_paper record;
+  v_sitting record;
 begin
   perform public.assert_admin();
   p_apply := coalesce(p_apply, false);
@@ -1045,29 +1045,29 @@ begin
 
         v_seen := array[]::text[];
         v_sittings := '[]'::jsonb;
-        for v_paper in
+        for v_sitting in
           select *
           from tmp_import_rows
           where legacy_id = v_grp.legacy_id
           order by row_no
         loop
-          v_sit_key := v_paper.university_id::text || '|' ||
-            coalesce(v_paper.college_id::text, '') || '|' ||
-            v_paper.exam_year::text || '|' ||
-            v_paper.exam_month::text || '|' ||
-            coalesce(v_paper.exam_type, '') || '|' ||
-            lower(coalesce(v_paper.paper_name, ''));
+          v_sit_key := v_sitting.university_id::text || '|' ||
+            coalesce(v_sitting.college_id::text, '') || '|' ||
+            v_sitting.exam_year::text || '|' ||
+            v_sitting.exam_month::text || '|' ||
+            coalesce(v_sitting.exam_type, '') || '|' ||
+            lower(coalesce(v_sitting.paper_name, ''));
           if v_sit_key = any(v_seen) then
             continue;
           end if;
           v_seen := array_append(v_seen, v_sit_key);
           v_sittings := v_sittings || jsonb_build_array(jsonb_build_object(
-            'university_id', v_paper.university_id,
-            'college_id', v_paper.college_id,
-            'exam_year', v_paper.exam_year,
-            'exam_month', v_paper.exam_month,
-            'exam_type', v_paper.exam_type,
-            'paper_name', v_paper.paper_name
+            'university_id', v_sitting.university_id,
+            'college_id', v_sitting.college_id,
+            'exam_year', v_sitting.exam_year,
+            'exam_month', v_sitting.exam_month,
+            'exam_type', v_sitting.exam_type,
+            'paper_name', v_sitting.paper_name
           ));
         end loop;
 
@@ -1080,18 +1080,18 @@ begin
         v_saved := public.admin_save_question(v_body);
         v_question_id := (v_saved->>'id')::uuid;
 
-        for v_paper in
+        for v_sitting in
           select value as sit
           from jsonb_array_elements(v_sittings)
         loop
           perform public.admin_save_appearance(jsonb_build_object(
             'question_id', v_question_id,
-            'university_id', v_paper.sit->>'university_id',
-            'college_id', v_paper.sit->>'college_id',
-            'exam_year', v_paper.sit->>'exam_year',
-            'exam_month', v_paper.sit->>'exam_month',
-            'exam_type', v_paper.sit->>'exam_type',
-            'paper_name', v_paper.sit->>'paper_name'
+            'university_id', v_sitting.sit->>'university_id',
+            'college_id', v_sitting.sit->>'college_id',
+            'exam_year', v_sitting.sit->>'exam_year',
+            'exam_month', v_sitting.sit->>'exam_month',
+            'exam_type', v_sitting.sit->>'exam_type',
+            'paper_name', v_sitting.sit->>'paper_name'
           ));
         end loop;
 
