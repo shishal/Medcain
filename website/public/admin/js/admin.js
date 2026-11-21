@@ -1994,6 +1994,40 @@
       URL.revokeObjectURL(url);
     }
 
+    // SheetJS writes the .xlsx in the browser. The first row is the header,
+    // matching the CSV template so either file imports the same way.
+    function downloadWorkbook(filename, headers, dataRows) {
+      if (!window.XLSX) throw new Error('Excel support did not load. Download the CSV template instead.');
+      const matrix = [headers];
+      for (const row of dataRows) {
+        matrix.push(headers.map((header) => {
+          const value = row[header];
+          return value == null ? '' : String(value);
+        }));
+      }
+      const sheet = window.XLSX.utils.aoa_to_sheet(matrix);
+      sheet['!cols'] = headers.map((header) => ({ wch: Math.min(Math.max(header.length + 2, 14), 36) }));
+      const book = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(book, sheet, 'Questions');
+      window.XLSX.writeFile(book, filename);
+    }
+
+    function filledSheet() {
+      const byRow = new Map((lastResult.codes || []).map((item) => [item.row_no, item.question_id || '']));
+      const headers = parsed.headers.slice();
+      if (!headers.includes('question_id')) {
+        const at = headers.indexOf('question_text');
+        headers.splice(at === -1 ? headers.length : at, 0, 'question_id');
+      }
+      const rows = [];
+      for (const row of parsed.rows) {
+        const copy = { ...row };
+        if (byRow.has(row._row_number)) copy.question_id = byRow.get(row._row_number);
+        rows.push(copy);
+      }
+      return { headers, rows };
+    }
+
     function invalidate() {
       checkedKey = '';
       const button = document.getElementById('import-file');
@@ -2003,6 +2037,7 @@
     function setBusy(busy) {
       document.getElementById('check-file').disabled = busy;
       document.getElementById('download-template').disabled = busy;
+      document.getElementById('download-template-xlsx').disabled = busy;
       if (busy) document.getElementById('import-file').disabled = true;
     }
 
@@ -2043,7 +2078,10 @@
       `).join('');
       preview.innerHTML = `
         <p class="msg ok">${esc(summary)}</p>
-        ${applied ? '<p><button class="btn btn-ghost" type="button" id="download-codes">Download sheet with question ids</button></p>' : ''}
+        ${applied ? `<p class="actions">
+          <button class="btn btn-ghost" type="button" id="download-codes">Download CSV with question ids</button>
+          <button class="btn btn-ghost" type="button" id="download-codes-xlsx">Download Excel with question ids</button>
+        </p>` : ''}
         <div class="table-wrap">
           <table>
             <thead><tr><th>Row</th><th></th><th>Code</th><th>Papers</th><th>Question</th></tr></thead>
@@ -2124,7 +2162,7 @@
 
     app.innerHTML = `
       <div id="msg"></div>
-      <p class="hint">Upload the same Questions sheet as a CSV or Excel file. Leave the fields below empty to use the sheet. A value here fills a cell only when that cell is empty. Questions that are not in the file stay as they are.</p>
+      <p class="hint">Upload a Questions sheet as CSV or Excel (.xlsx). The templates use the same columns. Leave the fields below empty to use the sheet. A value here fills a cell only when that cell is empty. Questions that are not in the file stay as they are.</p>
       <div class="card form-grid">
         ${field('Subject', selectControl('subject_id', subjects.map((item) => [item.id, item.name]), '', 'Use the sheet'))}
         ${field('University', selectControl('university_id', universities.map((item) => [item.id, `${item.code} · ${item.name}`]), '', 'Use the sheet'))}
@@ -2137,11 +2175,12 @@
         ${field('Plan', selectControl('required_plan', PLANS, '', 'Use the sheet'))}
         ${field('Visible', selectControl('is_active', [['true', 'Visible'], ['false', 'Hidden']], '', 'Use the sheet'))}
         <div class="span-2">
-          <label>File<input id="file" type="file" accept=".csv,.xlsx,text/csv" /></label>
+          <label>CSV or Excel file<input id="file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" /></label>
           <p class="hint" id="file-status"></p>
         </div>
         <div class="actions span-2">
-          <button class="btn btn-ghost" type="button" id="download-template">Download template</button>
+          <button class="btn btn-ghost" type="button" id="download-template">Download CSV template</button>
+          <button class="btn btn-ghost" type="button" id="download-template-xlsx">Download Excel template</button>
           <button class="btn btn-ghost" type="button" id="check-file">Check file</button>
           <button class="btn btn-primary" type="button" id="import-file" disabled>Import</button>
         </div>
@@ -2166,6 +2205,13 @@
       if (!button) return;
       if (button.id === 'download-template') {
         downloadText('Questions.csv', `\uFEFF${templateHeaders.join(',')}\n`);
+      }
+      if (button.id === 'download-template-xlsx') {
+        try {
+          downloadWorkbook('Questions.xlsx', templateHeaders, []);
+        } catch (error) {
+          message('error', error.message || 'Could not build the Excel template.');
+        }
       }
       if (button.id === 'check-file') {
         if (!parsed) {
@@ -2221,20 +2267,21 @@
           setBusy(false);
         }
       }
-      if (button.id === 'download-codes' && parsed && lastResult && lastResult.codes) {
-        const byRow = new Map(lastResult.codes.map((item) => [item.row_no, item.question_id || '']));
-        const headers = parsed.headers.slice();
-        if (!headers.includes('question_id')) {
-          const at = headers.indexOf('question_text');
-          headers.splice(at === -1 ? headers.length : at, 0, 'question_id');
+      if ((button.id === 'download-codes' || button.id === 'download-codes-xlsx') && parsed && lastResult && lastResult.codes) {
+        const sheet = filledSheet();
+        if (button.id === 'download-codes-xlsx') {
+          try {
+            downloadWorkbook('Questions-with-ids.xlsx', sheet.headers, sheet.rows);
+          } catch (error) {
+            message('error', error.message || 'Could not build the Excel file.');
+          }
+        } else {
+          const lines = [sheet.headers.map(csvCell).join(',')];
+          for (const row of sheet.rows) {
+            lines.push(sheet.headers.map((header) => csvCell(row[header])).join(','));
+          }
+          downloadText('Questions-with-ids.csv', `\uFEFF${lines.join('\n')}\n`);
         }
-        const lines = [headers.map(csvCell).join(',')];
-        for (const row of parsed.rows) {
-          const copy = { ...row };
-          if (byRow.has(row._row_number)) copy.question_id = byRow.get(row._row_number);
-          lines.push(headers.map((header) => csvCell(copy[header])).join(','));
-        }
-        downloadText('Questions-with-ids.csv', `\uFEFF${lines.join('\n')}\n`);
       }
     };
   }
