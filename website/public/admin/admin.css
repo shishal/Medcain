@@ -44,6 +44,10 @@
   margin-top: -8px;
 }
 
+.admin .actions .hint {
+  margin: 0;
+}
+
 .msg {
   padding: 10px 12px;
   border-radius: var(--radius);
@@ -195,6 +199,20 @@
   font-size: 0.8125rem;
   color: var(--muted);
   font-weight: 700;
+}
+
+
+.admin th.pick,
+.admin td.pick {
+  width: 36px;
+  padding-right: 0;
+}
+
+.admin th.pick input,
+.admin td.pick input {
+  width: auto;
+  margin: 2px 0 0;
+  padding: 0;
 }
 
 .stem {

@@ -453,6 +453,12 @@
     const states = [...new Set(universities.map((item) => item.state).filter(Boolean))].sort();
     let offset = 0;
     const limit = 50;
+    const selected = new Set();
+    let pageRows = [];
+    let bulkBusy = false;
+    let uploadRows = null;
+    let uploadKey = '';
+    let uploadResult = null;
 
     function universityPairs(state) {
       return universities
@@ -481,7 +487,17 @@
             <a class="btn btn-ghost" href="/admin/import/">Import</a>
           </div>
         </form>
+        <div class="actions" id="bulk-bar">
+          <span class="hint" id="selected-count">None selected.</span>
+          <button class="btn btn-ghost" type="button" id="download-selected" disabled>Download Excel</button>
+          <button class="btn btn-ghost" type="button" id="clear-selected" disabled>Clear selection</button>
+        </div>
         <div id="results"></div>
+        <div class="card" id="upload-card">
+          <p class="hint">Download the selected questions, edit them in Excel, then upload the file here. Keep question_id so the same questions are updated. exp_1 is the short explanation, exp_2 the longer explanation, and answers is the model answer. Leave the paper columns unchanged when you only want to change the wording. Changing a paper column adds a paper and does not remove the old one.</p>
+          <label>Edited Excel file<input id="upload-edited" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" /></label>
+          <div id="upload-preview"></div>
+        </div>
       `;
       const college = document.getElementById('college_id');
       college.disabled = true;
@@ -537,11 +553,13 @@
       try {
         const data = await rpc('admin_search_questions_filtered', { p_filters: readFilters() });
         const rows = data.questions || [];
+        pageRows = rows;
         const total = data.total || 0;
         const from = total === 0 ? 0 : offset + 1;
         const to = Math.min(offset + rows.length, total);
         const body = rows.map((row) => `
           <tr>
+            <td class="pick"><input class="pick" type="checkbox" data-id="${esc(row.id)}" aria-label="Select ${esc(row.public_code || 'question')}" ${selected.has(row.id) ? 'checked' : ''} /></td>
             <td><a href="/admin/question/?id=${esc(row.id)}">${esc(row.public_code || '—')}</a></td>
             <td>${esc(row.subject_name || '')}</td>
             <td>${esc(labelOf(KINDS, row.kind))}</td>
@@ -555,8 +573,8 @@
           <p class="hint">${total === 0 ? 'No questions match.' : `Showing ${from}–${to} of ${total}.`}</p>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Code</th><th>Subject</th><th>Type</th><th>Plan</th><th></th><th>Papers</th><th>Question</th></tr></thead>
-              <tbody>${body || '<tr><td colspan="7">No questions match.</td></tr>'}</tbody>
+              <thead><tr><th class="pick"><input type="checkbox" id="select-page" aria-label="Select every question on this page" /></th><th>Code</th><th>Subject</th><th>Type</th><th>Plan</th><th></th><th>Papers</th><th>Question</th></tr></thead>
+              <tbody>${body || '<tr><td colspan="8">No questions match.</td></tr>'}</tbody>
             </table>
           </div>
           <div class="pager">
@@ -572,8 +590,247 @@
           offset += limit;
           search();
         });
+        paintSelection();
       } catch (error) {
         results.innerHTML = `<p class="msg error">${esc(errorText(error))}</p>`;
+      }
+    }
+
+    function paintSelection() {
+      const count = document.getElementById('selected-count');
+      const download = document.getElementById('download-selected');
+      const clear = document.getElementById('clear-selected');
+      if (count) {
+        count.textContent = selected.size === 0
+          ? 'None selected.'
+          : `${selected.size} selected.`;
+      }
+      if (download) download.disabled = bulkBusy || selected.size === 0;
+      if (clear) clear.disabled = bulkBusy || selected.size === 0;
+      const box = document.getElementById('select-page');
+      if (!box) return;
+      const ids = pageRows.map((row) => row.id);
+      const picked = ids.filter((id) => selected.has(id)).length;
+      box.checked = ids.length > 0 && picked === ids.length;
+      box.indeterminate = picked > 0 && picked < ids.length;
+      box.disabled = bulkBusy || ids.length === 0;
+    }
+
+    function setBulkBusy(on) {
+      bulkBusy = on;
+      const upload = document.getElementById('upload-edited');
+      if (upload) upload.disabled = on;
+      const apply = document.getElementById('apply-upload');
+      if (apply) apply.disabled = on;
+      paintSelection();
+    }
+
+    function skipNote(skipped) {
+      const items = skipped || [];
+      if (!items.length) return '';
+      const shown = items.slice(0, 5).map((item) => {
+        const code = item.public_code || 'one question';
+        return `${code}: ${item.reason}`;
+      });
+      const more = items.length - shown.length;
+      return `Skipped ${items.length}. ${shown.join(' ')}${more > 0 ? ` And ${more} more.` : ''}`;
+    }
+
+    function downloadWorkbook(filename, headers, dataRows) {
+      if (!window.XLSX) throw new Error('Excel support did not load. Refresh the page and try again.');
+      const matrix = [headers];
+      for (const row of dataRows) {
+        matrix.push(headers.map((header) => {
+          const value = row[header];
+          return value == null ? '' : String(value);
+        }));
+      }
+      const sheet = window.XLSX.utils.aoa_to_sheet(matrix);
+      const wide = new Set([
+        'question_text', 'exp_1', 'exp_2', 'answers',
+        'option_a', 'option_b', 'option_c', 'option_d',
+      ]);
+      sheet['!cols'] = headers.map((header) => ({
+        wch: wide.has(header) ? 48 : Math.min(Math.max(header.length + 2, 14), 28),
+      }));
+      const idCol = headers.indexOf('question_id');
+      if (idCol >= 0) {
+        for (let r = 1; r <= dataRows.length; r += 1) {
+          const addr = window.XLSX.utils.encode_cell({ r, c: idCol });
+          const cell = sheet[addr];
+          if (!cell) continue;
+          cell.t = 's';
+          cell.v = String(cell.v ?? '');
+          delete cell.w;
+        }
+      }
+      const book = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(book, sheet, 'Questions');
+      window.XLSX.writeFile(book, filename);
+    }
+
+    function cellText(value) {
+      if (value == null) return '';
+      return String(value).replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+    }
+
+    function matrixToRows(matrix) {
+      if (!matrix.length || matrix[0].every((item) => cellText(item) === '')) {
+        throw new Error('The file has no header row.');
+      }
+      const headers = matrix[0].map((item) => cellText(item));
+      while (headers.length && headers[headers.length - 1] === '') headers.pop();
+      if (headers.some((header) => header === '')) {
+        throw new Error('The header row has an empty column.');
+      }
+      if (!headers.includes('question_id')) {
+        throw new Error('The file needs a question_id column. Download the Excel again.');
+      }
+      const seen = new Set();
+      for (const header of headers) {
+        if (seen.has(header)) throw new Error(`The column "${header}" is repeated.`);
+        seen.add(header);
+      }
+      const rows = [];
+      for (let i = 1; i < matrix.length; i += 1) {
+        const line = matrix[i] || [];
+        const obj = { _row_number: i + 1 };
+        let blank = true;
+        headers.forEach((header, index) => {
+          const text = cellText(line[index]);
+          obj[header] = text;
+          if (text !== '') blank = false;
+        });
+        if (!blank) rows.push(obj);
+      }
+      if (!rows.length) throw new Error('The file has no questions.');
+      if (rows.length > 300) throw new Error('A file can hold 300 questions. Split this one.');
+      const missingId = rows.some((row) => row.question_id === '');
+      if (missingId) {
+        throw new Error('Every row needs a question_id. Download the Excel again and leave that column filled.');
+      }
+      return rows;
+    }
+
+    function readUploadFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Could not read that file.'));
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function drawUpload(data) {
+      const preview = document.getElementById('upload-preview');
+      if (!preview) return;
+      if (!data) {
+        preview.innerHTML = '';
+        return;
+      }
+      if (!data.ok) {
+        const errors = data.errors || [];
+        const shown = errors.slice(0, 12);
+        const more = errors.length - shown.length;
+        preview.innerHTML = `
+          <p class="msg error">Nothing was written.</p>
+          <ul>${shown.map((item) => `<li>${esc(item)}</li>`).join('')}</ul>
+          ${more > 0 ? `<p class="hint">And ${more} more.</p>` : ''}
+        `;
+        return;
+      }
+      const creates = Number(data.creates) || 0;
+      const updates = Number(data.updates) || 0;
+      if (creates > 0) {
+        preview.innerHTML = `<p class="msg error">This file would add ${esc(creates)} new question${creates === 1 ? '' : 's'}. Keep question_id filled. New questions belong on Import.</p>`;
+        return;
+      }
+      if (updates === 0) {
+        preview.innerHTML = '<p class="msg error">Nothing in this file updates an existing question.</p>';
+        return;
+      }
+      preview.innerHTML = `
+        <p class="msg ok">This updates ${esc(updates)} question${updates === 1 ? '' : 's'}. Nothing is written yet.</p>
+        <button class="btn btn-primary" type="button" id="apply-upload">Update these questions</button>
+      `;
+    }
+
+    async function loadUpload(file) {
+      uploadRows = null;
+      uploadKey = '';
+      uploadResult = null;
+      drawUpload(null);
+      if (!file) return;
+      const name = file.name.toLowerCase();
+      if (!name.endsWith('.xlsx')) {
+        message('error', 'Use an Excel file (.xlsx).');
+        return;
+      }
+      if (!window.XLSX) {
+        message('error', 'Excel support did not load. Refresh the page and try again.');
+        return;
+      }
+      setBulkBusy(true);
+      try {
+        const book = window.XLSX.read(await readUploadFile(file), { type: 'array' });
+        const sheetName = book.SheetNames[0];
+        if (!sheetName) throw new Error('The workbook has no sheets.');
+        const matrix = window.XLSX.utils.sheet_to_json(book.Sheets[sheetName], {
+          header: 1,
+          raw: false,
+          defval: '',
+          blankrows: true,
+        });
+        const rows = matrixToRows(matrix);
+        const data = await rpc('admin_import_questions', {
+          p_rows: rows,
+          p_defaults: {},
+          p_apply: false,
+        });
+        uploadRows = rows;
+        uploadResult = data;
+        uploadKey = data.ok ? JSON.stringify(rows) : '';
+        drawUpload(data);
+        const extra = book.SheetNames.length > 1 ? ` Using the first sheet, ${sheetName}.` : '';
+        if (data.ok) message('ok', `Checked ${rows.length} row${rows.length === 1 ? '' : 's'}.${extra}`);
+        else message('error', 'Nothing was written.');
+      } catch (error) {
+        uploadRows = null;
+        uploadKey = '';
+        uploadResult = null;
+        drawUpload(null);
+        message('error', error.message || errorText(error));
+      } finally {
+        setBulkBusy(false);
+      }
+    }
+
+    async function downloadSelected() {
+      if (selected.size === 0 || bulkBusy) return;
+      if (selected.size > 300) {
+        message('error', 'Select at most 300 questions.');
+        return;
+      }
+      setBulkBusy(true);
+      try {
+        const data = await rpc('admin_export_questions', { p_ids: [...selected] });
+        const headers = data.headers || [];
+        const rows = data.rows || [];
+        const skipped = data.skipped || [];
+        if (!rows.length) {
+          message('error', skipNote(skipped) || 'None of the selected questions can be exported.');
+          return;
+        }
+        if (!headers.length) throw new Error('The export has no columns.');
+        downloadWorkbook('Questions-selected.xlsx', headers, rows);
+        const note = skipped.length
+          ? `Downloaded ${rows.length}. ${skipNote(skipped)}`
+          : `Downloaded ${rows.length} question${rows.length === 1 ? '' : 's'}.`;
+        message('ok', note);
+      } catch (error) {
+        message('error', error.message || errorText(error));
+      } finally {
+        setBulkBusy(false);
       }
     }
 
@@ -585,6 +842,31 @@
       await search();
     };
     handlers.change = async (event) => {
+      if (event.target.id === 'select-page') {
+        const on = event.target.checked;
+        for (const row of pageRows) {
+          if (on) selected.add(row.id);
+          else selected.delete(row.id);
+        }
+        document.querySelectorAll('#results input.pick').forEach((box) => {
+          box.checked = on;
+        });
+        paintSelection();
+        return;
+      }
+      if (event.target.classList && event.target.classList.contains('pick')) {
+        const id = event.target.getAttribute('data-id');
+        if (!id) return;
+        if (event.target.checked) selected.add(id);
+        else selected.delete(id);
+        paintSelection();
+        return;
+      }
+      if (event.target.id === 'upload-edited') {
+        await loadUpload(event.target.files && event.target.files[0]);
+        event.target.value = '';
+        return;
+      }
       if (event.target.id === 'state') {
         const select = document.getElementById('university_id');
         const current = select.value;
@@ -603,7 +885,53 @@
         await loadColleges(val('university_id'), '');
       }
     };
-    handlers.click = handleMarkdownClick;
+    handlers.click = async (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      if (button.id === 'download-selected') {
+        await downloadSelected();
+      }
+      if (button.id === 'clear-selected') {
+        selected.clear();
+        document.querySelectorAll('#results input.pick').forEach((box) => {
+          box.checked = false;
+        });
+        paintSelection();
+      }
+      if (button.id === 'apply-upload') {
+        if (!uploadRows || !uploadKey || JSON.stringify(uploadRows) !== uploadKey) {
+          message('error', 'Check the file again before updating.');
+          return;
+        }
+        const updates = Number(uploadResult && uploadResult.updates) || 0;
+        const creates = Number(uploadResult && uploadResult.creates) || 0;
+        if (!uploadResult || !uploadResult.ok || creates > 0 || updates === 0) return;
+        if (!window.confirm(`Update ${updates} question${updates === 1 ? '' : 's'}?`)) return;
+        setBulkBusy(true);
+        try {
+          const data = await rpc('admin_import_questions', {
+            p_rows: uploadRows,
+            p_defaults: {},
+            p_apply: true,
+          });
+          uploadResult = data;
+          if (data.ok && data.applied) {
+            uploadKey = '';
+            drawUpload(null);
+            message('ok', `Updated ${data.updates} question${Number(data.updates) === 1 ? '' : 's'}.`);
+            await search();
+          } else {
+            uploadKey = '';
+            drawUpload(data);
+            message('error', 'Nothing was written.');
+          }
+        } catch (error) {
+          message('error', error.message || errorText(error));
+        } finally {
+          setBulkBusy(false);
+        }
+      }
+    };
     await search();
   }
 

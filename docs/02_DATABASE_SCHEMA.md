@@ -757,6 +757,16 @@ type, and question text are still one question, and each row is another paper.
 Check the file before importing. A clean import creates or updates only the
 rows in the file. It does not delete questions that are missing from the file.
 
+`/admin/questions/` selects questions and downloads them as Excel through
+`admin_export_questions`. The file uses the same columns, including
+`question_id`. `exp_1` is the short explanation, `exp_2` the longer
+explanation, and `answers` the model answer. Uploading that file on the same
+page calls `admin_import_questions` and updates the questions with those ids.
+It does not create questions. Each exported question is one row, using its
+latest paper that has a university, year, and month. Changing a paper column
+adds a paper and leaves the previous paper in place. A question with no id,
+or no paper that can be written back, is left out of the file.
+
 Question identity is `questions.public_code`, six digits (`000123`). It is
 not derived from the stem, so two questions can share a stem. Older imports
 still have `questions.content_sync_source = 'questions_csv_v2'`.
