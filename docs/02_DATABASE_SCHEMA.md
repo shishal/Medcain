@@ -763,7 +763,7 @@ rows in the file. It does not delete questions that are missing from the file.
 explanation, and `answers` the model answer. Uploading that file on the same
 page calls `admin_import_questions` and updates the questions with those ids.
 It does not create questions. Each exported question is one row, using its
-latest paper that has a university, year, and month. Changing a paper column
+latest paper that has a university and year. A month cell of `-` means that paper has no month. Changing a paper column
 adds a paper and leaves the previous paper in place. A question with no id,
 or no paper that can be written back, is left out of the file.
 
@@ -775,8 +775,8 @@ A sitting is one `exam_papers` row: university + college + subject + exam type
 (`prof`, `supply`, `pre_prof`, `internal`) + year + month + paper label.
 Several sittings on one `public_code` are one question. The same stem with a
 different id is a different question. Older rows with `exam_type = 'university'`
-are migrated to `prof`. `paper_name` may be null. `exam_month` may be null
-only on papers imported before months were required.
+are migrated to `prof`. `paper_name` may be null. `exam_month` may be null.
+On the Questions sheet, `-` means the month does not apply.
 
 Table `subject_phase_defaults` maps the university-exam subjects to
 `year1`–`year4`:
