@@ -135,7 +135,7 @@
     current.replaceWith(wrap.firstElementChild);
   }
 
-  function selectControl(id, pairs, selected, placeholder) {
+  function selectControl(id, pairs, selected, placeholder, extra) {
     const options = [];
     if (placeholder !== undefined) {
       options.push(`<option value="">${esc(placeholder)}</option>`);
@@ -146,7 +146,7 @@
       const on = String(value) === String(selected ?? '') ? ' selected' : '';
       options.push(`<option value="${esc(value)}"${on}>${esc(label)}</option>`);
     }
-    return `<select id="${esc(id)}" name="${esc(id)}">${options.join('')}</select>`;
+    return `<select id="${esc(id)}" name="${esc(id)}"${extra ? ` ${extra}` : ''}>${options.join('')}</select>`;
   }
 
   function checkControl(id, label, on) {
@@ -1238,90 +1238,160 @@
       ? await rpc('admin_list_colleges', { p_university_id: collegeUniversityId })
       : [];
     const editing = { university: null, college: null, subject: null };
+    // Sections start closed. draw() reads the live <details> so a redraw keeps
+    // whichever section the admin has opened.
+    const open = { university: false, college: false, subject: false };
+
+    function captureOpen() {
+      app.querySelectorAll('details[data-fold]').forEach((fold) => {
+        const key = fold.getAttribute('data-fold');
+        if (key && Object.prototype.hasOwnProperty.call(open, key)) open[key] = fold.open;
+      });
+    }
+
+    function fold(key, title, count, body) {
+      return `<details class="fold" data-fold="${key}"${open[key] ? ' open' : ''}>
+        <summary>
+          <h2>${esc(title)}</h2>
+          <span class="fold-count">${esc(count)}</span>
+        </summary>
+        <div class="fold-body">${body}</div>
+      </details>`;
+    }
+
+    function viewActions(kind, id) {
+      return `<div class="actions">
+        <button class="btn btn-ghost btn-small" type="button" data-action="edit-${kind}" data-id="${esc(id)}">Edit</button>
+        <button class="btn btn-ghost btn-small" type="button" data-action="delete-${kind}" data-id="${esc(id)}">Delete</button>
+      </div>`;
+    }
+
+    function editActions(kind) {
+      return `<div class="actions">
+        <button class="btn btn-primary btn-small" type="submit" form="edit-${kind}">Save</button>
+        <button class="btn btn-ghost btn-small" type="button" data-action="clear-${kind}">Cancel</button>
+      </div>`;
+    }
+
+    // Save sits in the table row. form="edit-…" links that button to this empty
+    // form, so the browser validates the row's fields before submit.
+    function editForm(kind) {
+      return `<form id="edit-${kind}" class="inline-form" data-form="edit-${kind}"></form>`;
+    }
 
     function draw() {
-      const uni = editing.university || {};
-      const college = editing.college || {};
-      const subject = editing.subject || {};
+      captureOpen();
+      const scrollY = window.scrollY;
+      const phasePairs = phases.map((item) => [item.id, item.name]);
+      const collegeUni = universities.find((item) => item.id === collegeUniversityId);
+      const collegeCount = collegeUni ? `${collegeUni.code} · ${colleges.length}` : String(colleges.length);
       app.innerHTML = `
         <div id="msg"></div>
-        <h2>Universities</h2>
-        <form class="card form-grid" data-form="university">
-          ${field('Code', inputControl('uni_code', uni.code || '', 'required'))}
-          ${field('Name', inputControl('uni_name', uni.name || '', 'required'))}
-          ${field('State', inputControl('uni_state', uni.state || '', 'required'))}
-          ${field('Slug', inputControl('uni_slug', uni.slug || '', 'placeholder="Leave blank to build it from the name"'))}
-          <div class="actions span-2">
-            <button class="btn btn-primary" type="submit">${uni.id ? 'Save university' : 'Add university'}</button>
-            ${uni.id ? '<button class="btn btn-ghost" type="button" data-action="clear-university">Cancel</button>' : ''}
-          </div>
-        </form>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Code</th><th>Name</th><th>State</th><th></th></tr></thead>
-          <tbody>${universities.map((item) => `
-            <tr>
-              <td>${esc(item.code)}</td>
-              <td>${esc(item.name)}</td>
-              <td>${esc(item.state)}</td>
-              <td>
-                <button class="btn btn-ghost btn-small" type="button" data-action="edit-university" data-id="${esc(item.id)}">Edit</button>
-                <button class="btn btn-ghost btn-small" type="button" data-action="delete-university" data-id="${esc(item.id)}">Delete</button>
-              </td>
-            </tr>`).join('')}</tbody>
-        </table></div>
-
-        <h2 class="section-title">Colleges</h2>
-        <div class="card">
-          ${field('University', selectControl('college_university', universities.map((item) => [item.id, `${item.code} · ${item.name}`]), collegeUniversityId, 'Choose'))}
-          <form class="form-grid" data-form="college">
-            ${field('Name', inputControl('col_name', college.name || '', 'required'))}
-            ${field('Short form', inputControl('col_short', college.short_form || '', 'required placeholder="MAMC"'))}
-            <p class="hint span-2">Short form is the college alias. Unique in this university.</p>
+        ${fold('university', 'Universities', String(universities.length), `
+          <form class="card form-grid" data-form="university">
+            ${field('Code', inputControl('new_uni_code', '', 'required autocomplete="off"'))}
+            ${field('Name', inputControl('new_uni_name', '', 'required autocomplete="off"'))}
+            ${field('State', inputControl('new_uni_state', '', 'required autocomplete="off"'))}
+            ${field('Slug', inputControl('new_uni_slug', '', 'placeholder="From the name if blank" autocomplete="off"'))}
             <div class="actions span-2">
-              <button class="btn btn-primary" type="submit" ${collegeUniversityId ? '' : 'disabled'}>${college.id ? 'Save college' : 'Add college'}</button>
-              ${college.id ? '<button class="btn btn-ghost" type="button" data-action="clear-college">Cancel</button>' : ''}
+              <button class="btn btn-primary" type="submit">Add university</button>
             </div>
           </form>
-        </div>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Short form</th><th>Name</th><th></th></tr></thead>
-          <tbody>${colleges.map((item) => `
-            <tr>
-              <td>${esc(item.short_form)}</td>
-              <td>${esc(item.name)}</td>
-              <td>
-                <button class="btn btn-ghost btn-small" type="button" data-action="edit-college" data-id="${esc(item.id)}">Edit</button>
-                <button class="btn btn-ghost btn-small" type="button" data-action="delete-college" data-id="${esc(item.id)}">Delete</button>
-              </td>
-            </tr>`).join('') || '<tr><td colspan="3">No colleges for this university.</td></tr>'}</tbody>
-        </table></div>
+          ${editForm('university')}
+          <div class="table-wrap"><table>
+            <thead><tr><th>Code</th><th>Name</th><th>State</th><th></th></tr></thead>
+            <tbody>${universities.map((item) => {
+              const on = editing.university && editing.university.id === item.id;
+              if (!on) {
+                return `<tr>
+                  <td>${esc(item.code)}</td>
+                  <td>${esc(item.name)}<div class="cell-sub">${esc(item.slug || '')}</div></td>
+                  <td>${esc(item.state)}</td>
+                  <td class="row-actions">${viewActions('university', item.id)}</td>
+                </tr>`;
+              }
+              return `<tr class="editing">
+                <td>${inputControl('uni_code', item.code || '', 'required form="edit-university" aria-label="Code" autocomplete="off"')}</td>
+                <td>
+                  ${inputControl('uni_name', item.name || '', 'required form="edit-university" aria-label="Name" autocomplete="off"')}
+                  ${inputControl('uni_slug', item.slug || '', 'form="edit-university" aria-label="Slug" placeholder="Slug" autocomplete="off"')}
+                </td>
+                <td>${inputControl('uni_state', item.state || '', 'required form="edit-university" aria-label="State" autocomplete="off"')}</td>
+                <td class="row-actions">${editActions('university')}</td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table></div>
+        `)}
 
-        <h2 class="section-title">Subjects</h2>
-        <form class="card form-grid" data-form="subject">
-          ${field('Name', inputControl('sub_name', subject.name || '', 'required'))}
-          ${field('MBBS year', selectControl('sub_phase', phases.map((item) => [item.id, item.name]), subject.mbbs_phase_id || '', 'Choose'))}
-          ${field('Display order', inputControl('sub_order', subject.display_order ?? '', 'inputmode="numeric"'))}
-          ${field('Plan required', selectControl('sub_plan', PLANS, subject.required_plan || 'free'))}
-          <div class="actions span-2">
-            <button class="btn btn-primary" type="submit">${subject.id ? 'Save subject' : 'Add subject'}</button>
-            ${subject.id ? '<button class="btn btn-ghost" type="button" data-action="clear-subject">Cancel</button>' : ''}
+        ${fold('college', 'Colleges', collegeCount, `
+          <div class="card">
+            ${field('University', selectControl('college_university', universities.map((item) => [item.id, `${item.code} · ${item.name}`]), collegeUniversityId, 'Choose'))}
+            <form class="form-grid" data-form="college">
+              ${field('Name', inputControl('new_col_name', '', 'required autocomplete="off"'))}
+              ${field('Short form', inputControl('new_col_short', '', 'required placeholder="MAMC" autocomplete="off"'))}
+              <p class="hint span-2">Short form is the college alias. Unique in this university.</p>
+              <div class="actions span-2">
+                <button class="btn btn-primary" type="submit" ${collegeUniversityId ? '' : 'disabled'}>Add college</button>
+              </div>
+            </form>
           </div>
-        </form>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Order</th><th>Name</th><th>Year</th><th>Plan</th><th></th></tr></thead>
-          <tbody>${subjects.map((item) => `
-            <tr>
-              <td>${esc(item.display_order)}</td>
-              <td>${esc(item.name)}</td>
-              <td>${esc(item.phase_name || '')}</td>
-              <td>${esc(labelOf(PLANS, item.required_plan))}</td>
-              <td>
-                <button class="btn btn-ghost btn-small" type="button" data-action="edit-subject" data-id="${esc(item.id)}">Edit</button>
-                <button class="btn btn-ghost btn-small" type="button" data-action="delete-subject" data-id="${esc(item.id)}">Delete</button>
-              </td>
-            </tr>`).join('')}</tbody>
-        </table></div>
+          ${editForm('college')}
+          <div class="table-wrap"><table>
+            <thead><tr><th>Short form</th><th>Name</th><th></th></tr></thead>
+            <tbody>${colleges.map((item) => {
+              const on = editing.college && editing.college.id === item.id;
+              if (!on) {
+                return `<tr>
+                  <td>${esc(item.short_form)}</td>
+                  <td>${esc(item.name)}</td>
+                  <td class="row-actions">${viewActions('college', item.id)}</td>
+                </tr>`;
+              }
+              return `<tr class="editing">
+                <td>${inputControl('col_short', item.short_form || '', 'required form="edit-college" aria-label="Short form" autocomplete="off"')}</td>
+                <td>${inputControl('col_name', item.name || '', 'required form="edit-college" aria-label="Name" autocomplete="off"')}</td>
+                <td class="row-actions">${editActions('college')}</td>
+              </tr>`;
+            }).join('') || '<tr><td colspan="3">No colleges for this university.</td></tr>'}</tbody>
+          </table></div>
+        `)}
+
+        ${fold('subject', 'Subjects', String(subjects.length), `
+          <form class="card form-grid" data-form="subject">
+            ${field('Name', inputControl('new_sub_name', '', 'required autocomplete="off"'))}
+            ${field('MBBS year', selectControl('new_sub_phase', phasePairs, '', 'Choose'))}
+            ${field('Display order', inputControl('new_sub_order', '', 'inputmode="numeric" autocomplete="off"'))}
+            ${field('Plan required', selectControl('new_sub_plan', PLANS, 'free'))}
+            <div class="actions span-2">
+              <button class="btn btn-primary" type="submit">Add subject</button>
+            </div>
+          </form>
+          ${editForm('subject')}
+          <div class="table-wrap"><table>
+            <thead><tr><th>Order</th><th>Name</th><th>Year</th><th>Plan</th><th></th></tr></thead>
+            <tbody>${subjects.map((item) => {
+              const on = editing.subject && editing.subject.id === item.id;
+              if (!on) {
+                return `<tr>
+                  <td>${esc(item.display_order)}</td>
+                  <td>${esc(item.name)}</td>
+                  <td>${esc(item.phase_name || '')}</td>
+                  <td>${esc(labelOf(PLANS, item.required_plan))}</td>
+                  <td class="row-actions">${viewActions('subject', item.id)}</td>
+                </tr>`;
+              }
+              return `<tr class="editing">
+                <td>${inputControl('sub_order', item.display_order ?? '', 'form="edit-subject" aria-label="Display order" inputmode="numeric" autocomplete="off"')}</td>
+                <td>${inputControl('sub_name', item.name || '', 'required form="edit-subject" aria-label="Name" autocomplete="off"')}</td>
+                <td>${selectControl('sub_phase', phasePairs, item.mbbs_phase_id || '', undefined, 'form="edit-subject" aria-label="MBBS year"')}</td>
+                <td>${selectControl('sub_plan', PLANS, item.required_plan || 'free', undefined, 'form="edit-subject" aria-label="Plan required"')}</td>
+                <td class="row-actions">${editActions('subject')}</td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table></div>
+        `)}
       `;
+      window.scrollTo(0, scrollY);
     }
 
     handlers.change = async (event) => {
@@ -1391,47 +1461,69 @@
       draw();
       const slot = document.getElementById('msg');
       if (slot && note) slot.innerHTML = note;
+      const focusId = {
+        'edit-university': 'uni_code',
+        'edit-college': 'col_short',
+        'edit-subject': 'sub_name',
+      }[action];
+      const focusNode = focusId ? document.getElementById(focusId) : null;
+      if (focusNode) focusNode.focus({ preventScroll: true });
     };
 
     handlers.submit = async (event) => {
       event.preventDefault();
       const formName = event.target.getAttribute('data-form');
       try {
-        if (formName === 'university') {
+        if (formName === 'university' || formName === 'edit-university') {
+          const editingRow = formName === 'edit-university';
+          const prefix = editingRow ? 'uni_' : 'new_uni_';
           const body = {
-            code: val('uni_code'),
-            name: val('uni_name'),
-            state: val('uni_state'),
-            slug: val('uni_slug'),
+            code: val(prefix + 'code'),
+            name: val(prefix + 'name'),
+            state: val(prefix + 'state'),
+            slug: val(prefix + 'slug'),
           };
-          if (editing.university) body.id = editing.university.id;
+          if (editingRow) {
+            if (!editing.university) return;
+            body.id = editing.university.id;
+          }
           await rpc('admin_upsert_university', { p_body: body });
           universities = await rpc('admin_list_universities');
           editing.university = null;
           draw();
           message('ok', 'University saved.');
         }
-        if (formName === 'college') {
+        if (formName === 'college' || formName === 'edit-college') {
+          const editingRow = formName === 'edit-college';
+          const prefix = editingRow ? 'col_' : 'new_col_';
           const body = {
             university_id: collegeUniversityId,
-            name: val('col_name'),
-            short_form: val('col_short'),
+            name: val(prefix + 'name'),
+            short_form: val(prefix + 'short'),
           };
-          if (editing.college) body.id = editing.college.id;
+          if (editingRow) {
+            if (!editing.college) return;
+            body.id = editing.college.id;
+          }
           await rpc('admin_upsert_college', { p_body: body });
           colleges = await rpc('admin_list_colleges', { p_university_id: collegeUniversityId });
           editing.college = null;
           draw();
           message('ok', 'College saved.');
         }
-        if (formName === 'subject') {
+        if (formName === 'subject' || formName === 'edit-subject') {
+          const editingRow = formName === 'edit-subject';
+          const prefix = editingRow ? 'sub_' : 'new_sub_';
           const body = {
-            name: val('sub_name'),
-            mbbs_phase_id: val('sub_phase'),
-            display_order: val('sub_order'),
-            required_plan: val('sub_plan'),
+            name: val(prefix + 'name'),
+            mbbs_phase_id: val(prefix + 'phase'),
+            display_order: val(prefix + 'order'),
+            required_plan: val(prefix + 'plan'),
           };
-          if (editing.subject) body.id = editing.subject.id;
+          if (editingRow) {
+            if (!editing.subject) return;
+            body.id = editing.subject.id;
+          }
           await rpc('admin_upsert_subject', { p_body: body });
           subjects = await rpc('admin_list_subjects');
           editing.subject = null;
