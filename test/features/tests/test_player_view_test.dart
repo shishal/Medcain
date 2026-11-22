@@ -11,14 +11,17 @@ import 'package:medico/features/tests/presentation/widgets/test_player_view.dart
 
 const _explanation = 'Because mitochondria produce ATP.';
 
-PlayerSessionState _session(FeedbackTiming timing) {
+PlayerSessionState _session(
+  FeedbackTiming timing, {
+  bool isEphemeralPractice = true,
+}) {
   return PlayerSessionState.fromBundle(
     TestPlayerBundle(
       testId: 't1',
       title: 'Session',
       feedbackTiming: timing,
       explanationLevel: ExplanationLevel.full,
-      isEphemeralPractice: true,
+      isEphemeralPractice: isEphemeralPractice,
       questions: [
         const PlayerQuestion(
           id: 'q1',
@@ -404,10 +407,75 @@ void main() {
     await tester.pumpAndSettle();
     expect(finishCount, 0);
     expect(find.text('Submit test?'), findsOneWidget);
-    expect(find.textContaining('2 questions are still unanswered'), findsOneWidget);
+    expect(
+      find.textContaining('2 questions are still unanswered'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('confirm-finish-test')));
     await tester.pumpAndSettle();
     expect(finishCount, 1);
+  });
+
+  testWidgets('practice swipe left goes next and swipe right goes previous', (
+    tester,
+  ) async {
+    final session = ValueNotifier(_session(FeedbackTiming.onSubmit));
+    addTearDown(session.dispose);
+    await _pump(tester, session);
+
+    expect(find.byType(PageView), findsOneWidget);
+    expect(session.value.currentIndex, 0);
+
+    await tester.tap(find.byKey(const Key('option-B')));
+    await tester.pump();
+
+    await tester.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await tester.pumpAndSettle();
+
+    expect(session.value.currentIndex, 1);
+    expect(find.text('Second question'), findsOneWidget);
+    expect(find.text('Which organelle produces ATP?'), findsNothing);
+
+    // The last question stays put when there is no next page.
+    await tester.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await tester.pumpAndSettle();
+    expect(session.value.currentIndex, 1);
+
+    await tester.fling(find.byType(PageView), const Offset(400, 0), 1000);
+    await tester.pumpAndSettle();
+
+    expect(session.value.currentIndex, 0);
+    expect(find.text('Which organelle produces ATP?'), findsOneWidget);
+    expect(session.value.currentAnswer.selectedOption, QuestionOption.b);
+    expect(find.text('Correct'), findsNothing);
+
+    // The first question stays put when there is no previous page.
+    await tester.fling(find.byType(PageView), const Offset(400, 0), 1000);
+    await tester.pumpAndSettle();
+    expect(session.value.currentIndex, 0);
+  });
+
+  testWidgets('catalog test does not change question on a horizontal fling', (
+    tester,
+  ) async {
+    final session = ValueNotifier(
+      _session(FeedbackTiming.onSubmit, isEphemeralPractice: false),
+    );
+    addTearDown(session.dispose);
+    await _pump(tester, session);
+
+    expect(find.byType(PageView), findsNothing);
+
+    await tester.fling(
+      find.text('Which organelle produces ATP?'),
+      const Offset(-400, 0),
+      1000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(session.value.currentIndex, 0);
+    expect(find.text('Which organelle produces ATP?'), findsOneWidget);
+    expect(find.text('Second question'), findsNothing);
   });
 }

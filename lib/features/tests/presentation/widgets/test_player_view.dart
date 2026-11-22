@@ -45,8 +45,6 @@ class TestPlayerView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final question = session.currentQuestion;
-    final reveal = session.feedbackReveal;
     final finishLabel = session.isTutorMode ? 'Finish session' : 'Submit test';
 
     return PopScope(
@@ -116,25 +114,16 @@ class TestPlayerView extends StatelessWidget {
               ),
             const SizedBox(height: Spacing.sm),
             Expanded(
-              child: ListView(
-                // Keying by question ID resets scroll offset to the top when
-                // moving to the next or previous question.
-                key: ValueKey(question.id),
-                padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                children: [
-                  Text(
-                    question.questionText,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  QuestionStemImage(imageUrl: question.imageUrl),
-                  const SizedBox(height: Spacing.md),
-                  OptionList(session: session, onSelect: onSelectOption),
-                  if (reveal != null) ...[
-                    const SizedBox(height: Spacing.md),
-                    TutorFeedbackPanel(reveal: reveal),
-                  ],
-                ],
-              ),
+              child: session.isEphemeralPractice
+                  ? _PracticeQuestionPager(
+                      session: session,
+                      onGoTo: onGoTo,
+                      onSelectOption: onSelectOption,
+                    )
+                  : _QuestionBody(
+                      session: session,
+                      onSelectOption: onSelectOption,
+                    ),
             ),
             PlayerActionBar(
               session: session,
@@ -263,5 +252,144 @@ class TestPlayerView extends StatelessWidget {
       },
     );
     if (confirmed == true) onExit();
+  }
+}
+
+/// One question: stem, options, and tutor feedback when this question is revealed.
+class _QuestionBody extends StatelessWidget {
+  const _QuestionBody({required this.session, required this.onSelectOption});
+
+  final PlayerSessionState session;
+  final ValueChanged<QuestionOption> onSelectOption;
+
+  @override
+  Widget build(BuildContext context) {
+    final question = session.currentQuestion;
+    final reveal = session.feedbackReveal;
+
+    return ListView(
+      // Keying by question ID resets scroll offset to the top when this
+      // question is built again after leaving it.
+      key: ValueKey(question.id),
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+      children: [
+        Text(
+          question.questionText,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        QuestionStemImage(imageUrl: question.imageUrl),
+        const SizedBox(height: Spacing.md),
+        OptionList(session: session, onSelect: onSelectOption),
+        if (reveal != null) ...[
+          const SizedBox(height: Spacing.md),
+          TutorFeedbackPanel(reveal: reveal),
+        ],
+      ],
+    );
+  }
+}
+
+/// Practice questions sit in a horizontal [PageView].
+///
+/// A finger moving left brings in the next question; a finger moving right
+/// brings back the previous one. Each page has its own vertical list, so
+/// scrolling up and down still reads a long stem. Catalog tests stay on the
+/// action-bar buttons — a stray swipe there would skip a scored question.
+class _PracticeQuestionPager extends StatefulWidget {
+  const _PracticeQuestionPager({
+    required this.session,
+    required this.onGoTo,
+    required this.onSelectOption,
+  });
+
+  final PlayerSessionState session;
+  final ValueChanged<int> onGoTo;
+  final ValueChanged<QuestionOption> onSelectOption;
+
+  @override
+  State<_PracticeQuestionPager> createState() => _PracticeQuestionPagerState();
+}
+
+class _PracticeQuestionPagerState extends State<_PracticeQuestionPager> {
+  late final PageController _pages;
+  late int _page;
+
+  /// True while the buttons or the palette move the page. [PageView] reports
+  /// every page it passes, and we ignore those so a jump from question 1 to
+  /// question 5 does not stop on question 2.
+  var _syncing = false;
+  var _syncToken = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _page = widget.session.currentIndex;
+    _pages = PageController(initialPage: _page);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PracticeQuestionPager oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final target = widget.session.currentIndex;
+    if (target == _page) return;
+    _page = target;
+    _animateTo(target);
+  }
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  void _animateTo(int target) {
+    if (!_pages.hasClients) return;
+    final current = _pages.page;
+    if (current != null && (current - target).abs() < 0.01) return;
+    final token = ++_syncToken;
+    _syncing = true;
+    _pages
+        .animateToPage(
+          target,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+        )
+        .whenComplete(() {
+          if (!mounted || token != _syncToken) return;
+          _syncing = false;
+        });
+  }
+
+  void _onPageChanged(int index) {
+    if (_syncing) return;
+    if (!widget.session.isIndexReachable(index)) {
+      _page = widget.session.currentIndex;
+      _animateTo(_page);
+      return;
+    }
+    _page = index;
+    if (index != widget.session.currentIndex) widget.onGoTo(index);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = widget.session;
+    return PageView.builder(
+      controller: _pages,
+      itemCount: session.questions.length,
+      onPageChanged: _onPageChanged,
+      itemBuilder: (context, index) {
+        // copyWith only changes which question this page *displays*. The
+        // session's real index still updates through [onGoTo].
+        final page = session.copyWith(currentIndex: index);
+        return IgnorePointer(
+          ignoring: index != session.currentIndex,
+          child: _QuestionBody(
+            session: page,
+            onSelectOption: widget.onSelectOption,
+          ),
+        );
+      },
+    );
   }
 }
