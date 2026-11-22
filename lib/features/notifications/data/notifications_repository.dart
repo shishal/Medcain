@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -83,6 +85,51 @@ class NotificationsRepository {
           fallback: 'Could not update notification. Please try again.',
         ),
       );
+    }
+  }
+
+  /// Saves this phone's Firebase token for the signed-in account.
+  ///
+  /// The row is keyed by the token, so the next account on this phone
+  /// replaces the previous one. Call [unregisterPushToken] before sign-out
+  /// removes the session.
+  Future<Result<void>> registerPushToken(String token) {
+    return _writeToken(
+      RpcFunctions.registerPushToken,
+      token,
+      'Could not register this phone for notifications.',
+    );
+  }
+
+  /// Removes this phone's Firebase token while the account is still signed in.
+  Future<Result<void>> unregisterPushToken(String token) {
+    return _writeToken(
+      RpcFunctions.unregisterPushToken,
+      token,
+      'Could not remove this phone from notifications.',
+    );
+  }
+
+  Future<Result<void>> _writeToken(
+    String function,
+    String token,
+    String fallback,
+  ) async {
+    final trimmed = token.trim();
+    if (trimmed.isEmpty) return const Success(null);
+    if (_client.auth.currentUser == null) {
+      return const Failure('Not signed in.');
+    }
+
+    try {
+      await _client.rpc(
+        function,
+        params: {PushTokenParams.token: trimmed},
+      );
+      return const Success(null);
+    } catch (error) {
+      developer.log(fallback, name: 'broadcast_push', error: error);
+      return Failure(UserFacingError.from(error, fallback: fallback));
     }
   }
 }

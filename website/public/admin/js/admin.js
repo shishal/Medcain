@@ -434,7 +434,7 @@
         <a class="tile" href="/admin/questions/"><strong>Questions</strong><span>Search, edit, and add</span></a>
         <a class="tile" href="/admin/import/"><strong>Import</strong><span>Upload a Questions sheet</span></a>
         <a class="tile" href="/admin/catalog/"><strong>Catalog</strong><span>Universities, colleges, subjects</span></a>
-        <a class="tile" href="/admin/users/"><strong>Users</strong><span>Profile, plan, block, admin</span></a>
+        <a class="tile" href="/admin/users/"><strong>Users</strong><span>Profile, plan, block, and a notification to selected people</span></a>
         <a class="tile" href="/admin/announcements/"><strong>Announcements</strong><span>Inbox, and one phone alert the first time you publish</span></a>
         <a class="tile" href="/admin/app-update/"><strong>App update</strong><span>Block builds below a Play version</span></a>
         <a class="tile" href="/admin/plans/"><strong>Plans</strong><span>Price, access, devices, and promos</span></a>
@@ -1539,46 +1539,238 @@
   }
 
   async function renderUsers() {
-    app.innerHTML = `
-      <div id="msg"></div>
-      <form id="user-search" class="card">
-        <p class="hint">Name or phone. An empty search shows the newest 40 accounts.</p>
-        ${field('Name or phone', inputControl('user_query', ''))}
-        <button class="btn btn-primary" type="submit">Search</button>
-      </form>
-      <div id="user-results"></div>
-    `;
+    const planRows = await rpc('admin_list_plans');
+    const planPairs = (planRows || []).map((item) => [
+      item.id,
+      item.is_active ? item.name : `${item.name} (archived)`,
+    ]);
+    const selected = new Set();
+    const pageSize = 100;
+    let offset = 0;
+    let total = 0;
+    let pageRows = [];
+    let sending = false;
+
+    function filters() {
+      const body = { include_blocked: checked('include_blocked') };
+      const query = val('user_query');
+      const planId = val('plan_id');
+      const days = val('expires_within_days');
+      if (query) body.query = query;
+      if (planId) body.plan_id = planId;
+      if (days) {
+        if (!/^[0-9]{1,3}$/.test(days) || Number(days) < 1 || Number(days) > 365) {
+          throw new Error('Expires within must be a whole number of days from 1 to 365.');
+        }
+        body.expires_within_days = Number(days);
+      }
+      return body;
+    }
+
+    function planLabel(user) {
+      const name = user.plan_name || '';
+      if (!user.plan_expires_at) return name;
+      const when = formatWhen(user.plan_expires_at);
+      const past = new Date(user.plan_expires_at).getTime() < Date.now();
+      return past ? `${name} · expired ${when}` : `${name} · until ${when}`;
+    }
+
+    function paintSelection() {
+      const count = document.getElementById('selected-count');
+      const sendSelected = document.getElementById('send-selected');
+      const clear = document.getElementById('clear-selected');
+      const tooMany = selected.size > 500;
+      if (count) {
+        if (selected.size === 0) count.textContent = 'None selected.';
+        else if (tooMany) count.textContent = `${selected.size} selected. 500 is the most one selection can include.`;
+        else count.textContent = `${selected.size} selected.`;
+      }
+      if (sendSelected) sendSelected.disabled = sending || selected.size === 0 || tooMany;
+      if (clear) clear.disabled = sending || selected.size === 0;
+      const sendMatching = document.getElementById('send-matching');
+      if (sendMatching) sendMatching.disabled = sending;
+      const box = document.getElementById('select-page');
+      if (!box) return;
+      const ids = pageRows.map((row) => row.id);
+      const picked = ids.filter((id) => selected.has(id)).length;
+      box.checked = ids.length > 0 && picked === ids.length;
+      box.indeterminate = picked > 0 && picked < ids.length;
+      box.disabled = sending || ids.length === 0;
+    }
+
+    function noteBody() {
+      const title = val('note_title');
+      const body = document.getElementById('note_body').value.trim();
+      const category = val('note_category') || 'general';
+      const link = val('note_link');
+      if (!title) throw new Error('Title is required.');
+      if (!body) throw new Error('Body is required.');
+      return { title, body, category, deep_link: link };
+    }
 
     async function search() {
       const slot = document.getElementById('user-results');
       slot.textContent = 'Loading…';
       try {
-        const rows = await rpc('admin_search_users', { p_query: val('user_query') });
-        const list = rows || [];
+        const data = await rpc('admin_search_users_filtered', {
+          p_filters: { ...filters(), limit: pageSize, offset },
+        });
+        pageRows = data.users || [];
+        total = data.total || 0;
+        const from = total === 0 ? 0 : offset + 1;
+        const to = Math.min(offset + pageRows.length, total);
+        const overCap = total > 2000
+          ? '<p class="hint">Narrow the filters. 2000 is the most one send can include.</p>'
+          : '';
         slot.innerHTML = `
+          <p class="hint">${total === 0 ? 'No accounts match.' : `Showing ${from}–${to} of ${total}.`}</p>
+          ${overCap}
           <div class="table-wrap"><table>
-            <thead><tr><th>Name</th><th>Contact</th><th>Plan</th><th></th></tr></thead>
-            <tbody>${list.map((user) => `
+            <thead><tr>
+              <th class="pick"><input type="checkbox" id="select-page" aria-label="Select every account on this page" /></th>
+              <th>Name</th><th>Phone</th><th>Plan</th><th></th>
+            </tr></thead>
+            <tbody>${pageRows.map((user) => `
               <tr>
+                <td class="pick"><input class="pick" type="checkbox" data-id="${esc(user.id)}" aria-label="Select ${esc(user.full_name || user.phone || 'account')}" ${selected.has(user.id) ? 'checked' : ''} /></td>
                 <td><a href="/admin/user/?id=${esc(user.id)}">${esc(user.full_name || 'No name')}</a></td>
-                <td>${esc(user.phone || user.email || '')}</td>
-                <td>${esc(labelOf(PLANS, user.plan))}${user.plan_expires_at ? ` until ${esc(formatWhen(user.plan_expires_at))}` : ''}</td>
-                <td>${user.blocked_at ? '<span class="badge-inline">Blocked</span>' : ''}${user.plan_suspended_at ? ' <span class="badge-inline">Suspended</span>' : ''}</td>
-              </tr>`).join('') || '<tr><td colspan="4">No accounts match.</td></tr>'}</tbody>
+                <td>${esc(user.phone || '')}</td>
+                <td>${esc(planLabel(user))}</td>
+                <td>${user.blocked ? '<span class="badge-inline">Blocked</span>' : ''}</td>
+              </tr>`).join('') || '<tr><td colspan="5">No accounts match.</td></tr>'}</tbody>
           </table></div>
+          <div class="pager">
+            <button class="btn btn-ghost btn-small" type="button" id="page-prev" ${offset <= 0 ? 'disabled' : ''}>Previous</button>
+            <button class="btn btn-ghost btn-small" type="button" id="page-next" ${offset + pageSize >= total ? 'disabled' : ''}>Next</button>
+          </div>
         `;
+        document.getElementById('page-prev').addEventListener('click', () => {
+          offset = Math.max(0, offset - pageSize);
+          search();
+        });
+        document.getElementById('page-next').addEventListener('click', () => {
+          offset += pageSize;
+          search();
+        });
+        paintSelection();
       } catch (error) {
         slot.innerHTML = `<p class="msg error">${esc(errorText(error))}</p>`;
       }
     }
 
+    async function deliver(body) {
+      const saved = await rpc('admin_notify_users', { p_body: body });
+      const count = saved && saved.recipient_count ? saved.recipient_count : 0;
+      document.getElementById('note_title').value = '';
+      document.getElementById('note_body').value = '';
+      selected.clear();
+      message('ok', `Saved for ${count} ${count === 1 ? 'person' : 'people'}. Phones that allowed notifications get one alert.`);
+      await search();
+    }
+
+    app.innerHTML = `
+      <div id="msg"></div>
+      <form id="user-search" class="card filters">
+        <p class="hint span-2">Free includes expired and suspended accounts. Expires within finds a paid plan that is still active. Those two together match nobody. Blocked accounts stay hidden unless you include them.</p>
+        ${field('Name or phone', inputControl('user_query', ''))}
+        ${field('Plan', selectControl('plan_id', planPairs, '', 'Any plan'))}
+        ${field('Expires within days', inputControl('expires_within_days', '', 'inputmode="numeric" placeholder="7"'))}
+        <div class="span-2">${checkControl('include_blocked', 'Include blocked accounts', false)}</div>
+        <div class="actions span-2"><button class="btn btn-primary" type="submit">Search</button></div>
+      </form>
+      <div class="actions" id="bulk-bar">
+        <span class="hint" id="selected-count">None selected.</span>
+        <button class="btn btn-ghost" type="button" id="clear-selected" disabled>Clear selection</button>
+      </div>
+      <div id="user-results"></div>
+      <form id="user-notify" class="card">
+        <h2>Notify these people</h2>
+        <p class="hint">They see this in the app inbox. Android phones that allowed notifications, on a build that registers for alerts, also get one lock-screen alert. It is not sent to everyone.</p>
+        ${field('Title', inputControl('note_title', '', 'required'))}
+        ${field('Body', areaControl('note_body', '', 6))}
+        ${field('Category', selectControl('note_category', CATEGORIES, 'general'))}
+        ${field('App path', inputControl('note_link', '', 'placeholder="/upgrade"'))}
+        <div class="actions">
+          <button class="btn btn-primary" type="button" id="send-selected" disabled>Send to selected</button>
+          <button class="btn btn-ghost" type="button" id="send-matching">Send to everyone matching</button>
+        </div>
+      </form>
+    `;
+
     handlers.submit = async (event) => {
       if (event.target.id !== 'user-search') return;
       event.preventDefault();
+      offset = 0;
       await search();
     };
-    handlers.click = null;
-    handlers.change = null;
+    handlers.change = (event) => {
+      if (event.target.id === 'select-page') {
+        const on = event.target.checked;
+        for (const row of pageRows) {
+          if (on) selected.add(row.id);
+          else selected.delete(row.id);
+        }
+        document.querySelectorAll('#user-results input.pick').forEach((box) => {
+          box.checked = on;
+        });
+        paintSelection();
+        return;
+      }
+      if (event.target.classList && event.target.classList.contains('pick')) {
+        const id = event.target.getAttribute('data-id');
+        if (!id) return;
+        if (event.target.checked) selected.add(id);
+        else selected.delete(id);
+        paintSelection();
+      }
+    };
+    handlers.click = async (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      if (button.id === 'clear-selected') {
+        selected.clear();
+        document.querySelectorAll('#user-results input.pick').forEach((box) => {
+          box.checked = false;
+        });
+        paintSelection();
+        return;
+      }
+      if (button.id !== 'send-selected' && button.id !== 'send-matching') return;
+      if (sending) return;
+      sending = true;
+      paintSelection();
+      try {
+        const note = noteBody();
+        if (button.id === 'send-selected') {
+          if (selected.size === 0 || selected.size > 500) return;
+          const count = selected.size;
+          const ids = [...selected];
+          if (!window.confirm(`Send this notification to ${count} selected ${count === 1 ? 'person' : 'people'}?`)) return;
+          await deliver({ ...note, user_ids: ids });
+          return;
+        }
+        const current = filters();
+        const preview = await rpc('admin_search_users_filtered', {
+          p_filters: { ...current, limit: 1, offset: 0 },
+        });
+        const count = preview.total || 0;
+        if (count === 0) {
+          message('error', 'No accounts match these filters.');
+          return;
+        }
+        if (count > 2000) {
+          message('error', 'Narrow the filters. 2000 is the most one send can include.');
+          return;
+        }
+        if (!window.confirm(`Send this notification to all ${count} ${count === 1 ? 'person' : 'people'} matching these filters?`)) return;
+        await deliver({ ...note, filters: current });
+      } catch (error) {
+        message('error', errorText(error));
+      } finally {
+        sending = false;
+        paintSelection();
+      }
+    };
     await search();
   }
 
@@ -1827,11 +2019,29 @@
     const requested = queryParam('id');
     let current = rows.find((item) => item.id === requested) || null;
 
+    function audienceLabel(row) {
+      if (row.audience === 'selected') {
+        const count = Number(row.recipient_count) || 0;
+        return count === 1 ? '1 person' : `${count} people`;
+      }
+      return 'Everyone';
+    }
+
     function draw() {
       const item = current || {};
-      app.innerHTML = `
-        <div id="msg"></div>
-        <form class="card" data-form="announcement">
+      const selectedSend = item.audience === 'selected';
+      const form = selectedSend
+        ? `<div class="card">
+            <h2>${esc(item.title || '')}</h2>
+            <p class="plain">${esc(item.body || '').replaceAll('\n', '<br>')}</p>
+            <p class="hint">${esc(labelOf(CATEGORIES, item.category))} · ${esc(audienceLabel(item))} · ${item.is_active ? 'Published' : 'Hidden'}${item.deep_link ? ` · ${esc(item.deep_link)}` : ''}</p>
+            <p class="hint">This was sent to selected people from Users. Unpublishing hides it from their inbox. It cannot be turned into a message for everyone.</p>
+            <div class="actions">
+              ${item.is_active ? '<button class="btn btn-primary" type="button" data-action="unpublish-announcement">Unpublish</button>' : ''}
+              <button class="btn btn-ghost" type="button" data-action="new-announcement">New</button>
+            </div>
+          </div>`
+        : `<form class="card" data-form="announcement">
           <h2>${item.id ? 'Edit announcement' : 'New announcement'}</h2>
           ${field('Title', inputControl('ann_title', item.title || '', 'required'))}
           ${field('Body', areaControl('ann_body', item.body || '', 6))}
@@ -1839,32 +2049,61 @@
           ${field('App path', inputControl('ann_link', item.deep_link || '', 'placeholder="/upgrade"'))}
           ${checkControl('ann_active', 'Published', item.is_active === true)}
           ${field('Expiry', `<input id="ann_expires" type="date" value="${esc(toDateInput(item.expires_at))}" />`)}
-          <p class="hint">Leave the date empty for no expiry. Students see a published message in the app. The first time it is published, phones that allowed notifications get one alert. Saving it again does not send another.</p>
+          <p class="hint">This page publishes to everyone. Leave the date empty for no expiry. Students see a published message in the app. The first time it is published, phones that allowed notifications get one alert. Saving it again does not send another. To notify specific accounts, use Users.</p>
           <div class="actions">
             <button class="btn btn-primary" type="submit">Save</button>
             <button class="btn btn-ghost" type="button" data-action="new-announcement">New</button>
           </div>
-        </form>
+        </form>`;
+      app.innerHTML = `
+        <div id="msg"></div>
+        ${form}
         <div class="table-wrap"><table>
-          <thead><tr><th>Title</th><th>Category</th><th>Status</th><th>Expires</th></tr></thead>
+          <thead><tr><th>Title</th><th>Category</th><th>Audience</th><th>Status</th><th>Expires</th></tr></thead>
           <tbody>${(rows || []).map((row) => `
             <tr>
               <td><a href="/admin/announcements/?id=${esc(row.id)}">${esc(row.title)}</a></td>
               <td>${esc(labelOf(CATEGORIES, row.category))}</td>
-              <td>${row.is_active ? 'Published' : 'Draft'}</td>
+              <td>${esc(audienceLabel(row))}</td>
+              <td>${row.is_active ? 'Published' : (row.audience === 'selected' ? 'Hidden' : 'Draft')}</td>
               <td>${esc(formatWhen(row.expires_at))}</td>
-            </tr>`).join('') || '<tr><td colspan="4">No announcements yet.</td></tr>'}</tbody>
+            </tr>`).join('') || '<tr><td colspan="5">No announcements yet.</td></tr>'}</tbody>
         </table></div>
       `;
     }
 
     handlers.change = null;
-    handlers.click = (event) => {
-      const button = event.target.closest('[data-action="new-announcement"]');
+    handlers.click = async (event) => {
+      const button = event.target.closest('[data-action]');
       if (!button) return;
-      current = null;
-      history.replaceState(null, '', '/admin/announcements/');
-      draw();
+      const action = button.getAttribute('data-action');
+      if (action === 'new-announcement') {
+        current = null;
+        history.replaceState(null, '', '/admin/announcements/');
+        draw();
+        return;
+      }
+      if (action !== 'unpublish-announcement' || !current || current.audience !== 'selected') return;
+      if (!window.confirm('Hide this notification from those inboxes?')) return;
+      try {
+        await rpc('admin_upsert_announcement', {
+          p_body: {
+            id: current.id,
+            title: current.title,
+            body: current.body,
+            category: current.category,
+            deep_link: current.deep_link || '',
+            is_active: false,
+            expires_at: current.expires_at,
+          },
+        });
+        rows = await rpc('admin_list_announcements');
+        current = rows.find((item) => item.id === current.id) || current;
+        draw();
+        message('ok', 'Hidden from those inboxes.');
+      } catch (error) {
+        message('error', errorText(error));
+      }
     };
     handlers.submit = async (event) => {
       event.preventDefault();

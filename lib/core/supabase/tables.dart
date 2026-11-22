@@ -263,6 +263,8 @@ abstract final class RpcFunctions {
   static const adminSetBlocked = 'admin_set_blocked';
   static const adminListAnnouncements = 'admin_list_announcements';
   static const adminUpsertAnnouncement = 'admin_upsert_announcement';
+  static const registerPushToken = 'register_push_token';
+  static const unregisterPushToken = 'unregister_push_token';
   static const appUpdatePolicy = 'app_update_policy';
   static const adminSetAppUpdatePolicy = 'admin_set_app_update_policy';
   static const adminSearchQuestions = 'admin_search_questions';
@@ -303,6 +305,12 @@ abstract final class AdminRpcParams {
   static const detail = 'p_detail';
   static const minVersionCode = 'p_min_version_code';
   static const minVersionName = 'p_min_version_name';
+}
+
+/// Named parameter for [RpcFunctions.registerPushToken] and
+/// [RpcFunctions.unregisterPushToken].
+abstract final class PushTokenParams {
+  static const token = 'p_token';
 }
 
 /// Named parameters for [RpcFunctions.claimActiveDevice] /

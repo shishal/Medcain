@@ -3,9 +3,12 @@
 
 export const BROADCAST_TOPIC = 'broadcast';
 export const NOTIFICATION_CHANNEL_ID = 'announcements';
+export const TOKEN_SEND_CONCURRENCY = 25;
 
 const TITLE_LIMIT = 200;
 const BODY_LIMIT = 3500;
+
+export type PushAudience = 'all' | 'selected';
 
 export type PushRow = {
   id: string;
@@ -14,6 +17,7 @@ export type PushRow = {
   deep_link: string | null;
   is_active: boolean;
   push_sent_at: string | null;
+  audience: PushAudience;
 };
 
 export type PushDecision =
@@ -73,6 +77,70 @@ export function buildTopicMessage(row: PushRow): { message: Record<string, unkno
       },
     },
   };
+}
+
+/// Same tray text as the topic send, addressed to one registered phone.
+export function buildTokenMessage(
+  row: PushRow,
+  token: string,
+): { message: Record<string, unknown> } {
+  const message = { ...buildTopicMessage(row).message };
+  delete message.topic;
+  message.token = token;
+  return { message };
+}
+
+export type TokenSendOutcome = {
+  ok: boolean;
+  unregistered: boolean;
+};
+
+export type TokenDelivery = {
+  sent: number;
+  removed: string[];
+  failed: number;
+};
+
+/// True when Firebase says this install is gone. A bad payload is not this.
+export function isUnregisteredToken(status: number, body: unknown): boolean {
+  if (fcmErrorCode(body) === 'UNREGISTERED') return true;
+  return status === 404 && fcmErrorCode(body) == null;
+}
+
+/// Sends [tokens] with at most [concurrency] requests at once.
+/// Blank and repeated tokens are skipped. One failure does not stop the rest.
+export async function deliverTokenMessages(
+  tokens: string[],
+  sendOne: (token: string) => Promise<TokenSendOutcome>,
+  concurrency = TOKEN_SEND_CONCURRENCY,
+): Promise<TokenDelivery> {
+  const unique = [...new Set(tokens.map((token) => token.trim()).filter((token) => token !== ''))];
+  let sent = 0;
+  let failed = 0;
+  const removed: string[] = [];
+  let cursor = 0;
+
+  async function worker(): Promise<void> {
+    while (cursor < unique.length) {
+      const token = unique[cursor];
+      cursor += 1;
+      try {
+        const outcome = await sendOne(token);
+        if (outcome.ok) sent += 1;
+        else if (outcome.unregistered) removed.push(token);
+        else failed += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(Math.max(concurrency, 1), unique.length) },
+    () => worker(),
+  );
+  await Promise.all(workers);
+  return { sent, removed, failed };
 }
 
 export type ServiceAccount = {
@@ -150,11 +218,11 @@ export async function fcmAccessToken(account: ServiceAccount): Promise<string> {
   return token;
 }
 
-export async function sendTopicMessage(
+export async function postFcmMessage(
   account: ServiceAccount,
   accessToken: string,
   message: { message: Record<string, unknown> },
-): Promise<void> {
+): Promise<{ ok: boolean; status: number; body: unknown }> {
   const response = await fetch(
     `https://fcm.googleapis.com/v1/projects/${account.projectId}/messages:send`,
     {
@@ -166,9 +234,33 @@ export async function sendTopicMessage(
       body: JSON.stringify(message),
     },
   );
-  if (!response.ok) {
+  const body = await response.json().catch(() => null);
+  return { ok: response.ok, status: response.status, body };
+}
+
+export async function sendTopicMessage(
+  account: ServiceAccount,
+  accessToken: string,
+  message: { message: Record<string, unknown> },
+): Promise<void> {
+  const result = await postFcmMessage(account, accessToken, message);
+  if (!result.ok) {
     throw new Error('FCM did not accept the announcement.');
   }
+}
+
+function fcmErrorCode(body: unknown): string | null {
+  if (body == null || typeof body !== 'object') return null;
+  const error = (body as { error?: unknown }).error;
+  if (error == null || typeof error !== 'object') return null;
+  const details = (error as { details?: unknown }).details;
+  if (!Array.isArray(details)) return null;
+  for (const detail of details) {
+    if (detail == null || typeof detail !== 'object') continue;
+    const code = (detail as { errorCode?: unknown }).errorCode;
+    if (typeof code === 'string' && code !== '') return code;
+  }
+  return null;
 }
 
 function clip(value: string, limit: number): string {

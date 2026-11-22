@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -21,6 +22,15 @@ class AuthRepository {
 
   final SupabaseClient _client;
   Future<Result<ClaimActiveDeviceResult>>? _inFlightClaim;
+  Future<void> Function()? _beforeSignOut;
+
+  /// Runs while the session still exists, before the JWT is cleared.
+  ///
+  /// Notifications uses this to delete the phone's push token. After
+  /// [signOut] the request would have no account to attach the delete to.
+  void setBeforeSignOut(Future<void> Function()? hook) {
+    _beforeSignOut = hook;
+  }
 
   bool get isSignedIn => _client.auth.currentSession != null;
 
@@ -125,12 +135,12 @@ class AuthRepository {
     switch (claim) {
       case Success(:final value):
         if (!value.ok || value.deviceLimit) {
-          await _client.auth.signOut(scope: SignOutScope.local);
+          await _signOutLocal();
           return const Failure(DeviceSessionMessages.deviceLimit);
         }
         return Success(value);
       case Failure(:final message):
-        await _client.auth.signOut(scope: SignOutScope.local);
+        await _signOutLocal();
         return Failure(message);
     }
   }
@@ -138,7 +148,7 @@ class AuthRepository {
   Future<Result<void>> signOut() async {
     try {
       // Local only so we don't revoke the *other* device that just claimed.
-      await _client.auth.signOut(scope: SignOutScope.local);
+      await _signOutLocal();
       return const Success(null);
     } on AuthException catch (e) {
       return Failure(AuthFailure.fromException(e));
@@ -150,6 +160,22 @@ class AuthRepository {
         ),
       );
     }
+  }
+
+  Future<void> _signOutLocal() async {
+    final hook = _beforeSignOut;
+    if (hook != null) {
+      try {
+        await hook();
+      } catch (error) {
+        developer.log(
+          'Could not clear the notification token before sign-out.',
+          name: 'auth',
+          error: error,
+        );
+      }
+    }
+    await _client.auth.signOut(scope: SignOutScope.local);
   }
 
   /// Registers this install when the plan has a free device slot.

@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../auth/data/auth_repository.dart';
 import '../../../auth/presentation/providers/auth_session_provider.dart';
 import '../../data/broadcast_push.dart';
+import '../../data/notifications_repository.dart';
 import 'notifications_provider.dart';
 
 part 'broadcast_push_provider.g.dart';
@@ -31,6 +33,7 @@ class PendingAnnouncementPath extends _$PendingAnnouncementPath {
 void broadcastPush(Ref ref) {
   final signedIn = ref.watch(authSessionProvider);
   final controller = ref.watch(broadcastPushControllerProvider);
+  final auth = ref.watch(authRepositoryProvider);
 
   controller.onOpen = (path) {
     ref.read(pendingAnnouncementPathProvider.notifier).setPath(path);
@@ -38,6 +41,16 @@ void broadcastPush(Ref ref) {
   controller.onForeground = () {
     ref.invalidate(announcementsProvider);
   };
+  controller.onToken = (token) async {
+    await ref.read(notificationsRepositoryProvider).registerPushToken(token);
+  };
+  // The hook runs before AuthRepository drops the JWT, so the delete
+  // still belongs to this account. Topic unsubscribe follows in sync.
+  auth.setBeforeSignOut(() async {
+    final token = await controller.takeTokenForSignOut();
+    if (token == null) return;
+    await ref.read(notificationsRepositoryProvider).unregisterPushToken(token);
+  });
   // A tap can arrive while this provider is between builds. Deliver it
   // after build so we don't write another provider mid-build.
   final pending = controller.takePendingPath();
@@ -55,6 +68,8 @@ void broadcastPush(Ref ref) {
   ref.onDispose(() {
     controller.onOpen = null;
     controller.onForeground = null;
+    controller.onToken = null;
+    auth.setBeforeSignOut(null);
   });
 
   unawaited(controller.sync(signedIn: signedIn));

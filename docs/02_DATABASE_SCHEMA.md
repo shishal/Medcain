@@ -906,20 +906,32 @@ lesson's `required_plan`.
 
 ## 11. Announcements (inbox + one lock-screen alert)
 
-Broadcast messages (new app version, offer, payment reminder, etc.) published
-from **Admin → Notifications** or the Table Editor. Students see them in the
-in-app inbox the next time they open Home. The first time a row becomes
-active, phones that allowed notifications also get one lock-screen alert
-(FCM topic `broadcast`). Saving an already published row does not alert again.
-A student who denies permission, or who has not installed a build with Firebase
-configured, still sees the inbox row.
+Messages (new app version, offer, payment reminder, etc.) published from
+**Admin → Notifications**, the website, or the Table Editor. Students see them
+in the in-app inbox the next time they open Home. The first time a row becomes
+active, phones that allowed notifications also get one lock-screen alert.
+Saving an already published row does not alert again. A student who denies
+permission, or who has not installed a build with Firebase configured, still
+sees the inbox row.
 
-Migrations: `supabase/migrations/20260919120000_announcements_inbox.sql` and
+`audience` is `all` or `selected`. `all` is the inbox for every signed-in
+student and one FCM message to the topic `broadcast`. `selected` is the inbox
+only for `announcement_recipients`, and one FCM message per `push_tokens` row
+for those accounts. The website Users page creates that audience with
+`admin_notify_users` after `admin_search_users_filtered`. The phone registers
+its token with `register_push_token` and deletes it with
+`unregister_push_token` before sign-out. `admin_upsert_announcement` ignores
+any audience the client sends: new rows stay `all`, and a selected row keeps
+its recipients.
+
+Migrations: `supabase/migrations/20260919120000_announcements_inbox.sql`,
 `supabase/migrations/20261122120000_announcement_push.sql` (`push_sent_at`,
 queued by a trigger through `pg_net` to the Edge Function
-`send-announcement-push`). The function records `push_sent_at` before calling
-FCM so a second delivery does not send twice, and clears it if FCM does not
-accept the message. Publish off, then on, retries only while that column is
+`send-announcement-push`), and
+`supabase/migrations/20261122140000_targeted_announcements.sql`. The function
+records `push_sent_at` before calling FCM so a second delivery does not send
+twice. It clears that column if a broadcast is rejected, or if a selected send
+alerted nobody and at least one token send failed. Publish off, then on, retries only while the column is
 null. See `docs/11_ANNOUNCEMENTS_OPS.md`.
 
 ```sql
@@ -935,6 +947,22 @@ create table announcements (
   expires_at timestamptz,
   created_at timestamptz not null default now()
   -- push_sent_at timestamptz  -- added by 20261122120000_announcement_push.sql
+  -- audience text not null default 'all'  -- all | selected, 20261122140000
+  -- created_by uuid  -- admin who saved the row, when known
+);
+
+-- audience = selected. Students may select only their own rows.
+create table announcement_recipients (
+  announcement_id uuid not null references announcements(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  primary key (announcement_id, user_id)
+);
+
+-- FCM registration tokens. No student policies; RPCs only.
+create table push_tokens (
+  token text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  updated_at timestamptz not null default now()
 );
 
 create table announcement_reads (
@@ -949,7 +977,18 @@ alter table announcement_reads enable row level security;
 
 create policy "active announcements select" on announcements
   for select to authenticated
-  using (is_active and (expires_at is null or expires_at > now()));
+  using (
+    is_active
+    and (expires_at is null or expires_at > now())
+    and (
+      audience = 'all'
+      or exists (
+        select 1 from announcement_recipients r
+        where r.announcement_id = announcements.id
+          and r.user_id = auth.uid()
+      )
+    )
+  );
 
 create policy "own announcement reads select" on announcement_reads
   for select to authenticated using (auth.uid() = user_id);
@@ -967,6 +1006,8 @@ grant select, insert on table announcement_reads to authenticated;
 2. Publish: `is_active = true` (optional `expires_at`). This is the one lock-screen alert.
 3. Next Home open / refresh shows the row as unread until the student opens or dismisses it.
 4. Edit while it stays published: inbox text updates, no second alert.
+
+Website **Users** is the selected path: filter, tick accounts or send to everyone matching, and only those accounts get the inbox row and the alert.
 
 See also `docs/11_ANNOUNCEMENTS_OPS.md`.
 
@@ -993,7 +1034,8 @@ That account signs in with WhatsApp and lands on `/admin`. A student JWT that ca
 | Password, email, block / unblock | Edge Function `admin-user-auth` (GoTrue ban + `profiles.blocked_at` + session revoke). New accounts have no password; email and password actions remain for older accounts that still have a real email. |
 | Questions, papers, free preview (`is_preview`) | `admin_save_question`, `admin_save_appearance`, `admin_delete_appearance` |
 | Plans (price, duration, entitlements) | `admin_list_plans`, `admin_save_plan`, `admin_archive_plan`. Assigning a user uses `admin_set_plan(user, plan_id, expires_at)`. |
-| In-app notification | `admin_upsert_announcement` |
+| In-app notification to everyone | `admin_upsert_announcement` (`audience` stays `all`) |
+| Filter users, then notify the selection | `admin_search_users_filtered`, `admin_notify_users` (website Users). Phone token: `register_push_token`, `unregister_push_token` |
 | Force app update | `admin_set_app_update_policy` (read: `app_update_policy`, including anon) |
 
 Every admin RPC calls `assert_admin()` and writes `admin_audit_log`. Password values are stripped if a client puts them in the audit detail.

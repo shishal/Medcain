@@ -2,8 +2,11 @@ import {
   BROADCAST_TOPIC,
   NOTIFICATION_CHANNEL_ID,
   bearerToken,
+  buildTokenMessage,
   buildTopicMessage,
   decidePush,
+  deliverTokenMessages,
+  isUnregisteredToken,
   readServiceAccount,
   secretsEqual,
   type PushRow,
@@ -16,6 +19,7 @@ const row: PushRow = {
   deep_link: '/upgrade',
   is_active: true,
   push_sent_at: null,
+  audience: 'all',
 };
 
 Deno.test('accepts the webhook bearer and rejects a different secret', () => {
@@ -84,6 +88,66 @@ Deno.test('topic message uses the inbox text and the broadcast topic', () => {
   const linkData = withoutLink.data as Record<string, string>;
   if ('deep_link' in linkData) {
     throw new Error('expected a blank deep link to be omitted');
+  }
+});
+
+Deno.test('token message addresses one phone and keeps the inbox text', () => {
+  const message = buildTokenMessage(row, 'device-token').message;
+  if ('topic' in message) throw new Error('expected no topic');
+  if (message.token !== 'device-token') {
+    throw new Error('expected the device token');
+  }
+  const notification = message.notification as { title: string; body: string };
+  if (notification.title !== row.title || notification.body !== row.body) {
+    throw new Error('expected the inbox title and body');
+  }
+  const data = message.data as Record<string, string>;
+  if (data.announcement_id !== row.id || data.deep_link !== '/upgrade') {
+    throw new Error('expected the announcement id and deep link');
+  }
+});
+
+Deno.test('unregistered tokens are the ones Firebase dropped', () => {
+  const unregistered = {
+    error: { details: [{ errorCode: 'UNREGISTERED' }] },
+  };
+  if (!isUnregisteredToken(404, unregistered)) {
+    throw new Error('expected an UNREGISTERED code to be dropped');
+  }
+  if (!isUnregisteredToken(404, {})) {
+    throw new Error('expected a bare 404 to be dropped');
+  }
+  const invalid = {
+    error: { details: [{ errorCode: 'INVALID_ARGUMENT' }] },
+  };
+  if (isUnregisteredToken(400, invalid)) {
+    throw new Error('expected a bad payload to stay');
+  }
+  if (isUnregisteredToken(500, {})) {
+    throw new Error('expected a server error to stay');
+  }
+});
+
+Deno.test('delivers each token once and splits success from dead tokens', async () => {
+  const seen: string[] = [];
+  const delivery = await deliverTokenMessages(
+    ['a', 'b', 'c', 'a', ' '],
+    async (token) => {
+      seen.push(token);
+      if (token === 'b') return { ok: false, unregistered: true };
+      if (token === 'c') throw new Error('network');
+      return { ok: true, unregistered: false };
+    },
+    2,
+  );
+  if (seen.length !== 3 || seen.slice().sort().join(',') !== 'a,b,c') {
+    throw new Error('expected each non-blank token once');
+  }
+  if (delivery.sent !== 1 || delivery.failed !== 1) {
+    throw new Error('expected one success and one failure');
+  }
+  if (delivery.removed.length !== 1 || delivery.removed[0] !== 'b') {
+    throw new Error('expected the dead token to be removed');
   }
 });
 

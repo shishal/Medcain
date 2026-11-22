@@ -14,20 +14,25 @@ import '../domain/announcement_link.dart';
 const announcementBroadcastTopic = 'broadcast';
 
 /// Subscribes this install to [announcementBroadcastTopic] while someone is
-/// signed in, and reports taps and foreground arrivals.
+/// signed in, and reports taps, foreground arrivals, and the FCM token.
 ///
 /// Topic membership belongs to the app install, not the Supabase user, so
 /// sign-out has to unsubscribe or the next account on this phone would still
-/// receive the previous one's broadcasts.
+/// receive the previous one's broadcasts. The token is saved by
+/// [onToken]; this class does not call Supabase.
 class BroadcastPushController {
   void Function(String path)? _onOpen;
   void Function()? _onForeground;
+  Future<void> Function(String token)? _onToken;
   String? _pendingPath;
+  String? _token;
   var _foregroundWaiting = false;
   var _installed = false;
   var _initFailed = false;
-  var _generation = 0;
+  var _signedIn = false;
+  Future<void> _tail = Future<void>.value();
   StreamSubscription<RemoteMessage>? _openedSub;
+  StreamSubscription<String>? _tokenSub;
   StreamSubscription<RemoteMessage>? _foregroundSub;
   Future<bool>? _installing;
 
@@ -37,6 +42,12 @@ class BroadcastPushController {
 
   set onForeground(void Function()? listener) {
     _onForeground = listener;
+  }
+
+  /// Called with the current FCM token while this install is signed in,
+  /// including when Firebase rotates the token.
+  set onToken(Future<void> Function(String token)? listener) {
+    _onToken = listener;
   }
 
   /// Path from a tap that arrived before [onOpen] was set.
@@ -54,18 +65,68 @@ class BroadcastPushController {
   }
 
   /// Android only. iOS stays on the in-app inbox until App Store work.
-  Future<void> sync({required bool signedIn}) async {
-    if (!Platform.isAndroid) return;
-    final generation = ++_generation;
+  ///
+  /// While signed in, also reads the FCM token and passes it to [onToken].
+  Future<void> sync({required bool signedIn}) {
+    if (!Platform.isAndroid) return Future<void>.value();
+    return _oneAtATime(() => _syncLocked(signedIn));
+  }
+
+  /// Returns the token to delete, and stops a later refresh from saving it.
+  ///
+  /// Call this while the Supabase session still exists. Sign-out then
+  /// removes the JWT, so the delete has to happen first.
+  Future<String?> takeTokenForSignOut() {
+    if (!Platform.isAndroid) return Future<String?>.value();
+    return _oneAtATime(() async {
+      _signedIn = false;
+      var token = _token;
+      _token = null;
+      if ((token == null || token.isEmpty) && _installed) {
+        try {
+          token = await _currentToken();
+        } catch (error) {
+          developer.log(
+            'Could not read the notification token during sign-out.',
+            name: 'broadcast_push',
+            error: error,
+          );
+          token = null;
+        }
+      }
+      if (token == null || token.isEmpty) return null;
+      return token;
+    });
+  }
+
+  void dispose() {
+    _onOpen = null;
+    _onForeground = null;
+    _onToken = null;
+    _openedSub?.cancel();
+    _foregroundSub?.cancel();
+    _tokenSub?.cancel();
+  }
+
+  Future<void> _syncLocked(bool signedIn) async {
+    _signedIn = signedIn;
     try {
       final ready = await _ensureInstalled();
-      if (!ready || generation != _generation) return;
-      if (!signedIn) {
+      if (!ready) return;
+      if (!_signedIn) {
         await _unsubscribe();
         return;
       }
       await _subscribe();
-      if (generation != _generation) await _unsubscribe();
+      if (!_signedIn) {
+        await _unsubscribe();
+        return;
+      }
+      final token = await _currentToken();
+      if (!_signedIn || token == null || token.isEmpty) return;
+      _token = token;
+      final register = _onToken;
+      if (register != null) await register(token);
     } catch (error) {
       developer.log(
         'Could not update the broadcast subscription.',
@@ -75,11 +136,14 @@ class BroadcastPushController {
     }
   }
 
-  void dispose() {
-    _onOpen = null;
-    _onForeground = null;
-    _openedSub?.cancel();
-    _foregroundSub?.cancel();
+  /// Queues [action] behind any in-flight token work.
+  ///
+  /// Sign-out deletes the token. If a refresh saved it at the same time,
+  /// the phone would stay on the previous account's list.
+  Future<T> _oneAtATime<T>(Future<T> Function() action) {
+    final result = _tail.then((_) => action());
+    _tail = result.then((_) {}, onError: (_) {});
+    return result;
   }
 
   Future<bool> _ensureInstalled() {
@@ -118,6 +182,7 @@ class BroadcastPushController {
     _openedSub = FirebaseMessaging.onMessageOpenedApp.listen(
       (message) => _emitOpen(message.data),
     );
+    _listenForTokenRefresh();
     try {
       final initial = await FirebaseMessaging.instance.getInitialMessage();
       if (initial != null) _emitOpen(initial.data);
@@ -130,6 +195,30 @@ class BroadcastPushController {
     }
     _installed = true;
     return true;
+  }
+
+  /// FCM registration token for this install.
+  ///
+  /// `register()` reports a Firebase Installation ID. The sender addresses
+  /// a phone with the registration token, so this stays on getToken.
+  Future<String?> _currentToken() {
+    // ignore: deprecated_member_use
+    return FirebaseMessaging.instance.getToken();
+  }
+
+  void _listenForTokenRefresh() {
+    if (_tokenSub != null) return;
+    // ignore: deprecated_member_use
+    _tokenSub = FirebaseMessaging.instance.onTokenRefresh.listen((next) {
+      unawaited(
+        _oneAtATime(() async {
+          if (!_signedIn || next.isEmpty) return;
+          _token = next;
+          final register = _onToken;
+          if (register != null) await register(next);
+        }),
+      );
+    });
   }
 
   Future<void> _subscribe() async {
