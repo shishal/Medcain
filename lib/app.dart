@@ -7,6 +7,8 @@ import 'core/theme/theme_mode_provider.dart';
 import 'features/admin/presentation/widgets/admin_student_preview_overlay.dart';
 import 'features/app_update/presentation/force_update_gate.dart';
 import 'features/auth/presentation/widgets/device_session_guard.dart';
+import 'features/notifications/presentation/providers/broadcast_push_provider.dart';
+import 'features/notifications/presentation/widgets/push_open_host.dart';
 import 'features/security/presentation/widgets/app_screenshot_lock.dart';
 import 'features/security/presentation/widgets/developer_mode_lock.dart';
 
@@ -33,6 +35,9 @@ class _RoutedApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(goRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
+    // Nobody else reads this. Watching it is what subscribes the phone
+    // to the broadcast topic after sign-in.
+    ref.watch(broadcastPushProvider);
 
     return MaterialApp.router(
       title: 'MEDCAIN',
@@ -47,7 +52,7 @@ class _RoutedApp extends ConsumerWidget {
         // ignore: deprecated_member_use
         return MaterialUiCompatibilityBridge(
           child: AdminStudentPreviewOverlay(
-            child: child ?? const SizedBox.shrink(),
+            child: PushOpenHost(child: child ?? const SizedBox.shrink()),
           ),
         );
       },

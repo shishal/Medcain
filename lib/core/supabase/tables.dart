@@ -513,6 +513,7 @@ abstract final class AnnouncementColumns {
   static const publishedAt = 'published_at';
   static const expiresAt = 'expires_at';
   static const createdAt = 'created_at';
+  static const pushSentAt = 'push_sent_at';
 
   /// PostgREST embed alias: `reads:announcement_reads(read_at)`.
   static const readsEmbed = 'reads';

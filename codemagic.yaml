@@ -4,7 +4,7 @@
 # Names that must match the Codemagic UI:
 #   android_signing: medico
 #   integrations.app_store_connect: medico
-#   environment.groups: medico_app  (SUPABASE_URL, SUPABASE_ANON_KEY, CHECKOUT_URL)
+#   environment.groups: medico_app  (SUPABASE_URL, SUPABASE_ANON_KEY, CHECKOUT_URL, GOOGLE_SERVICES_JSON)
 
 definitions:
   env_versions: &env_versions
@@ -68,6 +68,13 @@ workflows:
       - *flutter_pub_get
       - *flutter_analyze
       - *flutter_test
+      - name: Write google-services.json
+        script: |
+          set -euo pipefail
+          : "${GOOGLE_SERVICES_JSON:?Add GOOGLE_SERVICES_JSON to the medico_app env group. Paste the Firebase Android config for com.shishal.medico.}"
+          dest="$CM_BUILD_DIR/android/app/google-services.json"
+          printf '%s\n' "$GOOGLE_SERVICES_JSON" > "$dest"
+          grep -q '"package_name": "com.shishal.medico"' "$dest"
       - name: Build signed APK and App Bundle
         script: |
           set -euo pipefail

@@ -904,13 +904,23 @@ lesson's `required_plan`.
 
 ---
 
-## 11. In-app announcements (inbox, no OS push)
+## 11. Announcements (inbox + one lock-screen alert)
 
 Broadcast messages (new app version, offer, payment reminder, etc.) published
-via **Supabase Table Editor**. Students see them in the app inbox when they
-open the app — there is no FCM / lock-screen push in this step.
+from **Admin → Notifications** or the Table Editor. Students see them in the
+in-app inbox the next time they open Home. The first time a row becomes
+active, phones that allowed notifications also get one lock-screen alert
+(FCM topic `broadcast`). Saving an already published row does not alert again.
+A student who denies permission, or who has not installed a build with Firebase
+configured, still sees the inbox row.
 
-Migration: `supabase/migrations/20260919120000_announcements_inbox.sql`.
+Migrations: `supabase/migrations/20260919120000_announcements_inbox.sql` and
+`supabase/migrations/20261122120000_announcement_push.sql` (`push_sent_at`,
+queued by a trigger through `pg_net` to the Edge Function
+`send-announcement-push`). The function records `push_sent_at` before calling
+FCM so a second delivery does not send twice, and clears it if FCM does not
+accept the message. Publish off, then on, retries only while that column is
+null. See `docs/11_ANNOUNCEMENTS_OPS.md`.
 
 ```sql
 create table announcements (
@@ -924,6 +934,7 @@ create table announcements (
   published_at timestamptz not null default now(),
   expires_at timestamptz,
   created_at timestamptz not null default now()
+  -- push_sent_at timestamptz  -- added by 20261122120000_announcement_push.sql
 );
 
 create table announcement_reads (
@@ -950,11 +961,12 @@ grant select, insert on table announcement_reads to authenticated;
 -- no INSERT/UPDATE/DELETE on announcements for authenticated — Table Editor / service_role only
 ```
 
-**Ops:** an admin publishes from the app (`/admin` → Notifications), or you can still insert in the Table Editor.
+**Ops:** an admin publishes from the app (`/admin` → Notifications), the website admin, or the Table Editor.
 
-1. Draft: `is_active = false` (hidden from students).
-2. Publish: `is_active = true` (optional `expires_at`).
+1. Draft: `is_active = false` (hidden from students, no phone alert).
+2. Publish: `is_active = true` (optional `expires_at`). This is the one lock-screen alert.
 3. Next Home open / refresh shows the row as unread until the student opens or dismisses it.
+4. Edit while it stays published: inbox text updates, no second alert.
 
 See also `docs/11_ANNOUNCEMENTS_OPS.md`.
 

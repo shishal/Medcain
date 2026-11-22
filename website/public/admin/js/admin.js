@@ -435,7 +435,7 @@
         <a class="tile" href="/admin/import/"><strong>Import</strong><span>Upload a Questions sheet</span></a>
         <a class="tile" href="/admin/catalog/"><strong>Catalog</strong><span>Universities, colleges, subjects</span></a>
         <a class="tile" href="/admin/users/"><strong>Users</strong><span>Profile, plan, block, admin</span></a>
-        <a class="tile" href="/admin/announcements/"><strong>Announcements</strong><span>In-app inbox on Home</span></a>
+        <a class="tile" href="/admin/announcements/"><strong>Announcements</strong><span>Inbox, and one phone alert the first time you publish</span></a>
         <a class="tile" href="/admin/app-update/"><strong>App update</strong><span>Block builds below a Play version</span></a>
         <a class="tile" href="/admin/plans/"><strong>Plans</strong><span>Price, access, devices, and promos</span></a>
         <a class="tile" href="/admin/pricing/"><strong>Pricing</strong><span>Older period prices, no longer used at checkout</span></a>
@@ -1839,7 +1839,7 @@
           ${field('App path', inputControl('ann_link', item.deep_link || '', 'placeholder="/upgrade"'))}
           ${checkControl('ann_active', 'Published', item.is_active === true)}
           ${field('Expiry', `<input id="ann_expires" type="date" value="${esc(toDateInput(item.expires_at))}" />`)}
-          <p class="hint">Leave the date empty for no expiry. Students see this on Home. It is not a lock-screen push.</p>
+          <p class="hint">Leave the date empty for no expiry. Students see a published message in the app. The first time it is published, phones that allowed notifications get one alert. Saving it again does not send another.</p>
           <div class="actions">
             <button class="btn btn-primary" type="submit">Save</button>
             <button class="btn btn-ghost" type="button" data-action="new-announcement">New</button>

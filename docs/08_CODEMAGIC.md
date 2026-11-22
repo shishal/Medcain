@@ -46,9 +46,17 @@ Create a group named exactly `medico_app` (must match `codemagic.yaml`) and add:
 | `SUPABASE_URL` | yes | same as local `.env` |
 | `SUPABASE_ANON_KEY` | yes | same as local `.env` (public by design; RLS is the real gate) |
 | `CHECKOUT_URL` | yes | **production** HTTPS checkout, not `127.0.0.1` |
+| `GOOGLE_SERVICES_JSON` | yes | Firebase Android config for `com.shishal.medico` (the whole `google-services.json` file). Android workflow only. |
 
-Do **not** put `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, or Razorpay secrets
-in this group. They would be baked into every install.
+Do **not** put `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, Razorpay secrets,
+or the Firebase **service account** JSON in this group. The first three would
+be baked into every install. The service account can send pushes; it belongs
+in Supabase Edge Function secrets (`FCM_SERVICE_ACCOUNT_JSON`), never in the app.
+
+`GOOGLE_SERVICES_JSON` is client config. The Android workflow writes it to
+`android/app/google-services.json` (gitignored) before the release build.
+Without it the build stops. A local debug run without that file still opens;
+lock-screen alerts stay off until the file is there. iOS does not use it.
 
 ---
 

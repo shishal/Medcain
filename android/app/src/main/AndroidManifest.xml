@@ -1,7 +1,11 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Release builds do not inherit debug/profile permissions. Without this,
          a signed APK cannot reach Supabase or open the checkout URL. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Android 13+ shows the notification prompt only if this is declared.
+         Denying it still leaves the in-app inbox working. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Android 15+ (API 35): no_screenshot's startScreenRecordingListening()
          calls WindowManager.addScreenRecordingCallback, which needs this
          install-time permission. Without it the method channel throws
@@ -13,6 +17,16 @@
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher">
+        <!-- firebase_core's provider runs before Dart and crashes when
+             google-services.json was not baked in. Dart initializes Firebase
+             itself, and skips push when that config is missing. -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            tools:node="remove" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="announcements" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

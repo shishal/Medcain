@@ -91,3 +91,10 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+// Codemagic writes this file from GOOGLE_SERVICES_JSON. A local build
+// without it still compiles; lock-screen push stays off until the file
+// is in place and this plugin bakes the Firebase Android config in.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}

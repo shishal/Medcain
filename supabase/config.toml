@@ -410,6 +410,10 @@ verify_jwt = false
 [functions.whatsapp-webhook]
 verify_jwt = false
 
+# pg_net calls this with PUSH_WEBHOOK_SECRET. That value is not a user JWT.
+[functions.send-announcement-push]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

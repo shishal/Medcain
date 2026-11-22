@@ -179,7 +179,8 @@ class _AdminAnnouncementScreenState
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Publish'),
                   subtitle: const Text(
-                    'Students see published messages on the next Home load.',
+                    'Students see it in the app. The first publish also '
+                    'alerts phones that allowed notifications.',
                   ),
                   value: _publish,
                   onChanged: _busy

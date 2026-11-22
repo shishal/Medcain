@@ -44,6 +44,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Firebase Android client config. Codemagic writes it from GOOGLE_SERVICES_JSON.
+# The FCM service-account key is a Supabase secret and must never be committed.
+/android/app/google-services.json
+
 # Widget Preview related
 .widget_preview/
 

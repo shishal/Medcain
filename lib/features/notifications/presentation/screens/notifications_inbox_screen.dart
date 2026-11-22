@@ -9,6 +9,7 @@ import '../../../../core/utils/result.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
 import '../../../../core/widgets/comic_card.dart';
+import '../../domain/announcement_link.dart';
 import '../../domain/app_announcement.dart';
 import '../providers/notifications_provider.dart';
 
@@ -193,54 +194,15 @@ class _AnnouncementTileState extends ConsumerState<_AnnouncementTile> {
           .markRead(item.id);
       if (!mounted) return;
       if (result case Failure(:final message)) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
         return;
       }
     }
 
     final link = item.deepLink?.trim();
     if (link == null || link.isEmpty) return;
-    _navigateSafeDeepLink(context, link);
-  }
-
-  /// Allows only known in-app student routes (blocking `//host`, `/admin`,
-  /// `/splash`, `/login`, or malformed paths) and uses `go` for shell tabs.
-  static void _navigateSafeDeepLink(BuildContext context, String raw) {
-    if (!raw.startsWith('/') || raw.startsWith('//')) return;
-    final uri = Uri.tryParse(raw);
-    if (uri == null || uri.hasScheme || uri.host.isNotEmpty) return;
-    final path = uri.path;
-
-    // Shell branches live inside StatefulShellRoute and must use `go`.
-    const shellRoutes = {
-      AppRoutes.home,
-      AppRoutes.practice,
-      AppRoutes.profile,
-    };
-    if (shellRoutes.contains(path)) {
-      context.go(raw);
-      return;
-    }
-
-    const pushPrefixes = [
-      AppRoutes.upgrade,
-      AppRoutes.bookmarks,
-      AppRoutes.progress,
-      AppRoutes.search,
-      AppRoutes.notifications,
-      '/subjects/',
-      '/topics/',
-      '/lessons/',
-      '/pyq/',
-    ];
-    final allowed = pushPrefixes.any(
-      (prefix) => path == prefix || path.startsWith(prefix),
-    );
-    if (allowed) {
-      context.push(raw);
-    }
+    openAnnouncementPath(context, link);
   }
 
   static IconData _iconFor(String category) {
