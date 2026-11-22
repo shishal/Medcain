@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/support.dart';
 import '../../../../core/theme/brand_assets.dart';
 import '../../../../core/theme/comic_colors.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/date_format.dart';
+import '../../../../core/utils/open_external_link.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
@@ -31,6 +33,16 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isSigningOut = false;
+
+  /// Profile phone first. WhatsApp sign-in still stores the number on Auth
+  /// when the profile column is empty.
+  String? _accountPhone() {
+    final profilePhone = ref.read(userProfileProvider).value?.phone?.trim();
+    if (profilePhone != null && profilePhone.isNotEmpty) return profilePhone;
+    final authPhone = ref.read(authRepositoryProvider).currentPhone?.trim();
+    if (authPhone == null || authPhone.isEmpty) return null;
+    return authPhone;
+  }
 
   Future<void> _signOut() async {
     setState(() => _isSigningOut = true);
@@ -199,6 +211,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Icon(Icons.workspace_premium_outlined),
                   SizedBox(width: Spacing.md),
                   Expanded(child: Text('Compare plans')),
+                  Icon(Icons.chevron_right_rounded),
+                ],
+              ),
+            ),
+            const SizedBox(height: Spacing.sm),
+            ComicCard(
+              color: Color.alphaBlend(
+                StickerFills.sky.withValues(alpha: 0.45),
+                comic.sticker,
+              ),
+              onTap: () => openExternalLink(
+                context,
+                SupportLinks.supportMailto(phone: _accountPhone()),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.mail_outline),
+                  SizedBox(width: Spacing.md),
+                  Expanded(child: Text('Contact support desk')),
                   Icon(Icons.chevron_right_rounded),
                 ],
               ),

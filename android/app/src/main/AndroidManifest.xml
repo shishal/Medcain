@@ -65,6 +65,11 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- url_launcher: open the support address in the device mail app. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="mailto"/>
+        </intent>
         <!-- url_launcher: open https checkout in the device browser. -->
         <intent>
             <action android:name="android.intent.action.VIEW"/>
