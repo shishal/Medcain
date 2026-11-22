@@ -4,12 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
-import '../../../../core/support.dart';
 import '../../../../core/theme/brand_assets.dart';
 import '../../../../core/theme/comic_colors.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../core/utils/date_format.dart';
-import '../../../../core/utils/open_external_link.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/async_status_views.dart';
@@ -186,38 +184,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: Spacing.lg),
             const _ReferralCodeCard(),
-            ComicCard(
-              color: Color.alphaBlend(
-                StickerFills.mint.withValues(alpha: 0.4),
-                comic.sticker,
-              ),
-              onTap: () => openExternalLink(context, SupportLinks.whatsAppUrl),
-              child: const Row(
-                children: [
-                  Icon(Icons.chat_outlined),
-                  SizedBox(width: Spacing.md),
-                  Expanded(child: Text('WhatsApp community')),
-                  Icon(Icons.chevron_right_rounded),
-                ],
-              ),
-            ),
-            const SizedBox(height: Spacing.sm),
-            ComicCard(
-              color: Color.alphaBlend(
-                ComicColors.of(context).accentPurple.withValues(alpha: 0.18),
-                comic.sticker,
-              ),
-              onTap: () => openExternalLink(context, SupportLinks.telegramUrl),
-              child: const Row(
-                children: [
-                  Icon(Icons.campaign_outlined),
-                  SizedBox(width: Spacing.md),
-                  Expanded(child: Text('Telegram channel')),
-                  Icon(Icons.chevron_right_rounded),
-                ],
-              ),
-            ),
-            const SizedBox(height: Spacing.sm),
+            // WhatsApp community and Telegram channel stay off Profile until
+            // those groups exist. URLs are in SupportLinks.
             ComicCard(
               color: Color.alphaBlend(
                 StickerFills.peach.withValues(alpha: 0.4),
